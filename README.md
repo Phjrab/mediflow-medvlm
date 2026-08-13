@@ -34,4 +34,8 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 환자 이름, MRN, 생년월일, 원본 DICOM UID 등 식별자를 요청·프롬프트·로그에 넣지 않는다.
 `study_id`에는 기관 내부에서만 역매핑 가능한 가명 식별자를 사용한다. 자세한 구현 및
-운영 기준은 추후 `DATA_GOVERNANCE.md`, `EVALUATION.md`에 추가한다.
+운영 기준은 다음 문서를 확인한다.
+
+- [아키텍처](ARCHITECTURE.md): 모듈 경계와 모델 어댑터 계약
+- [데이터 거버넌스](DATA_GOVERNANCE.md): PHI 처리와 로그 정책
+- [평가 프로토콜](EVALUATION.md): 모델·프롬프트 변경 전 검증 기준
