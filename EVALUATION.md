@@ -25,3 +25,18 @@ Every output must be visibly labeled as an AI-generated research draft. A
 qualified reviewer must be able to reject, edit, and document the final result.
 The application must communicate abstentions, image quality issues, and out-of-
 scope cases instead of silently producing a confident-looking answer.
+
+## Public research protocol v1
+
+`python -m mediflow_medvlm evaluation freeze` locks an answer-independent sample
+selection, source file digests, input/reference digests and generation/parser
+policy. The evaluator passes only question/context/options/verified images to
+the model; scoring joins references afterwards. Test is used after validation
+selection. Data patient grouping is recorded at its actual available level.
+
+Scheduled, attempted, completed, valid, abstained, invalid and technical failure
+counts remain visible. Classification accuracy uses either all scheduled rows or
+valid answers with explicit denominators. Free QA/VQA exact match and token F1
+are lexical metrics, not clinical correctness. Paired group bootstrap reflects
+evaluation-sample uncertainty, not variation across training seeds. Benchmark
+expert review remains `not_performed` unless a real reviewer completes it.

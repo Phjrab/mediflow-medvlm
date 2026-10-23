@@ -34,10 +34,16 @@ def validate_request(request: InferenceRequest) -> None:
 
     if not request.study_id or request.study_id.strip() != request.study_id:
         raise RequestValidationError("study_id must be a non-empty pseudonymous identifier")
-    if not request.current_images:
+    if not isinstance(request.task, TaskType):
+        raise RequestValidationError("task must be a TaskType")
+    if request.task is not TaskType.TEXT_QA and not request.current_images:
         raise RequestValidationError("at least one current image is required")
-    if request.task is TaskType.VQA and not request.question:
-        raise RequestValidationError("a VQA request requires a question")
+    if request.task in (TaskType.VQA, TaskType.TEXT_QA) and not (request.question or "").strip():
+        raise RequestValidationError(f"a {request.task.value.upper()} request requires a question")
+    if request.task is TaskType.TEXT_QA and (request.current_images or request.prior_images):
+        raise RequestValidationError("TEXT_QA does not accept images; use VQA for image input")
+    if not all(isinstance(k, str) and isinstance(v, str) and v.strip() for k, v in request.options.items()):
+        raise RequestValidationError("options must map string identifiers to non-empty text")
     if request.task is TaskType.LONGITUDINAL_COMPARISON and not request.prior_images:
         raise RequestValidationError("longitudinal comparison requires at least one prior image")
 
@@ -50,5 +56,5 @@ def validate_request(request: InferenceRequest) -> None:
         fields = ", ".join(sorted(disallowed))
         raise RequestValidationError(f"model_parameters must not include direct identifiers: {fields}")
 
-    if request.question and _MRN_LIKE_PATTERN.search(request.question):
+    if _MRN_LIKE_PATTERN.search(" ".join([request.question or "", request.context or "", *request.options.values()])):
         raise RequestValidationError("question appears to contain a direct patient identifier")

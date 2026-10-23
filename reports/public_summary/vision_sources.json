@@ -1,0 +1,329 @@
+{
+  "schema_version": "medvlm.vision-sources.public.v1",
+  "checked_date_asia_seoul": "2026-10-23",
+  "sources": {
+    "slake": {
+      "source_id": "slake",
+      "official_url": "https://www.med-vqa.com/slake/",
+      "resolved_revision": "a9083ce6c34ac3ffb17671a605962924d8a8f9e9",
+      "retrieved_at": "2026-10-23T07:45:32.564014+00:00",
+      "status": "SUCCEEDED",
+      "evidence_level": "CPU_TESTED",
+      "total_bytes": 216583480,
+      "declared_license": "CC-BY-4.0",
+      "resolved_applicable_license": "CC-BY-4.0 author-linked dataset distribution",
+      "code_license": null,
+      "original_content_license": "individual underlying image rights not separately enumerated by author",
+      "license_evidence": [
+        "https://huggingface.co/datasets/BoKelvin/SLAKE/blob/a9083ce6c34ac3ffb17671a605962924d8a8f9e9/README.md",
+        "https://www.med-vqa.com/slake/"
+      ],
+      "access_status": "public_author_linked_download",
+      "acquisition_status": "SUCCEEDED",
+      "used_counts": {
+        "train": 1979,
+        "validation": 512,
+        "test": 1061
+      },
+      "excluded_counts": {
+        "heldout_image_component_overlap": 3480,
+        "empty_question_or_answer": 1,
+        "not_english": 6995
+      },
+      "original_split_counts": null,
+      "raw_counts": {
+        "train": 9835,
+        "validation": 2099,
+        "test": 2094
+      },
+      "files": [
+        {
+          "name": "README.md",
+          "bytes": 568,
+          "sha256": "9e55939536c0d457f0cde9242eaba4d192d555c0c886545532b109173ccf76a2",
+          "url": "https://huggingface.co/datasets/BoKelvin/SLAKE/resolve/a9083ce6c34ac3ffb17671a605962924d8a8f9e9/README.md"
+        },
+        {
+          "name": "imgs.zip",
+          "bytes": 212343373,
+          "sha256": "44eb7d9214e1ac5b7946e237b669401866df9114fd9a3618c5a84fbffcded0b0",
+          "url": "https://huggingface.co/datasets/BoKelvin/SLAKE/resolve/a9083ce6c34ac3ffb17671a605962924d8a8f9e9/imgs.zip"
+        },
+        {
+          "name": "test.json",
+          "bytes": 635829,
+          "sha256": "6be8f7b4c5a46cdbc713a5210a25b6ed5aa1fd1574c83cefb4f998131f17c2c3",
+          "url": "https://huggingface.co/datasets/BoKelvin/SLAKE/resolve/a9083ce6c34ac3ffb17671a605962924d8a8f9e9/test.json"
+        },
+        {
+          "name": "train.json",
+          "bytes": 2964571,
+          "sha256": "7a9fb81f9d7bb145c3d7e9bc8d3b9016ba18b6539ea5031a53bae8fd3cd991c3",
+          "url": "https://huggingface.co/datasets/BoKelvin/SLAKE/resolve/a9083ce6c34ac3ffb17671a605962924d8a8f9e9/train.json"
+        },
+        {
+          "name": "validation.json",
+          "bytes": 639139,
+          "sha256": "32b016440b0c3be11056a78a18eeab46333268407fbb6e6b32f9f4c2debc50f6",
+          "url": "https://huggingface.co/datasets/BoKelvin/SLAKE/resolve/a9083ce6c34ac3ffb17671a605962924d8a8f9e9/validation.json"
+        }
+      ],
+      "canonical_files": {
+        "train": {
+          "count": 1979,
+          "sha256": "1810b04cd4a435d58a7464366a3c0d74f7ece6d621c69f3830039d17657d3418"
+        },
+        "validation": {
+          "count": 512,
+          "sha256": "24a116369a69805616c67539c7e1f5f99810e630a11db1602696f598f54ea1c6"
+        },
+        "test": {
+          "count": 1061,
+          "sha256": "7a41364e82af44ac6cac76ba5254f5012f8ef160b9ec56bb0dc0b9c02f59919f"
+        }
+      },
+      "all_fetched_file_manifest_digest": "30c9ee8876d217caf9925071c0bb2fd1f4b8ca75e937000f18500cc738233079",
+      "english_original_counts": {
+        "train": 4919,
+        "validation": 1053,
+        "test": 1061
+      },
+      "verified_image_count": 642,
+      "used_image_count": 310,
+      "invalid_images": {},
+      "overlap_exclusions_by_cause": {
+        "same_original_image": 1627,
+        "additional_perceptual_candidate_component": 1853
+      },
+      "near_duplicate_policy": {
+        "method": "64-bit grayscale dHash",
+        "preprocessing": "EXIF transpose; RGB; Pillow grayscale L; resize9x8 LANCZOS; adjacent-column left>right bits",
+        "hamming_threshold": 4,
+        "clinical_equivalence_verified": false,
+        "action": "conservatively group all candidates; exclude lower-priority split overlap; no claim all candidates true duplicates"
+      },
+      "largest_component_image_count": 86,
+      "direct_original_image_cross_split_count": 298,
+      "protocol": "official_split_preserved_with_lower_priority_overlap_and_conflict_exclusion",
+      "patient_group_verified": false,
+      "near_duplicate_candidate_pairs": 937,
+      "exact_pixel_duplicate_pairs": 0,
+      "image_component_count": 364,
+      "largest_components": [
+        {
+          "component_id": "xmlab42/source.jpg",
+          "image_count": 86,
+          "splits": [
+            "test",
+            "train",
+            "validation"
+          ],
+          "modality_counts": {
+            "MRI": 86
+          }
+        },
+        {
+          "component_id": "xmlab601/source.jpg",
+          "image_count": 34,
+          "splits": [
+            "test",
+            "train",
+            "validation"
+          ],
+          "modality_counts": {
+            "CT": 34
+          }
+        },
+        {
+          "component_id": "xmlab552/source.jpg",
+          "image_count": 23,
+          "splits": [
+            "test",
+            "train",
+            "validation"
+          ],
+          "modality_counts": {
+            "CT": 23
+          }
+        },
+        {
+          "component_id": "xmlab395/source.jpg",
+          "image_count": 22,
+          "splits": [
+            "test",
+            "train",
+            "validation"
+          ],
+          "modality_counts": {
+            "CT": 22
+          }
+        },
+        {
+          "component_id": "xmlab536/source.jpg",
+          "image_count": 16,
+          "splits": [
+            "test",
+            "train",
+            "validation"
+          ],
+          "modality_counts": {
+            "CT": 16
+          }
+        }
+      ],
+      "cross_split_image_components_before_exclusion": 185
+    },
+    "vqa_rad": {
+      "source_id": "vqa_rad",
+      "official_url": "https://osf.io/89kps/",
+      "resolved_revision": "osf-89kps-459aaec1e7e2b92a23f506a0d3df65b84f2d953486fac6d4a5406c1d2aacbea2",
+      "retrieved_at": "2026-10-23T07:55:04.444488+00:00",
+      "status": "SUCCEEDED",
+      "evidence_level": "CPU_TESTED",
+      "total_bytes": 17940910,
+      "declared_license": "CC0-1.0",
+      "resolved_applicable_license": "OSF project CC0-1.0",
+      "code_license": null,
+      "original_content_license": "OSF project terms; source MedPix case URLs retained",
+      "license_evidence": [
+        "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e96c/",
+        "https://api.osf.io/v2/nodes/89kps/"
+      ],
+      "access_status": "public_official_OSF_API_and_download",
+      "acquisition_status": "SUCCEEDED",
+      "used_counts": {
+        "test": 451,
+        "train": 0,
+        "validation": 0
+      },
+      "excluded_counts": {
+        "not_official_test": 1797
+      },
+      "original_split_counts": {
+        "freeform": 1206,
+        "para": 591,
+        "test_freeform": 308,
+        "test_para": 143
+      },
+      "raw_counts": null,
+      "files": [
+        {
+          "name": "VQA_RAD Dataset Public.json",
+          "bytes": 1419295,
+          "sha256": "948b7156059b864cf72344fb10669233526b175c243e5a046d20d4201d297a95",
+          "url": "https://osf.io/download/6qdas/"
+        }
+      ],
+      "canonical_files": {
+        "test": {
+          "count": 451,
+          "sha256": "f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe"
+        },
+        "train": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "validation": {
+          "count": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "all_fetched_file_manifest_digest": "d9a1b1d8feccea23cc63c3aba96d76145d53a903f46cbddeb9acee612496cf1b",
+      "verified_image_count": 315,
+      "actual_downloaded_rows": 2248,
+      "sft_allowed": false
+    },
+    "medqa": {
+      "status": "BLOCKED_LICENSE",
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "reason_code": "EXTERNAL_DATA_LICENSE_SCOPE_UNRESOLVED",
+      "actual_downloaded_rows": 0,
+      "official_url": "https://github.com/jind11/MedQA",
+      "repository_revision": "27b02f66aac217933c9648a06f82e9f720377925",
+      "declared_repository_license": "MIT",
+      "resolved_applicable_dataset_license": null,
+      "official_distribution_url": "https://drive.google.com/file/d/1ImYUSLk9JbgHXOemfvyiDiirluZHPeQw/view",
+      "access_status": "public_archive_landing_page_accessible",
+      "next_action": "Resolve exact US/4_options QA rights before acquiring external archive containing textbooks; then supplemental.medqa_records"
+    },
+    "medmcqa": {
+      "status": "BLOCKED_LICENSE",
+      "evidence_level": "CPU_TESTED",
+      "reason_code": "EXTERNAL_DATA_LICENSE_SCOPE_UNRESOLVED",
+      "actual_downloaded_rows": 0,
+      "official_url": "https://github.com/medmcqa/medmcqa",
+      "repository_revision": "c59ef14ca1990266c4107c7864b45a20fd93e5e0",
+      "hf_card_revision": "91c6572c454088bf71b679ad90aa8dffcd0d5868",
+      "declared_repository_license": "MIT",
+      "declared_hf_card_license": "Apache-2.0",
+      "resolved_applicable_dataset_license": null,
+      "official_distribution_url": "https://drive.google.com/uc?export=download&id=15VkJdq5eyWIkfb_aoD3oS8i4tScbHYky",
+      "official_test_gold_public": false,
+      "next_action": "Resolve exact artifact data-license scope; explicitly verify raw cop base and keep single choice; no official-test accuracy"
+    },
+    "aihub_71875": {
+      "status": "BLOCKED_ACCESS",
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "reason_code": "AUTHORIZED_DOWNLOAD_CREDENTIALS_NOT_CONFIGURED",
+      "actual_downloaded_rows": 0,
+      "official_url": "https://www.aihub.or.kr/aihubdata/data/view.do?dataSetSn=71875",
+      "declared_version": "1.1",
+      "source_includes_llm_generation": true,
+      "per_record_expert_authorship_verified": false,
+      "next_action": "Use existing authorized AI-Hub credentials or supplied authorized files, preserve source terms and qa_id/question/answer/q_type/domain"
+    },
+    "aihub_71762": {
+      "status": "BLOCKED_ACCESS",
+      "evidence_level": "CPU_TESTED",
+      "reason_code": "AUTHORIZED_DOWNLOAD_CREDENTIALS_NOT_CONFIGURED",
+      "actual_downloaded_rows": 0,
+      "official_url": "https://www.aihub.or.kr/aihubdata/data/view.do?dataSetSn=71762",
+      "declared_version": "1.1",
+      "pairing_status": "UNRESOLVED_PAIRING",
+      "next_action": "Obtain authorized files plus guide-defined explicit matching ID and parent ID; never join by position, disease or intent"
+    },
+    "rocov2": {
+      "status": "PREPARED_NOT_RUN",
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "reason_code": "REGISTRY_ONLY_V1_SCOPE",
+      "actual_downloaded_rows": 0,
+      "official_url": "https://zenodo.org/records/10821435",
+      "pack_record_id": "8333645",
+      "resolved_record_id": "10821435",
+      "version": "2.0.1",
+      "dataset_license": "CC-BY-NC-4.0",
+      "task": "medical_image_caption",
+      "all_file_bytes": 6360329403,
+      "license_metadata_bytes": 9446130,
+      "next_action": "Separate later-scale caption campaign with per-image license_information.csv and PMCID/figure grouping"
+    },
+    "pmc_vqa": {
+      "status": "PREPARED_NOT_RUN",
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "reason_code": "REGISTRY_ONLY_V1_SCOPE",
+      "actual_downloaded_rows": 0,
+      "official_url": "https://huggingface.co/datasets/RadGenome/PMC-VQA",
+      "resolved_revision": "b56ae594f794867893143b337b4118a835794647",
+      "dataset_license": "CC BY-SA (exact version not specified by card)",
+      "original_article_licenses": "CC0/CC BY per author card; retain PMCID license list",
+      "code_license": "MIT repository only",
+      "image_archive_bytes": {
+        "images.zip": 18945102275,
+        "images_2.zip": 2206255503
+      },
+      "next_action": "Separate later-scale QA campaign retaining train/test/test_clean and version2 artifacts, PMCID/figure/license metadata"
+    }
+  },
+  "implemented_tests": {
+    "command": "PYTHONPATH=src python -m pytest tests/test_slake.py tests/test_supplemental.py tests/test_vqarad.py -q",
+    "passed": 13
+  },
+  "resume_commands": [
+    "PYTHONPATH=src python -m mediflow_medvlm.data.slake --data-root ../medvlm-data --fetch",
+    "PYTHONPATH=src python -m mediflow_medvlm.data.vqarad --data-root ../medvlm-data --fetch",
+    "python scripts/summarize_vision_sources.py --data-root ../medvlm-data"
+  ],
+  "cross_source_exact_pixel_duplicate_count": 0,
+  "cross_source_perceptual_equivalence_review": "not performed; exact-pixel screen does not prove different patients",
+  "raw_data_redistributed": false
+}

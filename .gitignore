@@ -6,6 +6,16 @@ __pycache__/
 .venv/
 venv/
 .env
-data/
+/data/
 results/
 *.dcm
+runtime/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.parquet
+.venv*/
+.env.*
+*.pem
+*.key

@@ -9,14 +9,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 
-class TaskType(StrEnum):
+class StringEnum(str, Enum):
+    """The value/JSON/string behavior of StrEnum, also on Python 3.10."""
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class TaskType(StringEnum):
     """Supported high-level medical VLM tasks."""
 
     VQA = "vqa"
+    TEXT_QA = "text_qa"
     REPORT = "report"
     LONGITUDINAL_COMPARISON = "longitudinal_comparison"
 
@@ -42,6 +50,8 @@ class InferenceRequest:
     prior_images: tuple[ImageReference, ...] = ()
     prompt_version: str = "unversioned"
     model_parameters: dict[str, Any] = field(default_factory=dict)
+    context: str | None = None
+    options: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

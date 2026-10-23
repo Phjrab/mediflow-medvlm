@@ -1,0 +1,176 @@
+{
+  "medquad": {
+    "access_status": "public_author_distribution",
+    "acquisition_status": "SUCCEEDED",
+    "actual_downloaded_count": 47441,
+    "code_license": null,
+    "declared_license": "CC-BY-4.0",
+    "evidence_level": "CPU_TESTED",
+    "excluded_counts": {
+      "copyright_removed_subset": 31029,
+      "empty_answer": 5,
+      "exact_duplicate_input": 20,
+      "label_conflict": 2283,
+      "train_cap_whole_group": 3309
+    },
+    "fetched_files_sha256": "95986ddcb690fa0e8d710e14983862655bc1279e6c1461e9afd23ec475f0cb70",
+    "license_evidence": [
+      "https://github.com/abachaa/MedQuAD/blob/577bd37b96c02d1833b2c9eed2de9f96964e96cb/LICENSE.txt"
+    ],
+    "license_scope": "Released public answers under author CC-BY-4.0; removed subsets never reconstructed; individual source URLs preserved.",
+    "official_url": "https://github.com/abachaa/MedQuAD",
+    "original_content_license": "see per-sample source URL; retained underlying rights",
+    "original_split_counts": null,
+    "raw_path": "${MEDVLM_DATA_ROOT}/raw/medquad/repository",
+    "raw_redistribution": false,
+    "resolved_applicable_license": "CC-BY-4.0",
+    "resolved_revision": "577bd37b96c02d1833b2c9eed2de9f96964e96cb",
+    "retrieved_at": "2026-10-23T07:49:31.504496+00:00",
+    "schema_version": "medvlm.source.v1",
+    "source_id": "medquad",
+    "status": "SUCCEEDED",
+    "total_bytes": 36735138,
+    "used_counts": {
+      "test": 1301,
+      "train": 8000,
+      "validation": 1494
+    },
+    "file_count": 11277,
+    "build_counts": {
+      "copyright_removed_subset": 31029,
+      "empty_answer": 5,
+      "exact_duplicate_input": 20,
+      "label_conflict": 2283,
+      "observed_empty_answers": 31034,
+      "public_nonempty_before_dedup": 16407,
+      "raw_qa": 47441,
+      "train_cap_whole_group": 3309
+    },
+    "canonical_counts": {
+      "test": 1301,
+      "train": 8000,
+      "validation": 1494
+    },
+    "source_manifest_path": "${MEDVLM_DATA_ROOT}/manifests/sources/medquad.json",
+    "build_manifest_path": "${MEDVLM_DATA_ROOT}/manifests/build/medquad.json"
+  },
+  "pubmedqa_labeled": {
+    "access_status": "public_author_distribution",
+    "acquisition_status": "SUCCEEDED",
+    "actual_downloaded_count": 1000,
+    "code_license": "MIT",
+    "declared_license": "MIT repository distribution; underlying abstract rights retained",
+    "evidence_level": "CPU_TESTED",
+    "excluded_counts": {},
+    "fetched_files_sha256": "ba839a6310be3f314e8f689958bbc5d8e5c72486fa955b06f1aae6d8774c8982",
+    "license_evidence": [
+      "https://github.com/pubmedqa/pubmedqa/blob/1cbae8e92f72f20c8d3747cbb3bf5bc53554d997/LICENSE"
+    ],
+    "license_scope": "PQA-L distributed by author in MIT repository. Underlying article abstract copyright remains with original holders; retained PMID provenance, local noncommercial research use, no raw redistribution or public-domain claim.",
+    "official_url": "https://github.com/pubmedqa/pubmedqa",
+    "original_content_license": "see per-sample source URL; retained underlying rights",
+    "original_split_counts": {
+      "test": 500,
+      "train": 450,
+      "validation": 50
+    },
+    "raw_path": "${MEDVLM_DATA_ROOT}/raw/pubmedqa_labeled/repository",
+    "raw_redistribution": false,
+    "resolved_applicable_license": "MIT repository distribution; underlying abstract rights retained",
+    "resolved_revision": "1cbae8e92f72f20c8d3747cbb3bf5bc53554d997",
+    "retrieved_at": "2026-10-23T07:49:31.559677+00:00",
+    "schema_version": "medvlm.source.v1",
+    "source_id": "pubmedqa_labeled",
+    "status": "SUCCEEDED",
+    "total_bytes": 2603745,
+    "used_counts": {
+      "test": 500,
+      "train": 450,
+      "validation": 50
+    },
+    "file_count": 7,
+    "build_counts": {
+      "raw_qa": 1000,
+      "used": 1000
+    },
+    "canonical_counts": {
+      "test": 500,
+      "train": 450,
+      "validation": 50
+    },
+    "source_manifest_path": "${MEDVLM_DATA_ROOT}/manifests/sources/pubmedqa_labeled.json",
+    "build_manifest_path": "${MEDVLM_DATA_ROOT}/manifests/build/pubmedqa_labeled.json"
+  },
+  "kormedmcqa": {
+    "access_status": "public_author_distribution",
+    "acquisition_status": "SUCCEEDED",
+    "actual_downloaded_count": 7489,
+    "code_license": null,
+    "declared_license": "CC-BY-NC-2.0",
+    "evidence_level": "CPU_TESTED",
+    "excluded_counts": {
+      "fewshot_excluded_from_v1_SFT_and_zero_shot_eval": 20,
+      "train_excluded_from_v1_SFT_and_zero_shot_eval": 3401
+    },
+    "fetched_files_sha256": "9cc97a17fe5f4e0fa11ce3294abee11f76ac7a4bd24b3114d1d0e4e7bfb21b47",
+    "license_evidence": [
+      "https://huggingface.co/datasets/sean0042/KorMedMCQA/blob/79efd6f91edfc8036330d7a4daa88b9f2deb9a82/README.md"
+    ],
+    "license_scope": "CC-BY-NC-2.0 author distribution, attribution and noncommercial offline research only. No automatic commercial kiosk rights for underlying examination questions.",
+    "official_url": "https://huggingface.co/datasets/sean0042/KorMedMCQA",
+    "original_content_license": "see per-sample source URL; retained underlying rights",
+    "original_split_counts": {
+      "dentist": {
+        "dev": 304,
+        "fewshot": 5,
+        "test": 811,
+        "train": 297
+      },
+      "doctor": {
+        "dev": 164,
+        "fewshot": 5,
+        "test": 435,
+        "train": 1890
+      },
+      "nurse": {
+        "dev": 291,
+        "fewshot": 5,
+        "test": 878,
+        "train": 582
+      },
+      "pharm": {
+        "dev": 300,
+        "fewshot": 5,
+        "test": 885,
+        "train": 632
+      }
+    },
+    "raw_path": "${MEDVLM_DATA_ROOT}/raw/kormedmcqa/79efd6f91edfc8036330d7a4daa88b9f2deb9a82",
+    "raw_redistribution": false,
+    "resolved_applicable_license": "CC-BY-NC-2.0",
+    "resolved_revision": "79efd6f91edfc8036330d7a4daa88b9f2deb9a82",
+    "retrieved_at": "2026-10-23T07:49:56.447676+00:00",
+    "schema_version": "medvlm.source.v1",
+    "source_id": "kormedmcqa",
+    "status": "SUCCEEDED",
+    "total_bytes": 2176601,
+    "used_counts": {
+      "test": 3009,
+      "train": 0,
+      "validation": 1059
+    },
+    "file_count": 17,
+    "build_counts": {
+      "excluded_fewshot_evaluation_only": 20,
+      "excluded_train_evaluation_only": 3401,
+      "raw_qa": 7489
+    },
+    "canonical_counts": {
+      "test": 3009,
+      "train": 0,
+      "validation": 1059
+    },
+    "source_manifest_path": "${MEDVLM_DATA_ROOT}/manifests/sources/kormedmcqa.json",
+    "build_manifest_path": "${MEDVLM_DATA_ROOT}/manifests/build/kormedmcqa.json"
+  }
+}

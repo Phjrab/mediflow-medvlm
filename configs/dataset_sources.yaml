@@ -1,0 +1,233 @@
+# Candidate sources and source-specific constraints. None is already downloaded.
+# Codex resolves actual files, rights scope, immutable versions and counts.
+schema_version: medvlm.source-plan.v1
+specification_status: PROPOSED_NOT_EXECUTED
+as_of: "2026-10-23"
+defaults:
+  actual_downloaded_count: null
+  resolved_revision: null
+  no_automatic_raw_redistribution: true
+  rights_verification: check_applicable_source_terms_and_record_evidence
+  code_license_is_not_all_content_license: true
+  blocked_source_does_not_block_others: true
+
+sources:
+  - id: medquad
+    priority: core_text
+    official_url: https://github.com/abachaa/MedQuAD
+    license_url: https://github.com/abachaa/MedQuAD/blob/master/LICENSE.txt
+    readme_url: https://github.com/abachaa/MedQuAD/blob/master/readme.txt
+    observed_license: CC-BY-4.0
+    language: [en]
+    task: medical_qa
+    roles: [sft, dev, grouped_heldout]
+    default_acquire: true
+    acquisition: immutable_git_snapshot_of_released_xml
+    require_nonempty_source_answer: true
+    exclude_subsets:
+      - 10_MPlus_ADAM_QA
+      - 11_MPlusDrugs_QA
+      - 12_MPlusHerbsSupplements_QA
+    exclude_evaluation_archive_from_train: true
+    refill_removed_answers_by_crawling_or_generation: false
+    group_by: [source_document, original_question, duplicate_component]
+    train_cap: 8000
+    published_count_is_actual_train_count: false
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: pubmedqa_labeled
+    priority: core_context_qa
+    official_url: https://github.com/pubmedqa/pubmedqa
+    split_code_url: https://github.com/pubmedqa/pubmedqa/blob/master/preprocess/split_dataset.py
+    observed_repository_license: MIT
+    underlying_abstract_rights: preserve_source_metadata_and_verify_applicable_use
+    language: [en]
+    task: context_qa
+    roles: [small_sft, dev, frozen_test]
+    default_acquire: true
+    subset: PQA-L
+    official_test_expected: 500
+    official_cv_pool_expected: 500
+    fixed_fold: 0
+    expected_fold_train: 450
+    expected_fold_dev: 50
+    counts_are_reference_not_verified_local_counts: true
+    group_by: [PMID, duplicate_component]
+    allowed_input_fields: [question, context_without_conclusion]
+    forbidden_input_fields: [long_answer, final_decision, target, rationale]
+    decisions: ["yes", "no", "maybe"]
+    download_pqa_artificial_by_default: false
+    download_pqa_unlabeled_by_default: false
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: medqa
+    priority: text_extension
+    official_url: https://github.com/jind11/MedQA
+    observed_repository_license: MIT
+    data_license_status: verify_exact_author_linked_files_and_scope
+    language: [en]
+    task: medical_mcq
+    roles: [sft, dev, frozen_test]
+    default_acquire: after_rights_and_variant_resolution
+    variant: english_4_option_if_author_distribution_available
+    preserve_original_splits: true
+    group_by: [original_question, translation_parent, duplicate_component]
+    train_cap: 4000
+    fabricated_rationale: false
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: medmcqa
+    priority: text_extension
+    official_url: https://github.com/medmcqa/medmcqa
+    distribution_url: https://huggingface.co/datasets/openlifescienceai/medmcqa
+    observed_repository_license: MIT
+    observed_distribution_license: Apache-2.0
+    license_note: separate_code_and_data_scope_resolve_for_actual_download
+    language: [en]
+    task: medical_mcq
+    roles: [sft, dev, frozen_eval_if_labels_available]
+    default_acquire: after_rights_scope_resolution
+    train_cap: 5000
+    preserve_original_splits: true
+    validate_fields: [cop_index_base, choice_type, options, exp_presence, label_availability]
+    default_choice_type: single
+    absent_explanation: use_answer_only
+    hidden_test_labels: never_compute_invented_accuracy
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: kormedmcqa
+    priority: core_native_korean_eval
+    official_distribution_url: https://huggingface.co/datasets/sean0042/KorMedMCQA
+    official_paper_url: https://arxiv.org/abs/2403.01469
+    observed_license: CC-BY-NC-2.0
+    license_policy: verify_noncommercial_research_scope_and_original_exam_rights_not_blanket_product_permission
+    language: [ko]
+    task: medical_mcq
+    roles: [protocol_dev, frozen_test]
+    default_acquire: after_noncommercial_use_and_terms_verification
+    subsets: [doctor, nurse, pharm, dentist]
+    original_split_names: [train, dev, test, fewshot]
+    preserve_original_splits: true
+    sft_use_in_v1: false
+    official_dev_use: parser_and_protocol_checks_only
+    official_test_use: frozen_zero_shot_eval
+    fewshot_default: excluded
+    fewshot_overlap: 20_rows_are_drawn_from_dev_not_new_unique_questions
+    reference_unique_question_count: 7469
+    reference_all_split_row_count_including_fewshot: 7489
+    counts_are_reference_not_verified_local_counts: true
+    input_fields: [question, A, B, C, D, E]
+    forbidden_input_fields: [answer, cot]
+    answer_index_base: 1
+    answer_index_range: [1, 5]
+    source_id_fields: [subject, year, period, q_number]
+    rationale_availability: cot_only_in_fewshot_do_not_invent_missing_rationale
+    group_by: [original_question, duplicate_component]
+    upstream_model_training_exposure: unknown_unless_evidence_available
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: slake
+    priority: core_vlm
+    official_url: https://www.med-vqa.com/slake/
+    author_linked_distribution_url: https://huggingface.co/datasets/BoKelvin/SLAKE
+    observed_license: CC-BY-4.0
+    language: [en, zh]
+    primary_language: en
+    task: medical_vqa
+    roles: [sft, dev, frozen_test]
+    default_acquire: true
+    require_image_bytes: true
+    preserve_original_splits: true
+    group_by: [image_id, decoded_pixel_hash, bilingual_parent, duplicate_component]
+    fields_to_preserve: [qid, img_id, img_name, q_lang, answer_type, content_type, modality, original_split]
+    train_cap: 5000
+    if_official_split_has_image_overlap: retain_test_remove_overlapping_train_or_separate_protocol
+    medgemma15_dataset_training_exposure: known
+    medgemma15_exact_test_training_exposure: unknown
+    exposure_evidence_url: https://developers.google.com/health-ai-developer-foundations/medgemma/model-card
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: vqa_rad
+    priority: conditional_external_vlm_eval
+    official_publication_url: https://lhncbc.nlm.nih.gov/LHC-publications/pubs/Adatasetofclinicallygeneratedvisualquestionsandanswersaboutradiologyimages.html
+    official_distribution_url: https://osf.io/89kps/
+    license_status: verify_original_distribution
+    access_status_at_research: source_fetch_403_not_proof_of_permanent_unavailability
+    language: [en]
+    task: medical_vqa
+    roles: [external_eval_candidate]
+    default_acquire: conditional_small_original_if_available
+    unofficial_mirror_as_original: false
+    group_by: [image_id, decoded_pixel_hash, duplicate_component]
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: aihub_71875
+    priority: conditional_korean_extension
+    official_url: https://www.aihub.or.kr/aihubdata/data/view.do?aihubDataSe=data&dataSetSn=71875
+    name_ko: 필수의료 의학지식 데이터
+    license_status: source_terms_and_current_account_access_required
+    language: [ko]
+    task: mixed_medical_qa
+    roles: [conditional_sft, separate_korean_eval]
+    default_acquire: only_with_existing_authorized_access
+    verify_fields: [qa_id, domain, q_type, question, answer]
+    generation_note: official_page_marks_llm_generation_do_not_claim_all_expert_authored
+    group_by: [source_document, qa_id, generation_parent, duplicate_component]
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: aihub_71762
+    priority: conditional_korean_extension
+    official_url: https://www.aihub.or.kr/aihubdata/data/view.do?dataSetSn=71762
+    name_ko: 초거대 AI 헬스케어 질의응답 데이터
+    license_status: source_terms_and_current_account_access_required
+    language: [ko]
+    task: medical_qa
+    roles: [conditional_sft]
+    default_acquire: only_with_existing_access_and_verified_join_contract
+    question_and_answer_file_counts_match: false
+    join_by_file_index: false
+    join_only_by_disease_or_intent: false
+    unresolved_join_action: UNRESOLVED_PAIRING
+    augmented_questions_present: true
+    group_by: [original_parent, source_document, duplicate_component]
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: rocov2
+    priority: later_scale
+    official_publication_url: https://www.nature.com/articles/s41597-024-03496-6
+    official_distribution_url: https://zenodo.org/records/8333645
+    observed_official_license: CC-BY-NC-4.0
+    license_policy: verify_exact_version_not_mirror_label
+    language: [en]
+    task: medical_image_caption
+    roles: [future_sft]
+    default_acquire: metadata_and_size_only
+    group_by: [PMCID, figure_id, duplicate_component]
+    actual_downloaded_count: null
+    resolved_revision: null
+
+  - id: pmc_vqa
+    priority: later_scale
+    official_url: https://github.com/xiaoman-zhang/PMC-VQA
+    author_linked_distribution_url: https://huggingface.co/datasets/RadGenome/PMC-VQA
+    observed_repository_license: MIT
+    observed_dataset_license: CC-BY-SA
+    original_article_licenses: preserve_individual_PMCID_license_records
+    language: [en]
+    task: medical_vqa
+    roles: [future_sft, separate_external_eval]
+    default_acquire: metadata_and_size_only
+    verify_variants: [version_1, version_2, test, test_clean]
+    group_by: [PMCID, figure_id, decoded_pixel_hash, duplicate_component]
+    known_model_overlap_context: medgemma_PMC_OA_dataset_family
+    actual_downloaded_count: null
+    resolved_revision: null

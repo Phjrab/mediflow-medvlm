@@ -33,6 +33,17 @@ def vqa_request() -> InferenceRequest:
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_text_instruction_is_distinct_and_result_has_status(self):
+        adapter = FakeAdapter({"answer": "A", "status": "answered", "option_id": "A", "limitations": "Educational"})
+        request = InferenceRequest(study_id="text-example", task=TaskType.TEXT_QA, current_images=(), question="Choose.", options={"A": "one", "B": "two"})
+        result = run_workflow(adapter, request)
+        self.assertEqual(result.content["status"], "answered")
+        self.assertIn("educational", adapter.instruction)
+        self.assertNotIn("visible", adapter.instruction)
+        adapter.content["option_id"] = "C"
+        with self.assertRaisesRegex(RequestValidationError, "option_id"):
+            run_workflow(adapter, request)
+
     def test_vqa_workflow_returns_validated_result(self) -> None:
         adapter = FakeAdapter({"answer": "Indeterminate", "evidence": "Image observation", "limitations": "Research only"})
 

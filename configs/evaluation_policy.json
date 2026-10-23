@@ -1,0 +1,13 @@
+{
+  "schema_version": "medvlm.eval-policy.v1",
+  "seed": 20261023,
+  "declared_before_test_predictions": true,
+  "subject_aliases": {"kormedmcqa": {"pharmacy": "pharm"}},
+  "test_caps": {"medquad": 64, "pubmedqa_labeled": 500, "kormedmcqa": {"per_subject": 64}, "slake": 256, "vqa_rad": 64},
+  "validation_caps": {"medquad": 32, "pubmedqa_labeled": 32, "kormedmcqa": {"per_subject": 16}, "slake": 32},
+  "generation_tokens": {"medical_qa": 128, "context_qa": 16, "medical_mcq": 16, "medical_vqa": 32},
+  "image_diagnostic_cap": 32,
+  "do_sample": false,
+  "enable_thinking": false,
+  "human_review": "not_performed"
+}

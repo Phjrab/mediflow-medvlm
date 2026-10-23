@@ -1,0 +1,42 @@
+{
+  "status": "SUCCEEDED",
+  "evidence_level": "CPU_TESTED",
+  "reason_for_post_freeze_code_change": "Enforce the explicitly requested acquisition/resume and public-summary privacy contracts; existing frozen manifests and canonical bytes were not rebuilt or changed.",
+  "source_allowlist": "Explicit author repository/dataset paths; HTTPS and approved-host redirect validation.",
+  "transfer": "Three attempts maximum, 45-second socket timeout, validated Content-Range and Content-Length, checksum before atomic rename, retained .part on failure.",
+  "git_transfer": "Allowlisted origin, 600-second timeout, 1GiB source monitor, retained interrupted repository.part without deleting originals.",
+  "disk_policy": "Reserve max(20GiB,15% total disk) after expected growth; count raw archives and extracted images together against 25GiB.",
+  "archive_policy": "SLAKE owner added preflight expansion reservation and resolved-path containment including existing symlinks.",
+  "tests": {
+    "data_io_safety": 10,
+    "data_pipeline": 12,
+    "forge_export": 3,
+    "vqarad": 12,
+    "slake": 10
+  },
+  "core_freeze_unchanged_sha256": "af46823da1e4f4408480de16634460c20d2cc2b9c04b54583d20ebb1a875b934",
+  "new_io_code_sha256": "0fc32a020bc5aca4eaa5e1602adbe49943b08fb7daa6355d365c4ac3f44df7bf",
+  "forge_real_public_records": 4,
+  "forge_bytes": 7603,
+  "forge_official_validator": "valid=true; 4 rows; 7603 UTF-8 bytes",
+  "public_paths": "${MEDVLM_DATA_ROOT} placeholders only; restricted evidence retains exact paths.",
+  "new_slake_code_sha256": "91643b2b3277b5db5b879123d6fcb2728288abd8f74b75e8340c8e3e951979b7",
+  "new_vqarad_code_sha256": "afd4601827629cf1fd3f3f9b1b9f9b37360fb6fa76745258450bc39aad9c4f88",
+  "final_source_review": {
+    "status": "SUCCEEDED",
+    "material_current_blockers": [],
+    "VQA_RAD": {
+      "metadata": "HTTPS exact node/license endpoints; 4MiB response cap; 3 attempts; no auth retry; maximum four metadata pages and cycle rejection",
+      "asset_redirects": "HTTPS only; osf.io/download then files.osf.io/v1/resources/89kps/providers/osfstorage then exact observed official object-storage host and bucket",
+      "observed_storage_host": "idvyorynw6xy.compat.objectstorage.us-ashburn-1.oraclecloud.com",
+      "observed_storage_bucket": "cos-prod-osf-1-files-ash",
+      "official_metadata_live_check": "node 89kps and CC0 1.0 Universal returned",
+      "guarded_official_asset_HEAD_status": 200
+    },
+    "SLAKE": "Fixed revision metadata uses approved HTTPS redirects, 1MiB byte cap and at most three attempts; raw manifest growth included in disk budget",
+    "budget_accounting": "Atomic rename races in concurrent workers do not crash directory accounting",
+    "artifacts_preserved": true,
+    "raw_files_written_in_live_checks": 0,
+    "future_host_migration": "Unknown redirect hosts fail closed until the official distribution is re-verified."
+  }
+}

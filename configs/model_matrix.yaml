@@ -1,0 +1,160 @@
+# Candidate registry only. Resolve revisions, license/access, dependency versions,
+# native loaders, processor masks and actual backward-pass memory at execution.
+schema_version: medvlm.model-plan.v1
+specification_status: PROPOSED_NOT_EXECUTED
+as_of: "2026-10-23"
+revision_policy: resolve_and_lock_immutable_commit_before_comparison
+remote_code_default: false
+weight_format_for_training: native_safetensors
+hub_upload: false
+
+selection:
+  initial_text_slots: [text_small, text_medium]
+  initial_vlm_slots: [vlm_general, vlm_medical]
+  no_duplicate_model_fallback_counting: true
+  general_vlm_order:
+    - qwen35_2b
+    - qwen3vl_2b
+    - qwen25vl_3b
+    - smolvlm_500m
+  medical_vlm_order:
+    - medgemma15_4b
+    - gemma3_4b
+    - smolvlm_500m
+  medical_unavailable_label: medical_specialized_comparison_not_completed
+  task_adapters: independent_text_and_vlm_from_same_original_base
+  optional_same_family_pair: [gemma3_4b, medgemma15_4b]
+  optional_text_reference: medgemma15_4b
+  text_reference_rule: record_base_only_or_separate_text_sft_never_relabel_vqa_adapter_as_text_sft
+  fallback_must_preserve: [task, dataset_manifest, frozen_eval_protocol]
+  if_input_budget_differs: separate_resource_cohort_with_explicit_differences
+
+models:
+  - key: qwen3_17b
+    model_id: Qwen/Qwen3-1.7B
+    slot: text_small
+    tasks: [medical_qa, context_qa, medical_mcq]
+    modes: [base, medical_text_sft]
+    source_url: https://huggingface.co/Qwen/Qwen3-1.7B
+    observed_license: Apache-2.0
+    model_revision: null
+    access_verified_locally: false
+    loader_policy: native_causal_lm_after_config_probe
+    reasoning_policy: enable_thinking_false_where_supported_record_template
+    default_enabled: true
+
+  - key: qwen3_4b
+    model_id: Qwen/Qwen3-4B
+    slot: text_medium
+    tasks: [medical_qa, context_qa, medical_mcq]
+    modes: [base, medical_text_sft]
+    source_url: https://huggingface.co/Qwen/Qwen3-4B
+    observed_license: Apache-2.0
+    model_revision: null
+    access_verified_locally: false
+    loader_policy: native_causal_lm_after_config_probe
+    reasoning_policy: enable_thinking_false_where_supported_record_template
+    default_enabled: true
+    memory_fit: measured_not_assumed
+
+  - key: qwen35_2b
+    model_id: Qwen/Qwen3.5-2B
+    slot: vlm_general
+    tasks: [medical_vqa]
+    modes: [base, medical_vqa_sft]
+    source_url: https://huggingface.co/Qwen/Qwen3.5-2B
+    observed_license: Apache-2.0
+    architecture_hint: qwen3_5
+    model_revision: null
+    access_verified_locally: false
+    loader_policy: actual_native_multimodal_support_not_causal_lm_guess
+    existing_forge_pins_are_not_support_proof: true
+    requires_processor_forward_backward_probe: true
+    default_enabled: true
+
+  - key: medgemma15_4b
+    model_id: google/medgemma-1.5-4b-it
+    slot: vlm_medical
+    tasks: [medical_vqa, medical_qa, context_qa, medical_mcq]
+    modes: [base, medical_vqa_sft, optional_separate_medical_text_sft]
+    source_url: https://huggingface.co/google/medgemma-1.5-4b-it
+    model_card_url: https://developers.google.com/health-ai-developer-foundations/medgemma/model-card
+    observed_license: Health-AI-Developer-Foundations
+    gated: true
+    model_revision: null
+    access_verified_locally: false
+    default_enabled: if_existing_access_and_measured_training_fit
+    memory_fit: actual_backward_pass_required
+    official_notebook_recipe_gpu_memory_gb: 40
+    official_notebook_memory_note: requirement_for_published_recipe_not_universal_minimum
+    published_notebook_model_is_old_medgemma: true
+    do_not_copy_universal_image_token_ids: true
+    default_modules_to_save: none_unless_architecture_requires
+    dataset_level_exposure:
+      slake: known
+      pmc_oa: known
+    exact_test_exposure:
+      slake: unknown
+    exposure_evidence_url: https://developers.google.com/health-ai-developer-foundations/medgemma/model-card
+
+  - key: gemma3_4b
+    model_id: google/gemma-3-4b-it
+    slot: optional_same_family_control_or_fallback
+    tasks: [medical_vqa, medical_qa, context_qa, medical_mcq]
+    modes: [base, optional_task_specific_sft]
+    source_url: https://huggingface.co/google/gemma-3-4b-it
+    observed_license: Gemma
+    gated: true
+    model_revision: null
+    access_verified_locally: false
+    default_enabled: conditional_on_budget_access_and_measured_fit
+    comparison_note: same_family_control_not_a_perfect_causal_isolation_of_all_training_changes
+
+  - key: qwen3vl_2b
+    model_id: Qwen/Qwen3-VL-2B-Instruct
+    slot: first_general_vlm_fallback
+    tasks: [medical_vqa]
+    modes: [base, medical_vqa_sft]
+    source_url: https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct
+    observed_license: Apache-2.0
+    architecture_hint: qwen3_vl
+    model_revision: null
+    access_verified_locally: false
+    default_enabled: fallback_if_primary_unsupported
+    requires_processor_forward_backward_probe: true
+
+  - key: qwen25vl_3b
+    model_id: Qwen/Qwen2.5-VL-3B-Instruct
+    slot: legacy_general_vlm_fallback
+    tasks: [medical_vqa]
+    modes: [base, medical_vqa_sft]
+    source_url: https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct
+    observed_license: VERIFY_EXACT_MODEL_LICENSE_FILE
+    model_revision: null
+    access_verified_locally: false
+    default_enabled: fallback_only_after_license_and_native_support_verified
+    requires_processor_forward_backward_probe: true
+
+  - key: smolvlm_500m
+    model_id: HuggingFaceTB/SmolVLM-500M-Instruct
+    slot: tiny_general_vlm_fallback
+    tasks: [medical_vqa]
+    modes: [base, medical_vqa_sft]
+    source_url: https://huggingface.co/HuggingFaceTB/SmolVLM-500M-Instruct
+    observed_license: Apache-2.0
+    model_revision: null
+    access_verified_locally: false
+    default_enabled: resource_or_access_fallback
+    medical_quality_claim: none_prior_to_evaluation
+
+  - key: medgemma1_4b
+    model_id: google/medgemma-4b-it
+    slot: historical_reproduction_only
+    tasks: [medical_vqa]
+    modes: [optional_base]
+    source_url: https://huggingface.co/google/medgemma-4b-it
+    observed_license: Health-AI-Developer-Foundations
+    model_revision: null
+    access_verified_locally: false
+    default_enabled: false
+    do_not_replace_or_alias_version_1_5: true

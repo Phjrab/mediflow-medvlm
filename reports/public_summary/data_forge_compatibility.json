@@ -1,0 +1,35 @@
+{
+  "byte_limit": 131072,
+  "bytes": 7603,
+  "canonical_provenance_preserved_in_sidecar": true,
+  "data_path": "${MEDVLM_DATA_ROOT}/exports/forge/1bf58dbc8bac-4-text/train.jsonl",
+  "data_sha256": "c6b73ced4a193e1af64831036ec14327ab249305a91b7b8575644a341e01b60c",
+  "evidence_level": "CPU_TESTED",
+  "excluded_before_selection": {},
+  "forge_contract": "https://github.com/Phjrab/forge-finetune-dashboard/blob/d9a4656a5bee38cc9903e8caf5c4b680709423d2/workspace.py",
+  "freeze_id": "1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5",
+  "freeze_manifest": "${MEDVLM_DATA_ROOT}/manifests/freeze-1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5.json",
+  "freeze_manifest_sha256": "af46823da1e4f4408480de16634460c20d2cc2b9c04b54583d20ebb1a875b934",
+  "kind": "LLM",
+  "purpose": "small compatibility example only; no Forge import, upload or training performed",
+  "row_limit": 1000,
+  "rows": 4,
+  "schema_version": "medvlm.forge-example.v1",
+  "sidecar_path": "${MEDVLM_DATA_ROOT}/exports/forge/1bf58dbc8bac-4-text/provenance.json",
+  "sidecar_sha256": "36090cc7f305ca579681169c27b896813ecc1f1c32590c81e66a3a664f8ec99b",
+  "source_counts": {
+    "medquad": 2,
+    "pubmedqa_labeled": 2
+  },
+  "status": "SUCCEEDED",
+  "synthetic": false,
+  "official_forge_validator": {
+    "valid": true,
+    "row_count": 4,
+    "text_bytes": 7603,
+    "errors": 0,
+    "warnings": [
+      "small_dataset"
+    ]
+  }
+}

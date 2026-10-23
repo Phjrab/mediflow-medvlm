@@ -1,0 +1,319 @@
+{
+  "critical_error_count": 0,
+  "distributions": {
+    "kormedmcqa": {
+      "derivation": {
+        "original": 4068
+      },
+      "input_char_length": {
+        "max": 594,
+        "median": 63,
+        "min": 9,
+        "p95": 343
+      },
+      "label": {
+        "A": 765,
+        "B": 740,
+        "C": 804,
+        "D": 902,
+        "E": 857
+      },
+      "language": {
+        "ko": 4068
+      },
+      "split": {
+        "test": 3009,
+        "validation": 1059
+      },
+      "task": {
+        "medical_mcq": 4068
+      }
+    },
+    "medquad": {
+      "derivation": {
+        "original": 10795
+      },
+      "input_char_length": {
+        "max": 191,
+        "median": 50,
+        "min": 17,
+        "p95": 82
+      },
+      "label": null,
+      "language": {
+        "en": 10795
+      },
+      "split": {
+        "test": 1301,
+        "train": 8000,
+        "validation": 1494
+      },
+      "task": {
+        "medical_qa": 10795
+      }
+    },
+    "pubmedqa_labeled": {
+      "derivation": {
+        "original": 1000
+      },
+      "input_char_length": {
+        "max": 2820,
+        "median": 1452,
+        "min": 379,
+        "p95": 2038
+      },
+      "label": {
+        "maybe": 110,
+        "no": 338,
+        "yes": 552
+      },
+      "language": {
+        "en": 1000
+      },
+      "split": {
+        "test": 500,
+        "train": 450,
+        "validation": 50
+      },
+      "task": {
+        "context_qa": 1000
+      }
+    },
+    "slake": {
+      "derivation": {
+        "original": 3552
+      },
+      "input_char_length": {
+        "max": 108,
+        "median": 41,
+        "min": 13,
+        "p95": 67
+      },
+      "label": null,
+      "language": {
+        "en": 3552
+      },
+      "split": {
+        "test": 1061,
+        "train": 1979,
+        "validation": 512
+      },
+      "task": {
+        "medical_vqa": 3552
+      }
+    },
+    "vqa_rad": {
+      "derivation": {
+        "original": 451
+      },
+      "input_char_length": {
+        "max": 134,
+        "median": 36,
+        "min": 13,
+        "p95": 65
+      },
+      "label": null,
+      "language": {
+        "en": 451
+      },
+      "split": {
+        "test": 451
+      },
+      "task": {
+        "medical_vqa": 451
+      }
+    }
+  },
+  "evidence_level": "CPU_TESTED",
+  "freeze_id": "4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07",
+  "manifest_path": "${MEDVLM_DATA_ROOT}/manifests/freeze-4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07.json",
+  "near_duplicate_candidate_count": 2,
+  "patient_group_verified": false,
+  "raw_data_redistributed": false,
+  "record_count": 19866,
+  "schema_version": "medvlm.data.public-summary.v1",
+  "sources": {
+    "kormedmcqa": "79efd6f91edfc8036330d7a4daa88b9f2deb9a82",
+    "medquad": "577bd37b96c02d1833b2c9eed2de9f96964e96cb",
+    "pubmedqa_labeled": "1cbae8e92f72f20c8d3747cbb3bf5bc53554d997",
+    "slake": "a9083ce6c34ac3ffb17671a605962924d8a8f9e9",
+    "vqa_rad": "osf-89kps-459aaec1e7e2b92a23f506a0d3df65b84f2d953486fac6d4a5406c1d2aacbea2"
+  },
+  "splits": {
+    "kormedmcqa/test": {
+      "count": 3009,
+      "group_relation_digest": "fcd3f6da172881b29532d8f9d51afb24c797444ee6beef1f879b795052e50ca4",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "2d1b2c32c198fa3724710ba039abc6612d714bf10c7d2466ff2224e4ed327d0e",
+      "original_content_digest": "18f7983205613dbdf6647678bbeb6043054bddf189436e90537d8598e2a8001d",
+      "path": "${MEDVLM_DATA_ROOT}/processed/kormedmcqa/test.jsonl",
+      "sha256": "5c4567bf8770dac8f1d111421baf47627a2ea1d696995dd4c878d76722bbc971",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/5c4567bf8770dac8f1d111421baf47627a2ea1d696995dd4c878d76722bbc971/test.jsonl"
+    },
+    "kormedmcqa/train": {
+      "count": 0,
+      "group_relation_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "original_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "path": "${MEDVLM_DATA_ROOT}/processed/kormedmcqa/train.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/train.jsonl"
+    },
+    "kormedmcqa/validation": {
+      "count": 1059,
+      "group_relation_digest": "d5621af95bf042cbde77a2370002a92c412f8202d3ca4d9c1a52b8690db43684",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "87f733fab6bf9954f30adfac7c871dd09db605ea68b3aba37af2d68f969cb3e5",
+      "original_content_digest": "ec81f92e2a313dfdd5c20710a1237739d59eb0707124a873c037a0f3f0e6134e",
+      "path": "${MEDVLM_DATA_ROOT}/processed/kormedmcqa/validation.jsonl",
+      "sha256": "514ce4a6b713402d83edd70a0a6625750fadaa45b4128109c4f31f6ff58379ba",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/514ce4a6b713402d83edd70a0a6625750fadaa45b4128109c4f31f6ff58379ba/validation.jsonl"
+    },
+    "medquad/test": {
+      "count": 1301,
+      "group_relation_digest": "2ebfbff9bc38d71a6f7faab50a580b91ebd119ebde059bded7be1ef8aeb0db7f",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "93a3a562eef80faed942d4f4b2a16f7db75a2c2364906c09cbe6d173e9ae6d29",
+      "original_content_digest": "7bbcb7d5e9f2da030c61820d8eb080ae30a43ac261533b4507afe4fb5d45a846",
+      "path": "${MEDVLM_DATA_ROOT}/processed/medquad/test.jsonl",
+      "sha256": "5d29f657dce62425254820f6a123e8e9f7761d0604445544f12b9f0b93eb4c51",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/5d29f657dce62425254820f6a123e8e9f7761d0604445544f12b9f0b93eb4c51/test.jsonl"
+    },
+    "medquad/train": {
+      "count": 8000,
+      "group_relation_digest": "428eba75906d81dbe17c1ceb43bf9140802efd6664154423ca76f63256af791c",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "61dab6a641112c02f62af7ce553b5ef4ee4a98ecbd15d2db8dde2548cad55082",
+      "original_content_digest": "528ac5c4c17346f00abd64752f0e80f9738ad844aa43f254d72223e84e9d90c1",
+      "path": "${MEDVLM_DATA_ROOT}/processed/medquad/train.jsonl",
+      "sha256": "35e8e19cd61ca042c53c3cc6824a523551a95c587664de53cd80e99d764b8c0c",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/35e8e19cd61ca042c53c3cc6824a523551a95c587664de53cd80e99d764b8c0c/train.jsonl"
+    },
+    "medquad/validation": {
+      "count": 1494,
+      "group_relation_digest": "fb82c4809403ad1fa676554ef07b5474ac264d34ce716a3633ac324d99a2121b",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "be4efd5cc8be4abc72e5b7a51d7c2c5bd205a92e984e0d65b11620bd395a7035",
+      "original_content_digest": "0834ea8a35bdda3266df2c78913a2986449f8a62fdaf2b38d029e8b93c5709a2",
+      "path": "${MEDVLM_DATA_ROOT}/processed/medquad/validation.jsonl",
+      "sha256": "bd8ee9f78fee9e4268d75acfd5ef10c3f5febb04c4453b4aa10f40b1384d76ae",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/bd8ee9f78fee9e4268d75acfd5ef10c3f5febb04c4453b4aa10f40b1384d76ae/validation.jsonl"
+    },
+    "pubmedqa_labeled/test": {
+      "count": 500,
+      "group_relation_digest": "4d2146e3afd7bbd4422b85c1bad392077a547c32e492ee4a0f083e9c33d0e403",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "6a8c762b0fb19aa3d9bb96f023a8aad161e07cae6bbadd9ec9686d7eb72e9bcc",
+      "original_content_digest": "75c66dcf726e6097ca83bee07adffbfeb732fbfc1258f3406c4327ddf17c022e",
+      "path": "${MEDVLM_DATA_ROOT}/processed/pubmedqa_labeled/test.jsonl",
+      "sha256": "313f476a800c0de991febad98ab32675c100051d98e6deeeeefa2a7a6c5c9348",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/313f476a800c0de991febad98ab32675c100051d98e6deeeeefa2a7a6c5c9348/test.jsonl"
+    },
+    "pubmedqa_labeled/train": {
+      "count": 450,
+      "group_relation_digest": "542183c51f4d6fd2a33c703b5f28214eb3cf622285c847447feaa9c292396104",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "f8fc3d96b80e1d46055453a38a985cd2b9f74a9258c067f3bf3328281b015988",
+      "original_content_digest": "027ca10ee894cf379fdc41be97ae73c91f65541d5de5b9f7ef67e80f6fff24d1",
+      "path": "${MEDVLM_DATA_ROOT}/processed/pubmedqa_labeled/train.jsonl",
+      "sha256": "994d6935d87c13cc3e2c3efd9ad9d3500690e63546e6722827bd23ba64f0457b",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/994d6935d87c13cc3e2c3efd9ad9d3500690e63546e6722827bd23ba64f0457b/train.jsonl"
+    },
+    "pubmedqa_labeled/validation": {
+      "count": 50,
+      "group_relation_digest": "69e50853119e9ee611726e20b952049474ef7ffc77016d14f4eb04557f2a6c82",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "d168e4ae5ffe0a3802627e7005324dfe7f344f71799a6f081918994f5bb29950",
+      "original_content_digest": "ad0fa1e338b5977c831f7c73df019922ee01d1fa54be20838b2cf9a360506e5f",
+      "path": "${MEDVLM_DATA_ROOT}/processed/pubmedqa_labeled/validation.jsonl",
+      "sha256": "54e729565230575191fb7db1a79fd7a3d2dc18493b50381df9ddd479972bb337",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/54e729565230575191fb7db1a79fd7a3d2dc18493b50381df9ddd479972bb337/validation.jsonl"
+    },
+    "slake/test": {
+      "count": 1061,
+      "group_relation_digest": "743f266a63053178bec9f1baeb5c269fd0cf2cb07fa5b1c3e4c8ce4083670e22",
+      "image_content_digest": "1bbd49d6b6602ac7f9d0ecb658771a9bb204394a492af44c5d35e77a4aa70418",
+      "input_content_digest": "c8b3b7ed40fb80a498d16be11880f6df1b5785afa33f16f9c62edc80ff359b2e",
+      "original_content_digest": "1bbd49d6b6602ac7f9d0ecb658771a9bb204394a492af44c5d35e77a4aa70418",
+      "path": "${MEDVLM_DATA_ROOT}/processed/slake/test.jsonl",
+      "sha256": "7a41364e82af44ac6cac76ba5254f5012f8ef160b9ec56bb0dc0b9c02f59919f",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/7a41364e82af44ac6cac76ba5254f5012f8ef160b9ec56bb0dc0b9c02f59919f/test.jsonl"
+    },
+    "slake/train": {
+      "count": 1979,
+      "group_relation_digest": "1cd111e446e759057bc46bd46715a87a765402c88ec19083ef569b319daf1acf",
+      "image_content_digest": "c7ef2d55f6c3bdac939d5df98cee3443dd1d7e0139d0886ec7d16a3762e6d87e",
+      "input_content_digest": "d50588d1082b31311b2b12897c79b247c4a013d4b324d2373e50628afaa15e71",
+      "original_content_digest": "c7ef2d55f6c3bdac939d5df98cee3443dd1d7e0139d0886ec7d16a3762e6d87e",
+      "path": "${MEDVLM_DATA_ROOT}/processed/slake/train.jsonl",
+      "sha256": "1810b04cd4a435d58a7464366a3c0d74f7ece6d621c69f3830039d17657d3418",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/1810b04cd4a435d58a7464366a3c0d74f7ece6d621c69f3830039d17657d3418/train.jsonl"
+    },
+    "slake/validation": {
+      "count": 512,
+      "group_relation_digest": "a15e57f6eb06861ad5e9faddcce6577c1628ce69c6d3f578ae64d864c4510c4e",
+      "image_content_digest": "a7fd1e17eb39a81bcf98aec4a5795bcc7b8dc2abd9acbd05c0a242abc91e37d3",
+      "input_content_digest": "9a3f71b64ef50c6316f948cc75bc203638113ed564fc600616b41eb9c7a86d9f",
+      "original_content_digest": "a7fd1e17eb39a81bcf98aec4a5795bcc7b8dc2abd9acbd05c0a242abc91e37d3",
+      "path": "${MEDVLM_DATA_ROOT}/processed/slake/validation.jsonl",
+      "sha256": "24a116369a69805616c67539c7e1f5f99810e630a11db1602696f598f54ea1c6",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/24a116369a69805616c67539c7e1f5f99810e630a11db1602696f598f54ea1c6/validation.jsonl"
+    },
+    "text/test": {
+      "count": 1801,
+      "input_content_digest": "4b16be66560d714fc59df2c3a94db9bb6ab73e320e08e6d35afa52bc2f2d1d5e",
+      "note": "Derived union, excluded from source audit to avoid double counting; Korean evaluation source is not SFT.",
+      "path": "${MEDVLM_DATA_ROOT}/processed/text/test.jsonl",
+      "sha256": "aed7188ac53f5833c606e1af27004bd700630c7041e1c53756da6f68bafb069e",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/aed7188ac53f5833c606e1af27004bd700630c7041e1c53756da6f68bafb069e/test.jsonl"
+    },
+    "text/train": {
+      "count": 8450,
+      "input_content_digest": "57a2ed276ef0f785f4880792ff08f41ea23c4250a296cbe18b338aa30c4d81d5",
+      "note": "Derived union, excluded from source audit to avoid double counting; Korean evaluation source is not SFT.",
+      "path": "${MEDVLM_DATA_ROOT}/processed/text/train.jsonl",
+      "sha256": "b9455396d86410bef87415ab8f1b30b1fa4169e5c8a0585fcf080768fc62c2b8",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/b9455396d86410bef87415ab8f1b30b1fa4169e5c8a0585fcf080768fc62c2b8/train.jsonl"
+    },
+    "text/validation": {
+      "count": 1544,
+      "input_content_digest": "8adb0d38189c342210cb714624a98887289224eab15336e9d7d17e899edabeec",
+      "note": "Derived union, excluded from source audit to avoid double counting; Korean evaluation source is not SFT.",
+      "path": "${MEDVLM_DATA_ROOT}/processed/text/validation.jsonl",
+      "sha256": "49a662ca502771ef0daceb1886ad07a07ebfa09cbf6aeca59f264c8a64ca6ae0",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/49a662ca502771ef0daceb1886ad07a07ebfa09cbf6aeca59f264c8a64ca6ae0/validation.jsonl"
+    },
+    "vqa_rad/test": {
+      "count": 451,
+      "group_relation_digest": "51fd93a90d4309716959abdd35dc978355b96a56e257b0510ea0b72835f8f11c",
+      "image_content_digest": "092ec0c6a2a9f6c56a523894822bb678f76cf53aea9064556394bb876db1aa36",
+      "input_content_digest": "2e17dcdd3541c42b387f3ce137edfe7e5d17f261a77c63dc49d22e0f86ecd65d",
+      "original_content_digest": "2d3e0e211977d9fab78d6e43829a87fa3621cfa031c8daeec08b48e32e569090",
+      "path": "${MEDVLM_DATA_ROOT}/processed/vqa_rad/test.jsonl",
+      "sha256": "f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe/test.jsonl"
+    },
+    "vqa_rad/train": {
+      "count": 0,
+      "group_relation_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "original_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "path": "${MEDVLM_DATA_ROOT}/processed/vqa_rad/train.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/train.jsonl"
+    },
+    "vqa_rad/validation": {
+      "count": 0,
+      "group_relation_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "image_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "input_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "original_content_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "path": "${MEDVLM_DATA_ROOT}/processed/vqa_rad/validation.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/validation.jsonl"
+    }
+  },
+  "status": "SUCCEEDED"
+}

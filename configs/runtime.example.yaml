@@ -1,0 +1,194 @@
+# Future implementation specification; not an already executable configuration.
+# Codex must implement/validate the corresponding loader and freeze a resolved copy.
+schema_version: medvlm.execution-plan.v1
+specification_status: PROPOSED_NOT_EXECUTED
+as_of: "2026-10-23"
+timezone: Asia/Seoul
+
+repository:
+  url: https://github.com/Phjrab/mediflow-medvlm
+  role: only_mutation_target
+  branch_prefix: codex/medical-finetune-v1
+  preserve_dirty_work: true
+  commit_and_push_feature_branch: true
+  merge_main: false
+
+priorities:
+  - foundation
+  - real_data_acquisition
+  - canonical_data_and_frozen_splits
+  - text_training_and_evaluation
+  - vlm_training_and_evaluation
+  - jetson_inference
+  - final_report
+
+execution:
+  unattended_within_scope: true
+  implement_then_run: true
+  data_first: true
+  continue_independent_work_on_blocker: true
+  infer_gpu_from_historical_docs: false
+  cpu_fallback_large_training: false
+  synthetic_counts_as_medical_result: false
+  one_gpu_job_at_a_time: true
+  default_seed: 20261023
+  terminal_states:
+    - SUCCEEDED
+    - BLOCKED_ACCESS
+    - BLOCKED_LICENSE
+    - BLOCKED_HARDWARE
+    - NETWORK_UNREACHABLE
+    - FAILED_REPRODUCIBLE
+    - SKIPPED_BUDGET
+    - PREPARED_NOT_RUN
+  status_file: runtime/medvlm_state.json
+  gpu_lease_file: runtime/medvlm_gpu.lock
+
+storage:
+  # Resolve to an existing user-writable location with sufficient free space.
+  # Do not repurpose HOME/CODEX_HOME or assume macOS/Windows paths.
+  data_root: null
+  data_root_env: MEDVLM_DATA_ROOT
+  raw_immutable: true
+  preserve_prior_runs: true
+  minimum_free_gib: 20
+  minimum_free_fraction: 0.15
+  downloaded_data_gib_cap: 25
+  downloaded_model_gib_cap: 40
+  all_new_artifacts_gib_cap: 80
+  include_extracted_bytes_in_disk_budget: true
+  push_raw_data_or_model_weights: false
+  public_data_raw_predictions: restricted_local_artifacts
+  standard_log_raw_inputs_outputs: false
+
+network:
+  allowed_source_policy: official_or_author_linked_distribution
+  max_parallel_downloads: 2
+  transient_retry_limit: 3
+  retry_access_denied: false
+  use_paid_api_or_cloud: false
+  bypass_account_terms: false
+  push_to_hub: false
+  external_tracking: false
+
+resource_budget:
+  # Research execution budget proposal, not a model memory requirement or ETA.
+  total_gpu_hours: 24
+  per_model_gpu_hours: 6
+  per_model_budget_key: canonical_full_model_repository_id
+  per_model_scope: aggregate_all_revisions_tasks_adapters_probes_smokes_retries_training_evaluation_and_resumes
+  new_revision_or_run_resets_budget: false
+  count_smokes_and_probes: true
+  include_evaluation_in_gpu_budget: true
+  execution_wall_hours_after_infrastructure_ready: 36
+  jetson_wall_hours: 2
+  diagnosed_corrections_per_failure_type: 2
+  preserve_checkpoint_on_budget_exit: true
+  offline_report_after_gpu_budget: true
+
+data:
+  text_train_examples_cap: 20000
+  vlm_train_examples_cap: 5000
+  medquad_train_cap: 8000
+  medqa_train_cap: 4000
+  medmcqa_train_cap: 5000
+  original_split_priority: true
+  custom_split_ratios: [0.8, 0.1, 0.1]
+  grouping: strongest_available_source_group_with_duplicate_components
+  absent_patient_id_status: UNVERIFIED
+  final_test_can_become_training: false
+  augment_after_split: true
+  translation_inherits_parent_split: true
+
+training:
+  actual_training_if_gpu_usable: true
+  target_text_pairs: 2
+  target_vlm_pairs: 2
+  medical_text_reference_when_accessible: google/medgemma-1.5-4b-it
+  medical_text_reference_scope: base_only_if_no_budget_for_separate_text_adapter
+  method_preference: qlora_if_supported_else_lora_with_measured_fit
+  actual_smoke_optimizer_steps: 20
+  minimum_smoke_steps_with_measured_resource_reason: 10
+  max_epochs: 1
+  max_optimizer_steps: 1000
+  microbatch_start: 1
+  target_effective_batch_start: 16
+  text_sequence_budget_start: 2048
+  initial_lora_rank: 8
+  initial_lora_alpha: 16
+  initial_lora_dropout: 0.05
+  text_learning_rate_initial: 0.0002
+  vlm_learning_rate_initial: 0.0001
+  hyperparameters_status: starting_recipe_not_empirically_optimal
+  assistant_only_loss: true
+  native_processor_and_template: true
+  vision_encoder_frozen_by_default: true
+  verify_exact_trainable_modules: true
+  image_token_mask_from_current_model_config: true
+  fixed_universal_image_resize: false
+  hidden_text_to_vlm_curriculum: false
+  mandatory_loss_decrease_gate: false
+  mandatory_adapter_update_and_reload: true
+  max_saved_checkpoints_per_active_run: 2
+  checkpoint_retention: preserve_selected_final_and_recovery_no_prior_run_deletion
+  save_optimizer_rng_sampler_for_resume: true
+
+evaluation:
+  tune_on: validation
+  final_test_after_selection_freeze: true
+  score_all_attempts_and_failures: true
+  same_input_and_decode_policy_within_pair: true
+  initial_seed_count: 1
+  optional_top_candidates_seed_count: 3
+  bootstrap_resamples: 2000
+  bootstrap_unit: source_group_when_available_else_question
+  paired_bootstrap: true
+  task_and_language_separate: true
+  native_korean_eval_source: kormedmcqa
+  native_korean_eval_default: zero_shot_official_test_after_validation_protocol_freeze
+  korean_eval_dataset_used_for_sft: false
+  cross_tokenizer_loss_ranking: false
+  upstream_dataset_exposure_table: true
+  exact_test_exposure_distinct: true
+  clinical_signoff: human_review_pending
+  publish_clinical_claims: false
+  image_removed_shuffled_diagnostic_subset: 32
+  max_new_tokens_start: 256
+  use_model_native_template: true
+  do_sample: false
+  reasoning_mode: disabled_where_supported_record_otherwise
+  finite_replay_only_for_technical_failure: true
+
+jetson:
+  host: 192.168.50.11
+  user: jetson2
+  purpose: optional_separate_inference_validation
+  authentication_order:
+    - existing_ssh_key
+    - injected_secret_environment
+  password_env: MEDVLM_JETSON_PASSWORD
+  secret_value: null
+  missing_credentials_reason: AUTH_REQUIRED
+  verify_existing_host_key_continuity: true
+  inventory_before_change: true
+  infer_hardware_from_old_documents: false
+  install_x86_cuda_wheels: false
+  reflash_or_replace_system_python_torch: false
+  stop_unrelated_service: false
+  own_isolated_environment: true
+  warmup_requests: 2
+  measured_requests_target: 10
+  gguf_only_if_architecture_and_projector_supported: true
+  runtime_memory_or_ttft_unavailable_value: null
+
+report:
+  language: ko
+  sections:
+    - 현재 단계
+    - 이번에 한 일
+    - 확인 결과
+    - 다음 단계
+    - 사용자가 할 일
+  distinguish_historic_synthetic_current: true
+  distinguish_implemented_downloaded_trained_evaluated: true
+  allow_global_medical_complete_with_zero_real_runs: false

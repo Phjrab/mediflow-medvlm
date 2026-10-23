@@ -17,6 +17,20 @@ def request_for(task: TaskType = TaskType.VQA, **changes: object) -> InferenceRe
 
 
 class RequestValidationTests(unittest.TestCase):
+    def test_text_qa_accepts_question_without_dummy_image(self):
+        validate_request(request_for(task=TaskType.TEXT_QA, current_images=(), context="Public educational context", options={"A": "yes", "B": "no"}))
+
+    def test_image_tasks_still_reject_missing_current_image(self):
+        for task in (TaskType.VQA, TaskType.REPORT, TaskType.LONGITUDINAL_COMPARISON):
+            with self.subTest(task=task), self.assertRaisesRegex(RequestValidationError, "current image"):
+                validate_request(request_for(task=task, current_images=()))
+
+    def test_text_requires_question_and_rejects_images(self):
+        with self.assertRaisesRegex(RequestValidationError, "requires a question"):
+            validate_request(request_for(task=TaskType.TEXT_QA, current_images=(), question="  "))
+        with self.assertRaisesRegex(RequestValidationError, "does not accept images"):
+            validate_request(request_for(task=TaskType.TEXT_QA))
+
     def test_valid_vqa_request_passes(self) -> None:
         validate_request(request_for())
 

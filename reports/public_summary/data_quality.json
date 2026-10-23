@@ -1,0 +1,126 @@
+{
+  "freeze_id": "1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5",
+  "evidence_level": "CPU_TESTED",
+  "sources": {
+    "medquad": {
+      "count": 10795,
+      "question_chars": {
+        "min": 17,
+        "median": 50,
+        "p95": 82,
+        "max": 191
+      },
+      "target_chars": {
+        "min": 6,
+        "median": 870,
+        "p95": 3115,
+        "max": 27910
+      },
+      "split_counts": {
+        "train": 8000,
+        "validation": 1494,
+        "test": 1301
+      },
+      "q_type_counts": {
+        "treatment": 1586,
+        "information": 2656,
+        "frequency": 872,
+        "exams and tests": 431,
+        "genetic changes": 841,
+        "inheritance": 1021,
+        "symptoms": 2028,
+        "outlook": 250,
+        "research": 255,
+        "causes": 467,
+        "stages": 51,
+        "susceptibility": 150,
+        "prevention": 125,
+        "complications": 33,
+        "considerations": 28,
+        "support groups": 1
+      },
+      "source_subset_counts": {
+        "6_NINDS_QA": 724,
+        "1_CancerGov_QA": 440,
+        "3_GHR_QA": 4001,
+        "5_NIDDK_QA": 461,
+        "4_MPlus_Health_Topics_QA": 672,
+        "2_GARD_QA": 3959,
+        "9_CDC_QA": 168,
+        "8_NHLBI_QA_XML": 312,
+        "7_SeniorHealth_QA": 58
+      },
+      "synthetic_count": 0,
+      "translated_count": 0,
+      "patient_group_verified": false
+    },
+    "pubmedqa_labeled": {
+      "count": 1000,
+      "question_chars": {
+        "min": 22,
+        "median": 91.0,
+        "p95": 148,
+        "max": 213
+      },
+      "target_chars": {
+        "min": 2,
+        "median": 3.0,
+        "p95": 5,
+        "max": 5
+      },
+      "split_counts": {
+        "train": 450,
+        "validation": 50,
+        "test": 500
+      },
+      "q_type_counts": {
+        "not_provided": 1000
+      },
+      "source_subset_counts": {
+        "not_applicable": 1000
+      },
+      "synthetic_count": 0,
+      "translated_count": 0,
+      "patient_group_verified": false
+    },
+    "kormedmcqa": {
+      "count": 4068,
+      "question_chars": {
+        "min": 9,
+        "median": 63.0,
+        "p95": 343,
+        "max": 594
+      },
+      "target_chars": {
+        "min": 1,
+        "median": 1.0,
+        "p95": 1,
+        "max": 1
+      },
+      "split_counts": {
+        "validation": 1059,
+        "test": 3009
+      },
+      "q_type_counts": {
+        "not_provided": 4068
+      },
+      "source_subset_counts": {
+        "pharm": 914,
+        "dentist": 1115,
+        "nurse": 1169,
+        "doctor": 599,
+        "pharmacy": 271
+      },
+      "synthetic_count": 0,
+      "translated_count": 0,
+      "patient_group_verified": false
+    }
+  },
+  "truncation": "Tokenizer-specific target preservation is deferred to actual training renderer; character length is not token length.",
+  "patient_group_verified": false,
+  "text_train_source_proportions": {
+    "medquad": 0.9467455621301775,
+    "pubmedqa_labeled": 0.05325443786982249
+  },
+  "text_sampling_policy": "The frozen union preserves all selected rows; training recipe must record actual sampler and supervised token counts."
+}
