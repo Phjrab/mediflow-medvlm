@@ -232,7 +232,7 @@ def report(summary, root, repo):
     for key,sources in summary['changes'].items():
         for source,counts in sources.items():
             lines.append(f"| {MODELS[key]} | {source} | {counts['improved']} | {counts['unchanged']} | {counts['regressed']} |")
-    lines += ['', '개선·퇴보는 같은 문항의 이산 정답/lexical EM 변화에 대한 사후 집계다. 예시 opaque ID와 상태 변화는 run_summary.json에 보존하고 원문·응답은 로컬 제한 artifact에만 둔다. 한국어 성능 변화에는 정답 내용과 출력 형식 준수의 변화가 함께 포함된다.']
+    lines += ['', '개선·퇴보는 같은 문항의 이산 정답/lexical EM 변화에 대한 사후 집계다. 예시 opaque ID와 상태 변화는 run_summary.json에 보존하고 원문·응답은 로컬 제한 artifact에만 둔다. 한국어 성능 변화에는 정답 내용과 출력 형식 준수의 변화가 함께 포함된다. VQA lexical 개선에도 답변 길이·형식과 생성상한 잘림 감소가 영향을 줄 수 있으므로 시각적 추론 능력만의 변화로 단정하지 않는다. 잘림 수는 CSV/JSON에서 확인할 수 있다.']
     lines += ['', 'CI는 관측된 문서/이미지 그룹의 문항 표본 불확실성만 반영한다. 학습 seed 변동성·새 환자 임상 일반화는 측정하지 않았다. MedGemma의 SLAKE dataset-level 사전학습 노출은 알려져 있으나 정확한 test 노출 여부는 미상이다. 이번 실행 일반 모델들의 과거 노출도 미상으로 남겼다.', '',
       '## VQA 하위집단', '',
       '| 모델 | source | 조건 | 구분 | 값 | 예정/유효 | lexical EM | token F1 |',
@@ -265,7 +265,8 @@ def report(summary, root, repo):
             for c in ev['cohorts']:
                 den='/'.join(str(c[k]) for k in ('scheduled','attempted','completed','valid_answers'))
                 lines.append(f"| {ev['model_id']} | {ev['mode']} ({ev['status']}) | {den} | {pct(metric(c))} | {pct(c['lexical_token_f1'])} | {pct(c['technical_failure_rate'])} |")
-    lines += ['', '이미지 제외 조건에는 빈 이미지를 넣지 않는다. 동일 응답만으로 시각 정보가 무시됐다고 단정하지 않는다. 추가 진단은 본 평가 및 남은 모델 예산을 우선한 뒤 실행한다. 전문가 검토표는 로컬에만 준비하며 실제 검토 점수는 비어 있다.', '',
+    lines += ['', 'VQA-RAD 외부 평가는 OSF `phrase_type=test_freeform/test_para`에서 사전 정책으로 선택한64건이다. MedGemma 공식 카드가 보고한 balanced split 성적과 같은 시험이라고 주장하지 않는다.',
+      '', '이미지 제외 조건에는 빈 이미지를 넣지 않는다. 동일 응답만으로 시각 정보가 무시됐다고 단정하지 않는다. 추가 진단은 본 평가 및 남은 모델 예산을 우선한 뒤 실행한다. 전문가 검토표는 로컬에만 준비하며 실제 검토 점수는 비어 있다.', '',
       '## 실행 비용·환경', '', 'RTX 3060 12GB에서 실제 CUDA 연산으로 학습 가능성을 확인했다. NVML kernel/userspace mismatch 때문에 nvidia-smi는 실패했지만 PyTorch forward/backward는 성공했다. 드라이버는 변경하지 않았다.', '',
       '| 기반 모델 | 누적 GPU 점유(시간) |', '|---|---:|']
     for model,seconds in (summary.get('budget') or {}).get('models',{}).items():lines.append(f'| {model} | {seconds/3600:.4f} |')
@@ -351,9 +352,13 @@ def plots(summary,destination):
         ax.set_xticks(range(len(series)),[x[0] for x in series],rotation=15)
         ax.set_ylim(0,1);ax.yaxis.set_major_formatter(PercentFormatter(1))
         ax.set_title(source+(' | end-to-end accuracy' if source in sources[:2] else ' | lexical exact match'))
-        if series:ax.legend(loc='upper right')
-        else:ax.text(.5,.5,'NOT RUN',transform=ax.transAxes,ha='center',color='#666666')
+        if not series:ax.text(.5,.5,'NOT RUN',transform=ax.transAxes,ha='center',color='#666666')
         ax.grid(axis='y',alpha=.2);ax.set_axisbelow(True)
+    for ax in axes.flat:
+        handles,labels=ax.get_legend_handles_labels()
+        if handles:
+            fig.legend(handles,labels,loc='outside lower center',ncol=2,frameon=False)
+            break
     fig.suptitle('Frozen paired test evaluation | single seed, preliminary; lexical scores are not clinical accuracy',fontsize=11)
     fig.savefig(destination/'paired_scores.png',dpi=170)
     fig.savefig(destination/'paired_scores.svg')

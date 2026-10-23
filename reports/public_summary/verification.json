@@ -33,8 +33,8 @@
     "separate_log_retained": false
   },
   "remote_ci": {
-    "commit": "4e3a5841a75943735a95deaec3a8c6cf71a22690",
-    "run_id": 39932678838,
+    "commit": "07d54e48c00f7310b84d8829921b26cc43983a8b",
+    "run_id": 39952805233,
     "workflow": "Test",
     "conclusion": "success",
     "python_matrix": [
@@ -58,6 +58,17 @@
     {
       "commit": "4e3a5841a75943735a95deaec3a8c6cf71a22690",
       "run_id": 39932678838,
+      "workflow": "Test",
+      "conclusion": "success",
+      "python_matrix": [
+        "3.10",
+        "3.11",
+        "3.12"
+      ]
+    },
+    {
+      "commit": "07d54e48c00f7310b84d8829921b26cc43983a8b",
+      "run_id": 39952805233,
       "workflow": "Test",
       "conclusion": "success",
       "python_matrix": [

@@ -117,9 +117,9 @@
       "exact_test_exposure": "unknown",
       "sft_overlap": "no_observed_group_overlap_in_frozen_data",
       "patient_independence": "unverified",
-      "evidence_url": "https://huggingface.co/google/medgemma-1.5-4b-it",
+      "evidence_url": "https://huggingface.co/google/medgemma-1.5-4b-it/blob/91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b/README.md",
       "checked_at": "2026-10-23",
-      "note": "No verified exhaustive upstream corpus/item membership disclosed in evidence reviewed"
+      "note": "Pinned official card reports VQA-RAD balanced-split evaluation and attribution; this does not establish or exclude training membership. Our OSF phrase_type test subset is a distinct evaluation selection."
     },
     {
       "model_id": "Qwen/Qwen3.5-2B",

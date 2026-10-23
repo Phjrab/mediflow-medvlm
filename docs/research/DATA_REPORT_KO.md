@@ -30,9 +30,9 @@ SLAKE 실제 참조 이미지 **642개**, VQA-RAD 공식 이미지 **315개**를
 
 두 manifest를 직접 비교한 결과, **core에 있던 모든 source split과 text 통합 split의 파일 SHA-256이 aggregate에서도 동일**하다. VQA-RAD 추가로 기존 train/dev/test를 다시 나누거나 기존 core bytes를 변경하지 않았다. core의 train/validation/test 합계는 10,429 / 3,115 / 5,871이며, aggregate에서는 test만 451행 늘어난다.
 
-각 freeze는 `manifests/freeze-{전체ID}.json`과 `frozen/{파일SHA256}/{split}.jsonl`의 불변 사본을 보존한다. `current_freeze.json`은 현재 aggregate를 가리키는 편의 포인터이며, 기존 실행을 재현할 때 고정 core manifest 대신 무조건 최신 포인터를 사용하면 안 된다. 원본 revision, ordered sample IDs, input/original/group/image digest, transformation code SHA, seed와 감사 SHA도 manifest에 들어 있다.
+각 freeze는 `manifests/freeze-{전체ID}.json`과 `frozen/{파일SHA256}/{split}.jsonl`의 불변 사본을 보존한다. `current_freeze.json`은 현재 aggregate 전체 내용을 담은 편의 사본이며, 기존 실행을 재현할 때 고정 core manifest 대신 무조건 최신 사본을 사용하면 안 된다. 원본 revision, ordered sample IDs, input/original/group/image digest, transformation code SHA, seed와 감사 SHA도 manifest에 들어 있다.
 
-`data_quality.json`은 core freeze `1bf58…`에 대한 텍스트 길이·구성 보고다. `data_freeze.json`의 최종 전체 수량은 aggregate `4dc1…` 기준이다. 서로 다른 범위의 문서를 같은 시점의 동일 데이터셋으로 해석하지 않는다.
+`data_quality.json`은 core freeze `1bf58…`에 대한 텍스트 길이·구성 보고다. `data_freeze.json`의 최종 전체 수량은 aggregate `1562258…` 기준이다. 서로 다른 범위의 문서를 같은 시점의 동일 데이터셋으로 해석하지 않는다.
 
 주요 파일 SHA-256은 다음과 같다. 전체 source별 train/dev/test와 group/image digest는 freeze manifest에 보존한다.
 
