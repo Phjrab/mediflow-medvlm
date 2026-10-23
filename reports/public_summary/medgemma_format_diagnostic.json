@@ -1,0 +1,61 @@
+{
+  "checked_at": "2026-10-23T13:55:27.673434+00:00",
+  "clinical_accuracy": null,
+  "conditions": {
+    "base": {
+      "exact_matches": 0,
+      "median_generated_tokens": 19.5,
+      "median_output_words": 14.0,
+      "median_reference_words": 1.0,
+      "metrics_sha256": "facf2691b4680cb5b591669ddf789e2246e505035ce9f429cd461821da5cdf18",
+      "predictions_sha256": "49faa7e06ff43ee3adad59d35cc598dbac6147c5e40adfb4a463c3f348539fad",
+      "reference_phrase_present": 141,
+      "reference_phrase_present_by_finish_reason": {
+        "length": 25,
+        "stop": 116
+      },
+      "run_manifest_sha256": "baa2927e2390981132cd39ef2e4e7e2b4d0337fc289686fd44ec9854fa35778e",
+      "scheduled": 256,
+      "starts_with_reference_polarity": 52,
+      "truncated_count": 72,
+      "vision_ingested_count": 256,
+      "yes_no_with_additional_words": 61
+    },
+    "tuned": {
+      "exact_matches": 179,
+      "median_generated_tokens": 2.0,
+      "median_output_words": 1.0,
+      "median_reference_words": 1.0,
+      "metrics_sha256": "e00a25484bcca87640237f5e6b274ae0c650d90b9f518b2c5c2e96d637fae1f3",
+      "predictions_sha256": "e80c45261554fdd913a552108bab2f39111bd7005ec73be87c4438f43894ae73",
+      "reference_phrase_present": 181,
+      "reference_phrase_present_by_finish_reason": {
+        "stop": 181
+      },
+      "run_manifest_sha256": "ae496c9cf3e6d669a270e3187d5273c14e908d466a52cbbe278adfde6082c549",
+      "scheduled": 256,
+      "starts_with_reference_polarity": 69,
+      "truncated_count": 0,
+      "vision_ingested_count": 256,
+      "yes_no_with_additional_words": 0
+    }
+  },
+  "definitions": {
+    "generated_tokens": "stored output_tokens; can include ending special tokens",
+    "normalization": "Unicode NFKC; casefold; collapse whitespace",
+    "output_words": "len(raw_output.split()); median over all 256 scheduled records",
+    "reference_phrase_present": "re.search(r\"(?<!\\w)\" + re.escape(normalized_reference) + r\"(?!\\w)\", normalized_output)",
+    "reference_words": "len(normalized_reference.split())",
+    "starts_with_reference_polarity": "reference in {\"yes\",\"no\"} and re.match(re.escape(reference) + r\"\\b\", normalized_output)",
+    "yes_no_with_additional_words": "re.match(r\"(?:yes|no)\\b\", normalized_output) and len(re.findall(r\"\\w+\", normalized_output)) > 2"
+  },
+  "interpretation": "Long-form responses and strict short-answer lexical EM mismatch materially affect the observed zero. Phrase presence is not answer correctness. Format versus medical-content contributions have not been separated. No clear implementation error found in checked image ingestion, native inputs, pair alignment, and artifact hashes. No prompts, parsers, samples, or generation settings were changed after observing scores.",
+  "metric_or_protocol_changed": false,
+  "model_id": "google/medgemma-1.5-4b-it",
+  "posthoc": true,
+  "protocol_hash": "d989f8268eb5f5843da8e2d2d0f48130d5d57cfdeb0ce18ae68c16f917095fe2",
+  "protocol_sha256": "0505a190524e8b6eb9a1c2ecf0dc1d0bdd8f52e52e486de084b37194231a28cf",
+  "schema_version": "medvlm.posthoc-format-diagnostic.v1",
+  "scope": "Posthoc structural heuristics, not a replacement score or human medical review. NF4 and max_new_tokens=32 do not reproduce the official BF16 long-generation example.",
+  "source": "slake"
+}

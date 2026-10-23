@@ -1,0 +1,812 @@
+{
+  "active_process": null,
+  "campaign_pid": null,
+  "code_commit": "f4462de6d6d81d7433c5ffd0b4516204951e8434",
+  "code_commit_note": "HEAD at aggregate generation; original model runs retain their own source snapshots. The delivery commit is recorded separately after commit/push.",
+  "code_working_tree_dirty": true,
+  "completed_run_ids": [
+    "medgemma15_4b-no-image-base-20261023",
+    "medgemma15_4b-no-image-tuned-20261023",
+    "medgemma15_4b-smoke-20261023",
+    "medgemma15_4b-test-base-20261023",
+    "medgemma15_4b-test-tuned-20261023",
+    "medgemma15_4b-v1-20261023",
+    "medgemma15_4b-validation-base-20261023",
+    "medgemma15_4b-validation-tuned-20261023",
+    "medgemma15_4b-vqarad-base-20261023",
+    "medgemma15_4b-vqarad-tuned-20261023",
+    "qwen35_2b-no-image-base-20261023",
+    "qwen35_2b-no-image-tuned-20261023",
+    "qwen35_2b-smoke-20261023",
+    "qwen35_2b-test-base-20261023",
+    "qwen35_2b-test-tuned-20261023",
+    "qwen35_2b-v1-20261023",
+    "qwen35_2b-validation-base-20261023",
+    "qwen35_2b-validation-tuned-20261023",
+    "qwen35_2b-vqarad-base-20261023",
+    "qwen35_2b-vqarad-tuned-20261023",
+    "qwen3_17b-smoke-20261023",
+    "qwen3_17b-test-base-20261023",
+    "qwen3_17b-test-tuned-20261023",
+    "qwen3_17b-v1-20261023",
+    "qwen3_17b-validation-base-20261023",
+    "qwen3_17b-validation-tuned-20261023",
+    "qwen3_4b-smoke-20261023",
+    "qwen3_4b-test-base-20261023",
+    "qwen3_4b-test-tuned-20261023",
+    "qwen3_4b-v1-20261023",
+    "qwen3_4b-validation-base-20261023",
+    "qwen3_4b-validation-tuned-20261023"
+  ],
+  "config_policy_hash": "994f556748065815064e6e765204c51ef9c4db79ebc9a8a433d8b39ef2844696",
+  "current_model": null,
+  "data_freeze": {
+    "aggregate": "1562258c4b5b6f3b4c5c8948851fbb972da603cd63bff528aa7d278cf2253c86",
+    "core": "1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5"
+  },
+  "data_root": "${MEDVLM_DATA_ROOT}",
+  "earliest_retained_host_receipt_epoch": 1792741382.7795362,
+  "effective_config_digests": {
+    "gemma3_4b": {
+      "canonical_sha256": "5d0f0ee5d430c3e2695a786746bc79dc27355afee50321638fea4b9f6684c36b",
+      "file_sha256": "7ed626a75cf14edb17bee5bc8f3c1cdf47144cba9bb7e507b22eadf07dcf944a"
+    },
+    "medgemma15_4b": {
+      "canonical_sha256": "1578134a46eb626c73b2cf9a529b5b7e0e298203e6c77334f405b269e1f54a01",
+      "file_sha256": "3f45db9b7deb38ecab5004ad549679ba41b35a30cabcce0f4daf1225da2fddf1"
+    },
+    "qwen25vl_3b": {
+      "canonical_sha256": "7231b90382be442ad6c2569f1d5efa67aeb08878ca7e7eeedfff8fc9a855845f",
+      "file_sha256": "8698cd7c647e0f77e88e409f41ff5a63967b319236f1be861788274d231ba69c"
+    },
+    "qwen35_2b": {
+      "canonical_sha256": "205464c60638d5987cda24b6f1964dc4ae649f9f9bb1d5b08e3a889b460d0ddc",
+      "file_sha256": "42574040b077662401b08e90278426cdcdaad9958620dcdead35edb064c043ff"
+    },
+    "qwen3_17b": {
+      "canonical_sha256": "e026913f3cae9b0b7bd1ec66842247eb81d4c201468f9093b6c5d58abd644691",
+      "file_sha256": "a58d1fcf483bf3e5635322efe97fda91444f9dfd45e7bb9307aec59ae56771d4"
+    },
+    "qwen3_4b": {
+      "canonical_sha256": "43f1cce38e73481a5cfe5a48ec40d77ae6ebde0e7c61f7380333a234eb6098b6",
+      "file_sha256": "aeb84c247c8223e2593982188240af61d226a86a28fd413a424fa608744fd5a2"
+    },
+    "qwen3vl_2b": {
+      "canonical_sha256": "a40b6109effb6568744d2c8664cf4ef841bb05f234f2966590da3807a95242c8",
+      "file_sha256": "cc85b7f2c838f8cbfaedaaf4c63bb72cea4cb1e71469b2fb30ed96e5e4a39a65"
+    },
+    "smolvlm_500m": {
+      "canonical_sha256": "b1e744b933467701389d4ba753ffb550d8cf61900f6c9de7183993610b763974",
+      "file_sha256": "2ac56a0875db8e4bac9c67b3530b69298a4a334821b83beeefaf31ee092b4447"
+    }
+  },
+  "elapsed_since_earliest_host_receipt_seconds": 22376.291795015335,
+  "failure_or_blocked_cells": {},
+  "finalized_at": "2026-10-23T13:55:59.071063+00:00",
+  "models": {
+    "gemma3_4b": {
+      "cpu_probe_evidence": "${MEDVLM_DATA_ROOT}/manifests/models/gemma3_4b.json",
+      "evidence_level": "CPU_TESTED",
+      "model_id": "google/gemma-3-4b-it",
+      "reason_code": "FALLBACK_NOT_NEEDED",
+      "status": "PREPARED_NOT_RUN"
+    },
+    "medgemma15_4b": {
+      "comparison": "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-paired-comparison.json",
+      "diagnostics": {
+        "external_vqarad": {
+          "comparison": "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-vqarad-paired-comparison.json",
+          "status": "SUCCEEDED"
+        },
+        "no_image": {
+          "base": {
+            "comparison": "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-base-image-diagnostic.json",
+            "status": "SUCCEEDED"
+          },
+          "tuned": {
+            "comparison": "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-tuned-image-diagnostic.json",
+            "status": "SUCCEEDED"
+          }
+        }
+      },
+      "evidence_level": "REAL_MEDICAL_EVALUATED",
+      "finished_at": "2026-10-23T13:42:23.623733+00:00",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "phase": "paired_evaluation",
+      "revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "started_at": "2026-10-23T12:13:25.735158+00:00",
+      "status": "SUCCEEDED",
+      "training_manifest": "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-v1-20261023/manifest.json"
+    },
+    "qwen25vl_3b": {
+      "campaign_disposition": "FALLBACK_NOT_NEEDED",
+      "cpu_probe_evidence": "${MEDVLM_DATA_ROOT}/manifests/models/qwen25vl_3b.json",
+      "evidence_level": "CPU_TESTED",
+      "model_id": "Qwen/Qwen2.5-VL-3B-Instruct",
+      "reason_code": "FALLBACK_NOT_NEEDED",
+      "status": "PREPARED_NOT_RUN"
+    },
+    "qwen35_2b": {
+      "comparison": "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-paired-comparison.json",
+      "diagnostics": {
+        "external_vqarad": {
+          "comparison": "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-vqarad-paired-comparison.json",
+          "status": "SUCCEEDED"
+        },
+        "no_image": {
+          "base": {
+            "comparison": "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-base-image-diagnostic.json",
+            "status": "SUCCEEDED"
+          },
+          "tuned": {
+            "comparison": "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-tuned-image-diagnostic.json",
+            "status": "SUCCEEDED"
+          }
+        }
+      },
+      "evidence_level": "REAL_MEDICAL_EVALUATED",
+      "finished_at": "2026-10-23T13:45:45.671196+00:00",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "phase": "paired_evaluation",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "started_at": "2026-10-23T13:43:22.289997+00:00",
+      "status": "SUCCEEDED",
+      "training_manifest": "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-v1-20261023/manifest.json"
+    },
+    "qwen3_17b": {
+      "comparison": "${MEDVLM_DATA_ROOT}/runs/qwen3_17b-paired-comparison.json",
+      "diagnostics": {
+        "expert_review": {
+          "packet": "${MEDVLM_DATA_ROOT}/review/qwen3_17b",
+          "reason_code": "REVIEWER_NOT_ASSIGNED",
+          "status": "PREPARED_NOT_RUN"
+        }
+      },
+      "evidence_level": "REAL_MEDICAL_EVALUATED",
+      "finished_at": "2026-10-23T09:16:09.365297+00:00",
+      "model_id": "Qwen/Qwen3-1.7B",
+      "phase": "paired_evaluation",
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "status": "SUCCEEDED",
+      "training_manifest": "${MEDVLM_DATA_ROOT}/runs/qwen3_17b-v1-20261023/manifest.json"
+    },
+    "qwen3_4b": {
+      "comparison": "${MEDVLM_DATA_ROOT}/runs/qwen3_4b-paired-comparison.json",
+      "diagnostics": {
+        "expert_review": {
+          "packet": "${MEDVLM_DATA_ROOT}/review/qwen3_4b",
+          "reason_code": "REVIEWER_NOT_ASSIGNED",
+          "status": "PREPARED_NOT_RUN"
+        }
+      },
+      "evidence_level": "REAL_MEDICAL_EVALUATED",
+      "finished_at": "2026-10-23T11:29:16.658245+00:00",
+      "model_id": "Qwen/Qwen3-4B",
+      "phase": "paired_evaluation",
+      "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "started_at": "2026-10-23T09:16:14.283257+00:00",
+      "status": "SUCCEEDED",
+      "training_manifest": "${MEDVLM_DATA_ROOT}/runs/qwen3_4b-v1-20261023/manifest.json"
+    },
+    "qwen3vl_2b": {
+      "campaign_disposition": "FALLBACK_NOT_NEEDED",
+      "cpu_probe_evidence": "${MEDVLM_DATA_ROOT}/manifests/models/qwen3vl_2b.json",
+      "evidence_level": "CPU_TESTED",
+      "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+      "reason_code": "FALLBACK_NOT_NEEDED",
+      "status": "PREPARED_NOT_RUN"
+    },
+    "smolvlm_500m": {
+      "cpu_probe_evidence": "${MEDVLM_DATA_ROOT}/manifests/models/smolvlm_500m.json",
+      "evidence_level": "CPU_TESTED",
+      "model_id": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "reason_code": "FALLBACK_NOT_NEEDED",
+      "status": "PREPARED_NOT_RUN"
+    }
+  },
+  "next_resume_command": "PYTHONPATH=src ../.venv-medvlm/bin/python scripts/complete_v1.py --data-root \"$(realpath ../medvlm-data)\"",
+  "schema_version": "medvlm.state.v1",
+  "source_blockers": {
+    "aihub_71762": {
+      "evidence_level": "CPU_TESTED",
+      "reason_code": "AUTHORIZED_DOWNLOAD_CREDENTIALS_NOT_CONFIGURED",
+      "status": "BLOCKED_ACCESS"
+    },
+    "aihub_71875": {
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "reason_code": "AUTHORIZED_DOWNLOAD_CREDENTIALS_NOT_CONFIGURED",
+      "status": "BLOCKED_ACCESS"
+    },
+    "medmcqa": {
+      "evidence_level": "CPU_TESTED",
+      "reason_code": "EXTERNAL_DATA_LICENSE_SCOPE_UNRESOLVED",
+      "status": "BLOCKED_LICENSE"
+    },
+    "medqa": {
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "reason_code": "EXTERNAL_DATA_LICENSE_SCOPE_UNRESOLVED",
+      "status": "BLOCKED_LICENSE"
+    }
+  },
+  "stages": {
+    "data": {
+      "critical_error_count": 0,
+      "evidence_level": "CPU_TESTED",
+      "evidence_paths": [
+        "reports/public_summary/data_freeze.json",
+        "reports/public_summary/data_quality.json"
+      ],
+      "next_action": null,
+      "reason_code": "PUBLIC_CORPUS_AUDITED_AND_FROZEN",
+      "record_count": 19866,
+      "run_ids": [],
+      "status": "SUCCEEDED"
+    },
+    "device": {
+      "device_outcome": "BLOCKED_ACCESS",
+      "evidence_level": "IMPLEMENTED_ONLY",
+      "evidence_paths": [
+        "${MEDVLM_DATA_ROOT}/runs/device/jetson-inventory-20261023/summary.json"
+      ],
+      "next_action": "Verify the Jetson SSH host fingerprint through a trusted independent channel, register the trusted host key, then rerun device inventory.",
+      "optional": true,
+      "reason_code": "HOST_KEY_UNVERIFIED",
+      "run_ids": [],
+      "status": "BLOCKED_ACCESS"
+    },
+    "evaluation": {
+      "achieved_counts": {
+        "text": 2,
+        "unique_models": 4,
+        "vlm": 2
+      },
+      "evidence_level": "REAL_MEDICAL_EVALUATED",
+      "evidence_paths": [
+        "${MEDVLM_DATA_ROOT}/runs/qwen3_17b-paired-comparison.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen3_4b-paired-comparison.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-paired-comparison.json",
+        "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-paired-comparison.json"
+      ],
+      "next_action": null,
+      "reason_code": "TEXT2_VLM2_PAIRED_TEST_COMPLETE",
+      "run_ids": [
+        "qwen3_17b-test-base-20261023",
+        "qwen3_17b-test-tuned-20261023",
+        "qwen3_4b-test-base-20261023",
+        "qwen3_4b-test-tuned-20261023",
+        "qwen35_2b-test-base-20261023",
+        "qwen35_2b-test-tuned-20261023",
+        "medgemma15_4b-test-base-20261023",
+        "medgemma15_4b-test-tuned-20261023"
+      ],
+      "status": "SUCCEEDED",
+      "target_counts": {
+        "text": 2,
+        "vlm": 2
+      }
+    },
+    "infrastructure": {
+      "evidence_level": "CPU_TESTED",
+      "evidence_paths": [
+        "reports/public_summary/verification.json",
+        "docs/research/CURRENT_REPOSITORY_AUDIT.md"
+      ],
+      "next_action": null,
+      "reason_code": "CORE_CONTRACTS_VERIFIED",
+      "run_ids": [],
+      "status": "SUCCEEDED"
+    },
+    "training": {
+      "achieved_counts": {
+        "text": 2,
+        "unique_models": 4,
+        "vlm": 2
+      },
+      "evidence_level": "REAL_GPU_SMOKE",
+      "evidence_paths": [
+        "${MEDVLM_DATA_ROOT}/runs/qwen3_17b-v1-20261023/manifest.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen3_17b-v1-20261023/reload.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen3_4b-v1-20261023/manifest.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen3_4b-v1-20261023/reload.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-v1-20261023/manifest.json",
+        "${MEDVLM_DATA_ROOT}/runs/qwen35_2b-v1-20261023/reload.json",
+        "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-v1-20261023/manifest.json",
+        "${MEDVLM_DATA_ROOT}/runs/medgemma15_4b-v1-20261023/reload.json"
+      ],
+      "next_action": null,
+      "reason_code": "TEXT2_VLM2_TRAINED_AND_RELOADED",
+      "run_ids": [
+        "qwen3_17b-v1-20261023",
+        "qwen3_4b-v1-20261023",
+        "qwen35_2b-v1-20261023",
+        "medgemma15_4b-v1-20261023"
+      ],
+      "status": "SUCCEEDED",
+      "target_counts": {
+        "text": 2,
+        "vlm": 2
+      }
+    }
+  },
+  "summary_progress": "completed",
+  "termination_reason": "FINITE_AUTHORIZED_CAMPAIGN_FINISHED; OPTIONAL_DEVICE_AND_EXPERT_REVIEW_REMAIN_SEPARATE",
+  "updated_at": "2026-10-23T13:55:59.071063+00:00",
+  "used_budget": {
+    "active": null,
+    "models": {
+      "Qwen/Qwen3-1.7B": 4173.94175195694,
+      "Qwen/Qwen3-4B": 7916.192103624344,
+      "Qwen/Qwen3.5-2B": 2700.4923577308655,
+      "google/medgemma-1.5-4b-it": 5256.807885169983
+    },
+    "run_phases": {
+      "medgemma15_4b-no-image-base-20261023": {
+        "evaluation": 38.287938833236694
+      },
+      "medgemma15_4b-no-image-tuned-20261023": {
+        "evaluation": 20.564242601394653
+      },
+      "medgemma15_4b-smoke-20261023": {
+        "reload": 18.041733741760254,
+        "train": 152.61761355400085
+      },
+      "medgemma15_4b-test-base-20261023": {
+        "evaluation": 293.20118379592896
+      },
+      "medgemma15_4b-test-tuned-20261023": {
+        "evaluation": 174.00745153427124
+      },
+      "medgemma15_4b-v1-20261023": {
+        "reload": 18.375741004943848,
+        "train": 4306.9445815086365
+      },
+      "medgemma15_4b-validation-base-20261023": {
+        "evaluation": 51.58207583427429
+      },
+      "medgemma15_4b-validation-tuned-20261023": {
+        "evaluation": 37.24946475028992
+      },
+      "medgemma15_4b-vqarad-base-20261023": {
+        "evaluation": 89.62792301177979
+      },
+      "medgemma15_4b-vqarad-tuned-20261023": {
+        "evaluation": 56.30793499946594
+      },
+      "qwen35_2b-no-image-base-20261023": {
+        "evaluation": 31.568907499313354
+      },
+      "qwen35_2b-no-image-tuned-20261023": {
+        "evaluation": 15.499927282333374
+      },
+      "qwen35_2b-smoke-20261023": {
+        "reload": 10.573213577270508,
+        "train": 92.2345700263977
+      },
+      "qwen35_2b-test-base-20261023": {
+        "evaluation": 139.97854900360107
+      },
+      "qwen35_2b-test-tuned-20261023": {
+        "evaluation": 119.89799118041992
+      },
+      "qwen35_2b-v1-20261023": {
+        "reload": 9.722760915756226,
+        "train": 2130.2282421588898
+      },
+      "qwen35_2b-validation-base-20261023": {
+        "evaluation": 29.1343412399292
+      },
+      "qwen35_2b-validation-tuned-20261023": {
+        "evaluation": 27.067944526672363
+      },
+      "qwen35_2b-vqarad-base-20261023": {
+        "evaluation": 50.456491231918335
+      },
+      "qwen35_2b-vqarad-tuned-20261023": {
+        "evaluation": 44.12941908836365
+      },
+      "qwen3_17b-smoke-20261023": {
+        "reload": 10.677892684936523,
+        "train": 27.347935914993286
+      },
+      "qwen3_17b-test-base-20261023": {
+        "evaluation": 250.4397521018982
+      },
+      "qwen3_17b-test-tuned-20261023": {
+        "evaluation": 306.8462748527527
+      },
+      "qwen3_17b-v1-20261023": {
+        "reload": 9.89485764503479,
+        "train": 3337.2882854938507
+      },
+      "qwen3_17b-validation-base-20261023": {
+        "evaluation": 100.4607617855072
+      },
+      "qwen3_17b-validation-tuned-20261023": {
+        "evaluation": 130.9859914779663
+      },
+      "qwen3_4b-smoke-20261023": {
+        "reload": 16.423451900482178,
+        "train": 50.56353545188904
+      },
+      "qwen3_4b-test-base-20261023": {
+        "evaluation": 399.8693935871124
+      },
+      "qwen3_4b-test-tuned-20261023": {
+        "evaluation": 465.2651963233948
+      },
+      "qwen3_4b-v1-20261023": {
+        "reload": 17.050925493240356,
+        "train": 6665.283004283905
+      },
+      "qwen3_4b-validation-base-20261023": {
+        "evaluation": 130.33599853515625
+      },
+      "qwen3_4b-validation-tuned-20261023": {
+        "evaluation": 171.40059804916382
+      }
+    },
+    "schema_version": "medvlm.budget.v1",
+    "sessions": [
+      {
+        "finished_epoch": 1792742633.663074,
+        "id": "0b32e8e081b3470b9482192b4f0fb8f2",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "train",
+        "run_id": "qwen3_17b-smoke-20261023",
+        "seconds": 27.347935914993286,
+        "started_epoch": 1792742606.315138
+      },
+      {
+        "finished_epoch": 1792742701.7089124,
+        "id": "a3e57ccea50b400c8ae5d49925bb2a9d",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "reload",
+        "run_id": "qwen3_17b-smoke-20261023",
+        "seconds": 10.677892684936523,
+        "started_epoch": 1792742691.0310197
+      },
+      {
+        "finished_epoch": 1792746132.8467453,
+        "id": "97c4ef0a1b1d42f2b24ff66f610de9e1",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "train",
+        "run_id": "qwen3_17b-v1-20261023",
+        "seconds": 3337.2882854938507,
+        "started_epoch": 1792742795.5584598
+      },
+      {
+        "finished_epoch": 1792746171.4843802,
+        "id": "d950fa11f5f84a98ac2d13c621ce5636",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "reload",
+        "run_id": "qwen3_17b-v1-20261023",
+        "seconds": 9.89485764503479,
+        "started_epoch": 1792746161.5895226
+      },
+      {
+        "finished_epoch": 1792746273.9234018,
+        "id": "506946da6e3244a1afe92705292cae0a",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "evaluation",
+        "run_id": "qwen3_17b-validation-base-20261023",
+        "seconds": 100.4607617855072,
+        "started_epoch": 1792746173.46264
+      },
+      {
+        "finished_epoch": 1792746406.9589214,
+        "id": "8d525c94879a46048c645dbfa6883250",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "evaluation",
+        "run_id": "qwen3_17b-validation-tuned-20261023",
+        "seconds": 130.9859914779663,
+        "started_epoch": 1792746275.97293
+      },
+      {
+        "finished_epoch": 1792746659.207375,
+        "id": "5f7643627f5c40c5895dd8d0c2a8a02a",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "evaluation",
+        "run_id": "qwen3_17b-test-base-20261023",
+        "seconds": 250.4397521018982,
+        "started_epoch": 1792746408.767623
+      },
+      {
+        "finished_epoch": 1792746968.2841234,
+        "id": "f0ad13eeec344d6c87288e599bcef930",
+        "model_id": "Qwen/Qwen3-1.7B",
+        "phase": "evaluation",
+        "run_id": "qwen3_17b-test-tuned-20261023",
+        "seconds": 306.8462748527527,
+        "started_epoch": 1792746661.4378486
+      },
+      {
+        "finished_epoch": 1792747026.462222,
+        "id": "fcae8d343b5d4961be2a1450bfb70246",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "train",
+        "run_id": "qwen3_4b-smoke-20261023",
+        "seconds": 50.56353545188904,
+        "started_epoch": 1792746975.8986866
+      },
+      {
+        "finished_epoch": 1792747058.8966813,
+        "id": "835d220f7ec44886a4247b8f86d9cf3d",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "reload",
+        "run_id": "qwen3_4b-smoke-20261023",
+        "seconds": 16.423451900482178,
+        "started_epoch": 1792747042.4732294
+      },
+      {
+        "finished_epoch": 1792753734.2176921,
+        "id": "c3dba86e734045abb4b936965dce30a8",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "train",
+        "run_id": "qwen3_4b-v1-20261023",
+        "seconds": 6665.283004283905,
+        "started_epoch": 1792747068.9346879
+      },
+      {
+        "finished_epoch": 1792753768.4975076,
+        "id": "0f0208c6182a4e83b97192d6b413cbd7",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "reload",
+        "run_id": "qwen3_4b-v1-20261023",
+        "seconds": 17.050925493240356,
+        "started_epoch": 1792753751.446582
+      },
+      {
+        "finished_epoch": 1792753908.9893055,
+        "id": "8d8fe1110d2a448e9e816f84843b2ec6",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "evaluation",
+        "run_id": "qwen3_4b-validation-base-20261023",
+        "seconds": 130.33599853515625,
+        "started_epoch": 1792753778.653307
+      },
+      {
+        "finished_epoch": 1792754083.4959252,
+        "id": "8b248886a3254c549507a22dbb9726e7",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "evaluation",
+        "run_id": "qwen3_4b-validation-tuned-20261023",
+        "seconds": 171.40059804916382,
+        "started_epoch": 1792753912.0953271
+      },
+      {
+        "finished_epoch": 1792754486.5405772,
+        "id": "20809af969f249f190f6fd3fb33eb1a7",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "evaluation",
+        "run_id": "qwen3_4b-test-base-20261023",
+        "seconds": 399.8693935871124,
+        "started_epoch": 1792754086.6711836
+      },
+      {
+        "finished_epoch": 1792754955.0734375,
+        "id": "825619d6e81f4574800b915237ef91f0",
+        "model_id": "Qwen/Qwen3-4B",
+        "phase": "evaluation",
+        "run_id": "qwen3_4b-test-tuned-20261023",
+        "seconds": 465.2651963233948,
+        "started_epoch": 1792754489.8082411
+      },
+      {
+        "finished_epoch": 1792755050.8586972,
+        "id": "956d16eb3e3c4194929b744b65916918",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "train",
+        "run_id": "qwen35_2b-smoke-20261023",
+        "seconds": 92.2345700263977,
+        "started_epoch": 1792754958.6241271
+      },
+      {
+        "finished_epoch": 1792755071.2180557,
+        "id": "e204a17ab38c401dbb00411487f25767",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "reload",
+        "run_id": "qwen35_2b-smoke-20261023",
+        "seconds": 10.573213577270508,
+        "started_epoch": 1792755060.6448421
+      },
+      {
+        "finished_epoch": 1792757207.3690226,
+        "id": "4fc9b35cb8c049029a6472973e4d2484",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "train",
+        "run_id": "qwen35_2b-v1-20261023",
+        "seconds": 2130.2282421588898,
+        "started_epoch": 1792755077.1407804
+      },
+      {
+        "finished_epoch": 1792757226.4339178,
+        "id": "bd9296b1925a4de19bd95a44524869dd",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "reload",
+        "run_id": "qwen35_2b-v1-20261023",
+        "seconds": 9.722760915756226,
+        "started_epoch": 1792757216.7111568
+      },
+      {
+        "finished_epoch": 1792757261.5072138,
+        "id": "36f18173b6b14657967c767d6ea16d3f",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-validation-base-20261023",
+        "seconds": 29.1343412399292,
+        "started_epoch": 1792757232.3728726
+      },
+      {
+        "finished_epoch": 1792757290.229518,
+        "id": "86da88e6b9914eefb509b18a75a30883",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-validation-tuned-20261023",
+        "seconds": 27.067944526672363,
+        "started_epoch": 1792757263.1615734
+      },
+      {
+        "finished_epoch": 1792757431.9615438,
+        "id": "c1248276213240fa9472b4da3d050f4c",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-test-base-20261023",
+        "seconds": 139.97854900360107,
+        "started_epoch": 1792757291.9829948
+      },
+      {
+        "finished_epoch": 1792757553.6421523,
+        "id": "a1a4dc093c014319a77e5eb0c655aed6",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-test-tuned-20261023",
+        "seconds": 119.89799118041992,
+        "started_epoch": 1792757433.7441611
+      },
+      {
+        "finished_epoch": 1792757587.6158223,
+        "id": "57cbebb299ce47e799701cebbb17da22",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-no-image-base-20261023",
+        "seconds": 31.568907499313354,
+        "started_epoch": 1792757556.0469148
+      },
+      {
+        "finished_epoch": 1792757604.943101,
+        "id": "f75dec0e55074a71916e26f53d6623b3",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-no-image-tuned-20261023",
+        "seconds": 15.499927282333374,
+        "started_epoch": 1792757589.4431736
+      },
+      {
+        "finished_epoch": 1792757759.7184744,
+        "id": "64226d41f9c54f3f9770bccf55ec9a58",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "train",
+        "run_id": "medgemma15_4b-smoke-20261023",
+        "seconds": 152.61761355400085,
+        "started_epoch": 1792757607.1008608
+      },
+      {
+        "finished_epoch": 1792757795.3441184,
+        "id": "f952e6781523425dafe367c1429d86e7",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "reload",
+        "run_id": "medgemma15_4b-smoke-20261023",
+        "seconds": 18.041733741760254,
+        "started_epoch": 1792757777.3023846
+      },
+      {
+        "finished_epoch": 1792762112.6898987,
+        "id": "5095a941f6454454beb20da7a60fd1bc",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "train",
+        "run_id": "medgemma15_4b-v1-20261023",
+        "seconds": 4306.9445815086365,
+        "started_epoch": 1792757805.7453172
+      },
+      {
+        "finished_epoch": 1792762148.9405556,
+        "id": "e699048322554265bc2782fc08e211fd",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "reload",
+        "run_id": "medgemma15_4b-v1-20261023",
+        "seconds": 18.375741004943848,
+        "started_epoch": 1792762130.5648146
+      },
+      {
+        "finished_epoch": 1792762211.174221,
+        "id": "8217e5811b7c499da613511a56600375",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-validation-base-20261023",
+        "seconds": 51.58207583427429,
+        "started_epoch": 1792762159.5921452
+      },
+      {
+        "finished_epoch": 1792762251.5482466,
+        "id": "ee56fd54052f4e8c815ae4255a8d644f",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-validation-tuned-20261023",
+        "seconds": 37.24946475028992,
+        "started_epoch": 1792762214.2987819
+      },
+      {
+        "finished_epoch": 1792762547.8295035,
+        "id": "4d9f19d7969747dba37f56d0285fd1f3",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-test-base-20261023",
+        "seconds": 293.20118379592896,
+        "started_epoch": 1792762254.6283197
+      },
+      {
+        "finished_epoch": 1792762725.0189621,
+        "id": "aa56210f3dfe4a00996769dd47bbbf22",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-test-tuned-20261023",
+        "seconds": 174.00745153427124,
+        "started_epoch": 1792762551.0115106
+      },
+      {
+        "finished_epoch": 1792762766.4895039,
+        "id": "719af8d0f3c442d7bd13ea7c35412971",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-no-image-base-20261023",
+        "seconds": 38.287938833236694,
+        "started_epoch": 1792762728.201565
+      },
+      {
+        "finished_epoch": 1792762790.2134147,
+        "id": "025acecf865c4b4f8de1c573f3890ea5",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-no-image-tuned-20261023",
+        "seconds": 20.564242601394653,
+        "started_epoch": 1792762769.649172
+      },
+      {
+        "finished_epoch": 1792762882.8291194,
+        "id": "627fdc9dffea4d17b1919b9676995137",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-vqarad-base-20261023",
+        "seconds": 89.62792301177979,
+        "started_epoch": 1792762793.2011964
+      },
+      {
+        "finished_epoch": 1792762942.256627,
+        "id": "1acc0b9b7dd9458fac7b049201d7c659",
+        "model_id": "google/medgemma-1.5-4b-it",
+        "phase": "evaluation",
+        "run_id": "medgemma15_4b-vqarad-tuned-20261023",
+        "seconds": 56.30793499946594,
+        "started_epoch": 1792762885.948692
+      },
+      {
+        "finished_epoch": 1792763098.8416526,
+        "id": "5069bf6713204a45b39c535023a2ef4b",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-vqarad-base-20261023",
+        "seconds": 50.456491231918335,
+        "started_epoch": 1792763048.3851614
+      },
+      {
+        "finished_epoch": 1792763144.8725264,
+        "id": "495f10b3e2264663807eb90738a51822",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "phase": "evaluation",
+        "run_id": "qwen35_2b-vqarad-tuned-20261023",
+        "seconds": 44.12941908836365,
+        "started_epoch": 1792763100.7431073
+      }
+    ]
+  }
+}

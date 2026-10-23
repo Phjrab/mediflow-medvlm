@@ -2,6 +2,8 @@
 
 이번 v1 실행의 상태는 `runtime/medvlm_state.json`, 실제 근거는 Git 밖의 `MEDVLM_DATA_ROOT`에 있다. 최종 집계는 `reports/public_summary/RESULTS_KO.md`와 `run_summary.json`이다. 이 문서는 실행 가능한 명령과 보존 조건을 기록한다. 실행 중에는 상태 파일의 현재 프로세스를 먼저 확인한다.
 
+최종 v1은 text2+VLM2의 실제 학습·새 process 재로드·주 paired 평가4개를 완료했다. Qwen3.5와 MedGemma의 VQA-RAD64건 paired 및 이미지 제외 진단도 완료했다. 남은 필수 GPU run은 없다. 예비 후보는 fallback 불필요로 미실행, Jetson·AIHub·외부 원문 권리와 전문가 검토는 각각 별도 상태로 남긴다. `stage_status.json`은 최종 단계 근거, 전달 사본의 `git_receipt.json`은 최종 commit/push/CI 근거다.
+
 ## 환경·데이터 위치
 
 저장소 기준으로 전용 Python3.12 환경은 `../.venv-medvlm`, 데이터 루트는 `../medvlm-data`다. Python3.10 경량 검사 환경은 `../.venv-core310`다. 로컬 절대경로는 사용자에게 전달하는 별도 인계 사본과 Git 제외 상태에 기록한다.

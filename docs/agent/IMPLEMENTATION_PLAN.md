@@ -9,3 +9,16 @@
 7. 상태/근거/정확한 재개 명령, Korean report, 실제 검증, commit/push 확인.
 
 완료는 실행 상태와 evidence_level을 분리한다. synthetic 성공은 의료 성능이 아니다. 실행하지 않은 baseline/tuned는 N/A로 남긴다. 동일 오류 진단수정2회/일시 네트워크 재시도3회 상한, test 결과로 prompt/data를 바꾸지 않는다.
+
+## 최종 실행 상태
+
+| 단계 | 실제 결과 |
+|---|---|
+| 기반 | 현재 저장소 재확인, Python3.10 core139passed/6skipped/6subtests, native CPU16passed, CUDA 실제 forward/backward 완료 |
+| 데이터 | 원본72,206 QA행 확보, canonical19,866개, critical0 감사 및 immutable freeze 완료 |
+| 학습 | Qwen3-1.7B/4B와 Qwen3.5-2B/MedGemma1.5-4B 네 모델 실제 optimizer update·새 process 재로드 완료 |
+| 평가 | 주 paired4개, 외부 VQA-RAD paired2개, VLM별 base/tuned no-image 진단4개 완료 |
+| Jetson | BLOCKED_ACCESS / HOST_KEY_UNVERIFIED, 실제 장치 추론 미실행 |
+| 인계 | 비식별 최종 집계·adapter 카드·state·재개 명령 생성. 전달 commit/push·CI는 별도 git receipt로 확인 |
+
+예비 후보 네 모델은 FALLBACK_NOT_NEEDED로 GPU 미실행이다. 전문가 판정과 추가 seed는 미실행으로 남겼으며, 필수 v1 목표의 완료 조건에 추가하지 않았다.

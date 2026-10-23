@@ -84,6 +84,7 @@ def collect(root, repo):
              'preliminary_single_seed':True,'human_review':'not_performed','clinical_validation':False,
              'data':read(repo/'reports/public_summary/data_freeze.json'), 'models':{},'evaluations':[],
              'data_repairs':read(repo/'reports/public_summary/vqarad_image_provenance_repair.json'),
+             'posthoc_format_diagnostics':read(repo/'reports/public_summary/medgemma_format_diagnostic.json'),
              'paired':{},'external_paired':{},'incomplete_comparisons':{},'external_evaluations':[],'image_diagnostics':{},'changes':{},
              'campaign':{k:campaign.get(k) for k in ('stages','current_model','updated_at','active_process')},
              'device':{k:v for k,v in read(root/'runs/device/jetson-inventory-20261023/summary.json',{}).items()
@@ -224,6 +225,7 @@ def report(summary, root, repo):
             latency=c['e2e_latency_seconds']['median']
             lines.append(f"| {e['model_id']} | {label} | {e['mode']} | {den} | {pct(metric(c))} | {pct(c['coverage'])} | {pct(c['invalid_format_rate'])} | {pct(c['technical_failure_rate'])} | {latency:.3f} |" if latency is not None else f"| {e['model_id']} | {label} | {e['mode']} | {den} | {pct(metric(c))} | {pct(c['coverage'])} | {pct(c['invalid_format_rate'])} | {pct(c['technical_failure_rate'])} | N/A |")
     lines += ['', 'PubMedQA·KorMedMCQA 주 지표는 전체 예정 문항 기준 정답률이다. MedQuAD·SLAKE 주 지표는 보수적인 문자열 exact match이며 임상 정답률이 아니다. lexical token F1, 유효 응답 기준 지표, 잘림과 실패 분모는 CSV/JSON에 함께 보존했다. 평가 대상이 없거나 실행하지 않은 셀을 0점으로 표시하지 않았다.', '',
+      '**MedGemma 기본 모델의 SLAKE EM 0/256은 임상 정답률 0%라는 뜻이 아니다.** 사후 형식 진단에서 기본 응답은 중앙값14단어, 정답과 tuned 응답은1단어였다. 기본72건이32-token 생성 상한에 도달했고 정상 종료184건도 엄격한 EM은0이었다. 기본141건에는 gold 문자열이 단어 경계를 지키는 구절로 포함됐지만, 포함 여부는 정답 판정이 아니다. 이미지 입력·해시·동일 prompt 연결에서 명확한 구현 오류는 발견하지 못했다. 형식과 답 길이의 불일치가 큰 영향을 준 증거이며, 내용 오류와 형식의 기여도를 분리한 수치는 없다. 따라서 0→69.92% lexical EM 변화를 같은 크기의 의학적 능력 향상으로 해석하지 않는다. 고정 NF4/32-token 조건은 공식 BF16/장문 생성 예시의 성능 재현도 아니다. 설정·parser·평가 문항은 결과를 본 뒤 변경하지 않았다. 집계 정의와 근거 해시는 `medgemma_format_diagnostic.json`에 있다.', '',
       '| 모델 | source | 문항 / 관측 그룹 | Tuned − Base | 그룹 bootstrap 95% CI |', '|---|---|---:|---:|---|']
     for key,pair in summary['paired'].items():
         for c in pair['comparison']:
@@ -278,6 +280,9 @@ def report(summary, root, repo):
       '- 권리 확인 보류: MedQA/MedMCQA의 외부 시험·교재 파일 적용 권리 미확정. ROCOv2/PMC-VQA는 등록·권리 조사만 수행.',
       '- 장치 차단: Jetson SSH 호스트 키 검증 자료 없음. 호스트 검증을 우회하지 않았으며 장치 identity·실제 추론 결과는 없다.',
       '- 미실행: 전문가 사실성·안전성 검토, 추가 seed, 임상 검증, 서비스 배포. 자동 점수를 전문가 판정으로 대체하지 않았다.', '',
+      '핵심 Python3.10 검사139passed/6skipped/6subtests와 별도 native CPU16passed 기록은 `verification.json`에 있다. 주 평가4쌍·외부 평가2쌍의 실제 예측4,560건에 대한 파일SHA, 고정 문항, 동일 pair 입력·생성 조건, 선정 adapter 연결의 최종 검증은 `final_artifact_verification.json`에 있다. 네 모델 모두 실제 의료 데이터 smoke20 update와 별도 process 재로드를 통과했다. 미실행 검사는 성공 수에 포함하지 않았다.', '',
+      '전용 branch는 `codex/medical-finetune-v1-20261023`이다. 최종 전달 commit·remote SHA 일치·CI 결과는 전달 폴더의 `git_receipt.json`에 별도 보존한다. 각 학습/평가 run의 code commit과 source snapshot은 당시 실행 코드의 근거이며 최종 문서 commit과 구분한다.', '',
+      '후속 연구의 우선순위는 준비한 익명 전문가 검토표의 사실성·안전성 판정, 그리고 별도 validation에서 응답 길이·형식을 사전 고정한 새 VQA 실험이다. 현재 결과를 보고 기존 test에 맞춘 설정 변경으로 이번 점수를 대체하지 않는다. 추가 seed는 선택적 후속 실험이며 이번 v1 완료의 선행 조건이 아니다.', '',
       '## 재개', '', '정확한 로컬 경로와 명령은 HANDOFF.md에 기록했다. 공개 저장소에서는 다음과 같이 기존 환경을 재사용한다.', '',
       '```bash', 'export MEDVLM_DATA_ROOT="$(realpath ../medvlm-data)"', 'PYTHONPATH=src ../.venv-medvlm/bin/python -m mediflow_medvlm status',
       'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/complete_v1.py --data-root "$MEDVLM_DATA_ROOT"',
@@ -362,6 +367,8 @@ def plots(summary,destination):
     fig.suptitle('Frozen paired test evaluation | single seed, preliminary; lexical scores are not clinical accuracy',fontsize=11)
     fig.savefig(destination/'paired_scores.png',dpi=170)
     fig.savefig(destination/'paired_scores.svg')
+    svg=destination/'paired_scores.svg'
+    svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
     plt.close(fig)
 
 
@@ -374,7 +381,7 @@ def main():
     rows=csv_rows(summary)
     if rows:
         with (out/'paired_metrics.csv').open('w',encoding='utf-8-sig',newline='') as f:
-            writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+            writer=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator='\n');writer.writeheader();writer.writerows(rows)
     if args.plot:plots(summary,out)
     print(json.dumps({'output':str(out),
         'optimizer_updated_models':sum(x.get('optimizer_steps',0)>0 for x in summary['models'].values()),
