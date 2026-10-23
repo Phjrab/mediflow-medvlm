@@ -159,7 +159,7 @@ class CampaignResumeTests(unittest.TestCase):
         self.assertIsNone(result['active_process'])
 
     def test_successful_primary_skips_both_fallbacks_without_erasing_prior_evidence(self):
-        atomic_json(self.root / 'runtime/medvlm_state.json', {'models': {'medgemma15_4b': {'status': 'SUCCEEDED'},
+        atomic_json(self.root / 'runtime/medvlm_state.json', {'models': {'medgemma15_4b': {'status': 'SUCCEEDED'}, 'qwen35_2b': {'status': 'SUCCEEDED'},
                     'smolvlm_500m': {'status': 'SUCCEEDED', 'diagnostics': {'prior': 'kept'}}}})
         with patch.object(campaign, 'train_stage') as train:
             result = self.run_main(['gemma3_4b', 'smolvlm_500m'])
@@ -168,6 +168,14 @@ class CampaignResumeTests(unittest.TestCase):
         self.assertEqual(result['models']['smolvlm_500m']['diagnostics'], {'prior': 'kept'})
         self.assertEqual(result['models']['smolvlm_500m']['status'], 'SUCCEEDED')
         self.assertEqual(result['models']['smolvlm_500m']['campaign_disposition'], 'FALLBACK_NOT_NEEDED')
+
+    def test_medical_success_does_not_hide_general_vlm_failure(self):
+        models={'medgemma15_4b':{'status':'SUCCEEDED'},'qwen35_2b':{'status':'BLOCKED_HARDWARE'}}
+        self.assertFalse(campaign.fallback_not_needed(models,'qwen3vl_2b'))
+        self.assertFalse(campaign.fallback_not_needed(models,'smolvlm_500m'))
+        self.assertTrue(campaign.fallback_not_needed(models,'gemma3_4b'))
+        self.assertEqual(campaign.expand_general_fallbacks(['qwen35_2b','medgemma15_4b','qwen3vl_2b']),
+                         ['qwen35_2b','qwen3vl_2b','qwen25vl_3b','medgemma15_4b'])
 
 
 class CampaignDownloadBudgetTests(unittest.TestCase):

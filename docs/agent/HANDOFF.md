@@ -30,7 +30,7 @@ GPU와 네트워크는 이 desktop의 일반 sandbox에서 보이지 않았으�
 ../.venv-medvlm/bin/python scripts/report_v1.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary --plot
 ```
 
-기본 후보 순서는 Qwen3-1.7B, Qwen3-4B, Qwen3.5-2B, MedGemma1.5-4B다. MedGemma가 실행되지 못하면 Gemma3-4B, 다시 실패하면 SmolVLM500M으로 진행한다. 앞 후보가 성공하면 fallback은 `PREPARED_NOT_RUN / FALLBACK_NOT_NEEDED`다. 사용자 새 Hugging Face 계정으로 MedGemma 및 Gemma3 config 접근을 실제 확인했다. 기본 로그인 캐시를 읽은 뒤 모델 artifact 캐시를 분리한다. 토큰을 설정 파일·명령 인자·Git에 적지 않는다.
+기본 후보 순서는 Qwen3-1.7B, Qwen3-4B, Qwen3.5-2B, MedGemma1.5-4B다. 일반 VLM은 Qwen3.5-2B 실패 시 Qwen3-VL-2B→Qwen2.5-VL-3B로 진행한다. 의료 VLM은 MedGemma 실패 시 Gemma3-4B로 진행한다. SmolVLM500M은 아직 완료하지 못한 VLM 셀의 마지막 대안이며 두 모델로 중복 계산하지 않는다. Qwen2.5-VL-3B는 비상업 연구용 Research License이며 Apache 2.0으로 간주하지 않는다. 앞 후보가 성공하면 fallback은 `PREPARED_NOT_RUN / FALLBACK_NOT_NEEDED`다. 사용자 새 Hugging Face 계정으로 MedGemma 및 Gemma3 config 접근을 실제 확인했다. 기본 로그인 캐시를 읽은 뒤 모델 artifact 캐시를 분리한다. 토큰을 설정 파일·명령 인자·Git에 적지 않는다.
 
 개별 실행의 실제 config는 `configs/<model-key>-<smoke|v1>-20261023.json`이다. config와 source/data/model hash가 바뀌면 같은 run을 재개하지 말고 별도 run_id를 사용한다. smoke20 실제 update와 fresh-process reload를 먼저 통과해야 본 학습으로 진행한다.
 
@@ -40,7 +40,7 @@ GPU와 네트워크는 이 desktop의 일반 sandbox에서 보이지 않았으�
 ../.venv-medvlm/bin/python -m mediflow_medvlm.training reload --config <IMMUTABLE_RUN_CONFIG> --checkpoint <SELECTED_CHECKPOINT>
 ```
 
-`<...>`는 각 run의 `latest.json` 또는 `selection.json`에 있는 값으로 채운다. 최초 Qwen3-1.7B는 초기 training code로 시작했으며 원래 7개 training/runtime 소스와 hash receipt가 run의 `source_snapshot/`에 보존됐다. 새 checkpoint identity로 이전 미완료 run을 이관할 때는 검증된 원본 소스가 필요하다. 해당 변경이 설치된 뒤 다음 명령을 사용한다.
+`<...>`는 각 run의 `latest.json` 또는 `selection.json`에 있는 값으로 채운다. 최초 Qwen3-1.7B는 초기 training code로 시작했으며 원래 7개 training/runtime 소스와 hash receipt가 run의 `source_snapshot/`에 보존됐다. 새 checkpoint identity로 이전 미완료 run을 이관할 때는 검증된 원본 소스가 필요하다. 이전 미완료 run에 한해 다음 명령을 사용한다.
 
 ```bash
 ../.venv-medvlm/bin/python -m mediflow_medvlm.training train --config <IMMUTABLE_RUN_CONFIG> --resume <COMPLETE_LEGACY_CHECKPOINT> --migrate-legacy-from <RUN_DIRECTORY>/source_snapshot

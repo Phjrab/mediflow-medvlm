@@ -12,9 +12,10 @@ from datetime import datetime, timezone
 
 from mediflow_medvlm.runtime import atomic_json, canonical_hash, file_hash
 
-KEYS = ('qwen3_17b','qwen3_4b','qwen35_2b','medgemma15_4b','gemma3_4b','smolvlm_500m')
+KEYS = ('qwen3_17b','qwen3_4b','qwen35_2b','qwen3vl_2b','qwen25vl_3b','medgemma15_4b','gemma3_4b','smolvlm_500m')
 MODELS = {'qwen3_17b':'Qwen/Qwen3-1.7B','qwen3_4b':'Qwen/Qwen3-4B',
           'qwen35_2b':'Qwen/Qwen3.5-2B','medgemma15_4b':'google/medgemma-1.5-4b-it','gemma3_4b':'google/gemma-3-4b-it',
+          'qwen3vl_2b':'Qwen/Qwen3-VL-2B-Instruct','qwen25vl_3b':'Qwen/Qwen2.5-VL-3B-Instruct',
           'smolvlm_500m':'HuggingFaceTB/SmolVLM-500M-Instruct'}
 
 
@@ -33,16 +34,22 @@ def pct(value):
     return 'N/A' if value is None else f'{value*100:.2f}%'
 
 
+def points(value):
+    return 'N/A' if value is None else f'{value*100:.2f}%p'
+
+
 def metric(row):
     classification = row['task_type'] in {'medical_mcq','context_qa'}
     return row.get('end_to_end_correct_fraction' if classification else 'end_to_end_lexical_exact_match')
 
 
 def collect(root, repo):
+    campaign=read(repo/'runtime/medvlm_state.json',{})
     summary={'schema_version':'medvlm.public-result.v1','generated_at':datetime.now(timezone.utc).isoformat(),
              'preliminary_single_seed':True,'human_review':'not_performed','clinical_validation':False,
              'data':read(repo/'reports/public_summary/data_freeze.json'), 'models':{},'evaluations':[],
-             'paired':{},'external_paired':{},'image_diagnostics':{},'changes':{},
+             'paired':{},'external_paired':{},'external_evaluations':[],'image_diagnostics':{},'changes':{},
+             'campaign':{k:campaign.get(k) for k in ('stages','current_model','updated_at','active_process')},
              'device':{k:v for k,v in read(root/'runs/device/jetson-inventory-20261023/summary.json',{}).items()
                                   if k in ('status','reason_code','evidence_level','device_outcome','wall_seconds','finished_at')},
              'budget':read(root/'runtime/gpu_budget.json')}
@@ -56,7 +63,19 @@ def collect(root, repo):
                 'best_checkpoint','validation_history','initial_validation','training_selection','validation_selection','selected_validation_loss','adapter_changed',
                 'effective_batch','resume_from','training_pid','finished_at','gpu','host','versions','actual_epochs')
         record={k:manifest.get(k) for k in wanted if k in manifest}
+        record['peak_allocated_bytes']=manifest.get('peak_cuda_allocated_bytes')
+        record['peak_reserved_bytes']=manifest.get('peak_cuda_reserved_bytes')
+        record['recipe']=read(root/'configs'/f'{key}-v1-20261023.json',{})
+        record['validation_curve']=[]
+        events=train/'events.jsonl'
+        if events.exists():
+            for line in events.read_text().splitlines():
+                event=json.loads(line)
+                if event['event'] in ('checkpoint','validation_before_updates'):
+                    record['validation_curve'].append(event)
         record.update(model_id=MODELS[key],revision=manifest.get('revision'),status=manifest.get('status','PREPARED_NOT_RUN'),
+                      campaign={k:v for k,v in campaign.get('models',{}).get(key,{}).items()
+                                if k in ('status','reason_code','phase','evidence_level','campaign_disposition','diagnostics')},
                       manifest_sha256=file_hash(train/'manifest.json') if manifest else None,
                       smoke={k:sm.get(k) for k in ('status','evidence_level','optimizer_steps','adapter_changed')},
                       reload=read(train/'reload.json',{}).get('status','PREPARED_NOT_RUN'),
@@ -84,6 +103,14 @@ def collect(root, repo):
         external=read(root/'runs'/f'{key}-vqarad-paired-comparison.json')
         if external:summary['external_paired'][key]=external
         for mode in ('base','tuned'):
+            run=root/'runs'/f'{key}-vqarad-{mode}-20261023'
+            rm=read(run/'run_manifest.json',{})
+            metrics=read(run/'metrics.json',{})
+            if rm:
+                summary['external_evaluations'].append({'key':key,'model_id':MODELS[key],'mode':mode,
+                    'status':rm.get('status'),'reason_code':rm.get('reason_code'),
+                    'peak_allocated_bytes':rm.get('peak_allocated_bytes'),'cohorts':metrics.get('cohorts',[])})
+        for mode in ('base','tuned'):
             diagnostic=read(root/'runs'/f'{key}-{mode}-image-diagnostic.json')
             if diagnostic:summary['image_diagnostics'][key+'-'+mode]=diagnostic
         left=read(root/'runs'/f'{key}-test-base-20261023/metrics.json',{}).get('scores',[])
@@ -101,13 +128,16 @@ def collect(root, repo):
             summary['changes'][key]=by_source
     for name in KEYS:
         probe=read(root/'manifests/models'/f'{name}.json',{})
+        if not summary['models'][name]['revision']:
+            summary['models'][name]['revision']=probe.get('revision')
         summary['models'][name]['access_probe']={k:probe.get(k) for k in ('status','reason_code','http_status','access_verified_config','processor_class','declared_license','source_url')}
+        summary['models'][name]['license_evidence']=probe.get('license_evidence')
     return portable(summary,root)
 
 
 def csv_rows(summary):
     rows=[]
-    for ev in summary['evaluations']:
+    for ev in summary['evaluations']+summary['external_evaluations']:
         for c in ev['cohorts']:
             rows.append({'model':ev['model_id'],'condition':ev['mode'],'run_status':ev['status'],
                          **{k:c.get(k) for k in ('source_id','task_type','language','subject','scheduled','attempted','completed','valid_answers','correct','exact_matches','coverage','answered_accuracy','answered_lexical_exact_match','end_to_end_correct_fraction','end_to_end_lexical_exact_match','lexical_token_f1','macro_f1','invalid_format_rate','technical_failure_rate','not_attempted_count','truncated_count')},
@@ -128,11 +158,12 @@ def report(summary, root, repo):
         if isinstance(original,dict):original=sum(x for x in original.values() if isinstance(x,int))
         if original is None:original=source.get('actual_downloaded_rows',source.get('original_qa_rows',source.get('qa_records')))
         lines.append(f"| {name} | {original if original is not None else '원본 manifest 참조'} | {count.get('train',0)} | {count.get('validation',0)} | {count.get('test',0)} | {source.get('resolved_applicable_license','source manifest 참조')} |")
-    lines += ['', '학습에는 MedQuAD/PubMedQA와 SLAKE만 사용했다. KorMedMCQA는 한국어 원문 평가 전용, VQA-RAD는 외부 평가 전용이다. 합성·번역 의료 학습 데이터는 추가하지 않았다. 환자 독립성은 확인할 수 없으며, 이미지 유사 후보를 보수적으로 같은 그룹에 묶어 학습 데이터를 제외했다. 소스별 정확한 제외 수·권리·revision·분할 해시는 DATA_REPORT_KO.md와 공개 manifest를 참조한다.', '',
-      '## 실제 학습 및 재로드', '', '| 모델 | v1 상태 | 실제 update | 처리 sample 횟수 | target token | 재로드 |', '|---|---|---:|---:|---:|---|']
+    lines += ['', '학습용 코퍼스로 MedQuAD/PubMedQA와 SLAKE를 준비했다. 실제 사용·완료 여부는 모델별 실행 표를 따른다. KorMedMCQA는 한국어 원문 평가 전용, VQA-RAD는 외부 평가 전용이다. 합성·번역 의료 학습 데이터는 추가하지 않았다. 환자 독립성은 확인할 수 없으며, 이미지 유사 후보를 보수적으로 같은 그룹에 묶어 학습 데이터를 제외했다. 소스별 정확한 제외 수·권리·revision·분할 해시는 DATA_REPORT_KO.md와 공개 manifest를 참조한다.', '',
+      '## 실제 학습 및 재로드', '', '| 모델 | v1 학습 상태 / 전체 셀 상태 | 실제 update | 처리 sample 횟수 | target token | 재로드 |', '|---|---|---:|---:|---:|---|']
     for key,m in summary['models'].items():
-        lines.append(f"| {m['model_id']} | {m['status']} | {m.get('optimizer_steps','—')} | {m.get('samples_processed','—')} | {m.get('supervised_tokens','—')} | {m.get('reload','미실행')} |")
-    lines += ['', '학습 횟수와 평가 완료 수는 별개다. smoke와 본 학습도 별도 run으로 보존했다. Qwen은 NF4 QLoRA, SmolVLM은 BF16 LoRA이며 vision encoder/projector는 동결했다. 선택은 고정 validation loss에만 근거하고 test는 선택에 사용하지 않았다.', '',
+        cell=m['campaign'];disposition=cell.get('reason_code') or cell.get('campaign_disposition') or cell.get('phase','')
+        lines.append(f"| {m['model_id']} | {m['status']} / {cell.get('status','PREPARED_NOT_RUN')} {disposition} | {m.get('optimizer_steps','—')} | {m.get('samples_processed','—')} | {m.get('supervised_tokens','—')} | {m.get('reload','미실행')} |")
+    lines += ['', '학습 횟수와 평가 완료 수는 별개다. smoke와 본 학습도 별도 run으로 보존했다. 기본 설정은 NF4 QLoRA, SmolVLM은 BF16 LoRA이며 vision encoder/projector는 동결했다. 모델별 실제 설정·모듈·메모리·adapter digest는 ADAPTER_CARDS.md와 run_summary.json에 보존했다. 선택은 고정 validation loss에만 근거하고 test는 선택에 사용하지 않았다.', '',
       '## 동일 조건 Base/Tuned 시험 평가', '', '| 모델 | source / 언어 / 직군 | 조건 | 예정/시도/완료/유효 | 주 지표 | coverage | 형식 오류 | 기술 실패 | E2E 중앙값(초) |', '|---|---|---|---|---:|---:|---:|---:|---:|']
     for e in summary['evaluations']:
         if not e['cohorts']:
@@ -146,16 +177,17 @@ def report(summary, root, repo):
       '| 모델 | source | 문항 / 관측 그룹 | Tuned − Base | 그룹 bootstrap 95% CI |', '|---|---|---:|---:|---|']
     for key,pair in summary['paired'].items():
         for c in pair['comparison']:
-            lines.append(f"| {MODELS[key]} | {c['source_id']} | {c['n']} / {c['group_count']} | {pct(c['delta'])} | {pct(c['ci95'][0])} ~ {pct(c['ci95'][1])} |")
+            lines.append(f"| {MODELS[key]} | {c['source_id']} | {c['n']} / {c['group_count']} | {points(c['delta'])} | {points(c['ci95'][0])} ~ {points(c['ci95'][1])} |")
     lines += ['', 'CI는 관측된 문서/이미지 그룹의 문항 표본 불확실성만 반영한다. 학습 seed 변동성·새 환자 임상 일반화는 측정하지 않았다. MedGemma의 SLAKE dataset-level 사전학습 노출은 알려져 있으나 정확한 test 노출 여부는 미상이다. 이번 실행 일반 모델들의 과거 노출도 미상으로 남겼다.', '',
       '## 추가 영상 진단·외부 평가', '',
       '| 모델 | 조건 | 예정 문항 | 차이와 해석 |', '|---|---|---:|---|']
     for key,d in summary['image_diagnostics'].items():
         for c in d['paired_image_minus_no_image']:
-            lines.append(f"| {key} | 같은 모델의 이미지 포함 − 제외 | {c['n']} | lexical EM {pct(c['delta'])}; 미지원 {d['unsupported_ablation_count']}개 |")
+            value='N/A (이미지 제외 추론 전체 미지원)' if d['unsupported_ablation_count']==d['scheduled'] else 'lexical EM '+points(c['delta'])
+            lines.append(f"| {key} | 같은 모델의 이미지 포함 − 제외 | {c['n']} | {value}; 미지원 {d['unsupported_ablation_count']}개 |")
     for key,pair in summary['external_paired'].items():
         for c in pair['comparison']:
-            lines.append(f"| {MODELS[key]} | VQA-RAD 외부 test, Tuned − Base | {c['n']} | lexical EM {pct(c['delta'])}, CI {pct(c['ci95'][0])} ~ {pct(c['ci95'][1])} |")
+            lines.append(f"| {MODELS[key]} | VQA-RAD 외부 test, Tuned − Base | {c['n']} | lexical EM {points(c['delta'])}, CI {points(c['ci95'][0])} ~ {points(c['ci95'][1])} |")
     if not summary['image_diagnostics'] and not summary['external_paired']:lines.append('| — | PREPARED_NOT_RUN | — | N/A |')
     lines += ['', '이미지 제외 조건에는 빈 이미지를 넣지 않는다. 동일 응답만으로 시각 정보가 무시됐다고 단정하지 않는다. 추가 진단은 본 평가 및 남은 모델 예산을 우선한 뒤 실행한다. 전문가 검토표는 로컬에만 준비하며 실제 검토 점수는 비어 있다.', '',
       '## 실행 비용·환경', '', 'RTX 3060 12GB에서 실제 CUDA 연산으로 학습 가능성을 확인했다. NVML kernel/userspace mismatch 때문에 nvidia-smi는 실패했지만 PyTorch forward/backward는 성공했다. 드라이버는 변경하지 않았다.', '',
@@ -164,17 +196,46 @@ def report(summary, root, repo):
     lines += ['', 'GPU 예산은 load/smoke/train/reload/evaluation을 포함한 단일 worker 점유 시간으로 계측한다. 상한은 전체24시간·기반모델별6시간이다. TTFT와 전력·에너지는 측정하지 않아 null이다. tokens/E2E는 전처리와 생성의 합산 처리량이며 순수 decode throughput이 아니다.', '',
       '## 실제 수행·미실행·차단', '',
       '- 실제 수행: 공개 원본 확보, 정제·중복/누수 감사, immutable split freeze, CPU 계약 검사, 위 표에 명시된 GPU 학습·재로드·평가.',
-      '- 접근 재확인: 사용자 새 계정과 추가 승인으로 MedGemma 1.5와 Gemma 3 접근 모두 성공. 과거401/403 시도는 이력으로 보존. Gemma3→Smol은 MedGemma 실패 시에만 사용한다.',
+      '- 접근 재확인: 사용자 새 계정과 추가 승인으로 MedGemma 1.5와 Gemma 3 접근 모두 성공. 과거401/403 시도는 이력으로 보존. 일반 VLM은 Qwen3.5→Qwen3-VL→Qwen2.5-VL, 의료 VLM은 MedGemma→Gemma3 순으로 대체한다. Smol은 아직 완료하지 못한 VLM 셀의 마지막 대안이며 두 셀로 중복 계산하지 않는다.',
       '- 접근 차단: AIHub 71875/71762 인증 및 허용 범위 미확보.',
       '- 권리 확인 보류: MedQA/MedMCQA의 외부 시험·교재 파일 적용 권리 미확정. ROCOv2/PMC-VQA는 등록·권리 조사만 수행.',
       '- 장치 차단: Jetson SSH 호스트 키 검증 자료 없음. 호스트 검증을 우회하지 않았으며 장치 identity·실제 추론 결과는 없다.',
       '- 미실행: 전문가 사실성·안전성 검토, 추가 seed, 임상 검증, 서비스 배포. 자동 점수를 전문가 판정으로 대체하지 않았다.', '',
       '## 재개', '', '정확한 로컬 경로와 명령은 HANDOFF.md에 기록했다. 공개 저장소에서는 다음과 같이 기존 환경을 재사용한다.', '',
       '```bash', 'export MEDVLM_DATA_ROOT="$(realpath ../medvlm-data)"', 'PYTHONPATH=src ../.venv-medvlm/bin/python -m mediflow_medvlm status',
-      'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/complete_v1.py --data-root "$MEDVLM_DATA_ROOT" --skip-download',
+      'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/complete_v1.py --data-root "$MEDVLM_DATA_ROOT"',
       'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/report_v1.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary --plot', '```', '',
       '완료한 run은 동일 config/data/model identity 확인 후 재사용한다. 진행 중인 소유 프로세스가 있으면 중복 실행하지 않는다. 예산 ledger와 checkpoint·source snapshot을 함께 보존한다.']
     return '\n'.join(lines)+'\n'
+
+
+def adapter_cards(summary):
+    lines=['# 모델·adapter 실행 카드','',
+           '공개 의료 데이터의 오프라인 연구용이다. 모델이나 adapter 가중치를 공개 업로드하지 않았다. 자동 lexical 점수와 객관식 결과는 임상 검증이 아니며 전문가 검토는 미실행이다. 각 adapter에는 기반 모델 및 학습 데이터의 이용 조건이 함께 적용된다. `${MEDVLM_DATA_ROOT}`는 실제 로컬 data root다.','']
+    for key,m in summary['models'].items():
+        recipe=m['recipe'];native=m['model'];adapter=m.get('adapter',{}) or {};probe=m['access_probe']
+        lines.extend([f"## {m['model_id']}",'',f"학습 상태 `{m['status']}`, 재로드 `{m['reload']}`, 전체 셀 `{m['campaign'].get('status','PREPARED_NOT_RUN')}`.",'',
+          '| 항목 | 실제 값 또는 사전 설정 |','|---|---|',
+          f"| Base revision | `{m['revision']}` |",
+          f"| Base native files digest | `{(native.get('native_files') or {}).get('sha256','미측정')}` |",
+          f"| Processor / loader | {native.get('processor_class') or probe.get('processor_class')} / {native.get('loader')} |",
+          f"| Native chat template SHA256 | `{native.get('chat_template_sha256')}` |",
+          f"| Adapter 경로 | `{adapter.get('path','미생성')}` |",
+          f"| Adapter digest / parent | `{adapter.get('digest')}` / `{adapter.get('base_revision')}` |",
+          f"| 학습 source / config hash | `{m['code'].get('training_code_sha256')}` / `{m.get('config_hash')}` |",
+          f"| 설정 seed / rank / alpha / dropout | {recipe.get('seed')} / {recipe.get('lora_rank')} / {recipe.get('lora_alpha')} / {recipe.get('lora_dropout')} |",
+          f"| 설정 dtype / quantization / max length | {recipe.get('dtype')} / {recipe.get('quantization')} / {recipe.get('max_length')} |",
+          f"| 실제 학습 / 동결 parameter 수 | {native.get('trainable_parameters')} / {native.get('frozen_parameters')} |",
+          f"| 실제 target module 수 / SHA256 | {m['target_modules_count']} / `{m['target_modules_sha256']}` |",
+          f"| 실제 sample pass / target token / update | {m.get('samples_processed')} / {m.get('supervised_tokens')} / {m.get('optimizer_steps')} |",
+          f"| 실제 epoch / effective batch | {m.get('actual_epochs')} / {m.get('effective_batch')} |",
+          f"| 학습 wall seconds / GPU seconds | {m.get('wall_seconds')} / {m.get('gpu_seconds')} |",
+          f"| Peak CUDA allocated / reserved bytes | {m.get('peak_allocated_bytes')} / {m.get('peak_reserved_bytes')} |",
+          f"| 선언 license / 원본 근거 | {probe.get('declared_license')} / {probe.get('source_url')} |",''])
+        evidence=m.get('license_evidence')
+        if evidence:lines.extend([f"추가 이용 조건 근거: {evidence.get('exact_name')}. {evidence.get('scope_note','')} [{evidence.get('license_id','license')}]({evidence.get('source_url')}).",''])
+        lines.extend(['원본 설정, 정확한 target module 목록, 환경 버전, train/dev digest, validation 선정과 source snapshot은 해당 로컬 run의 `config.json`, `manifest.json`, `selection.json`, `reload.json`에 보존한다. 미실행 모델의 null은 측정값이 아니다.',''])
+    return '\n'.join(lines)
 
 
 def plots(summary,destination):
@@ -218,6 +279,7 @@ def main():
     root=Path(args.data_root).resolve();repo=Path(__file__).resolve().parents[1];out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     summary=collect(root,repo);atomic_json(out/'run_summary.json',summary)
     (out/'RESULTS_KO.md').write_text(report(summary,root,repo),encoding='utf-8')
+    (out/'ADAPTER_CARDS.md').write_text(adapter_cards(summary),encoding='utf-8')
     rows=csv_rows(summary)
     if rows:
         with (out/'paired_metrics.csv').open('w',encoding='utf-8-sig',newline='') as f:

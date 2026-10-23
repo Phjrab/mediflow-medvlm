@@ -234,6 +234,25 @@ def optional_diagnostics(config_path, root, key, test_protocol, results, selecti
     return outcomes
 
 
+def fallback_not_needed(models, key):
+    succeeded=lambda names:any(models.get(name,{}).get('status')=='SUCCEEDED' for name in names)
+    general=['qwen35_2b','qwen3vl_2b','qwen25vl_3b']
+    medical=['medgemma15_4b','gemma3_4b']
+    if key=='qwen3vl_2b':return succeeded(general[:1])
+    if key=='qwen25vl_3b':return succeeded(general[:2])
+    if key=='gemma3_4b':return succeeded(medical[:1])
+    if key=='smolvlm_500m':return succeeded(general) and succeeded(medical)
+    return False
+
+
+def expand_general_fallbacks(keys):
+    expanded=[]
+    for key in keys:
+        for candidate in ([key,'qwen3vl_2b','qwen25vl_3b'] if key=='qwen35_2b' else [key]):
+            if candidate not in expanded:expanded.append(candidate)
+    return expanded
+
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--data-root',required=True)
     parser.add_argument('--keys',nargs='+',default=['qwen3_17b','qwen3_4b','qwen35_2b','medgemma15_4b','gemma3_4b','smolvlm_500m'])
@@ -249,13 +268,13 @@ def main():
     state['data_root']=str(root);state['campaign_pid']=os.getpid();state['config_policy_hash']=canonical_hash(policy)
     state['active_process']={'pid':os.getpid(),'role':'finite_campaign'}
     atomic_json(state_path,state)
-    for key in args.keys:
-        predecessors={'gemma3_4b':['medgemma15_4b'], 'smolvlm_500m':['medgemma15_4b','gemma3_4b']}.get(key,[])
-        if any(state['models'].get(parent,{}).get('status')=='SUCCEEDED' for parent in predecessors):
+    for key in expand_general_fallbacks(args.keys):
+        if fallback_not_needed(state['models'],key):
             if key in state['models']:
                 state['models'][key]['campaign_disposition']='FALLBACK_NOT_NEEDED'
             else:
-                state['models'][key]={'model_id':{'gemma3_4b':'google/gemma-3-4b-it','smolvlm_500m':'HuggingFaceTB/SmolVLM-500M-Instruct'}[key],
+                state['models'][key]={'model_id':{'qwen3vl_2b':'Qwen/Qwen3-VL-2B-Instruct','qwen25vl_3b':'Qwen/Qwen2.5-VL-3B-Instruct',
+                                                'gemma3_4b':'google/gemma-3-4b-it','smolvlm_500m':'HuggingFaceTB/SmolVLM-500M-Instruct'}[key],
                                      'status':'PREPARED_NOT_RUN','evidence_level':'IMPLEMENTED_ONLY','reason_code':'FALLBACK_NOT_NEEDED'}
             atomic_json(state_path,state)
             continue
