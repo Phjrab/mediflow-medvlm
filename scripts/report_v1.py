@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import tempfile
 from pathlib import Path
@@ -43,12 +44,47 @@ def metric(row):
     return row.get('end_to_end_correct_fraction' if classification else 'end_to_end_lexical_exact_match')
 
 
+def weight_inventory(config):
+    if not config.get('cache_dir') or not config.get('revision'):
+        return {'status':'PREPARED_NOT_RUN','reason_code':'NO_CONFIG'}
+    snapshot=Path(config['cache_dir'])/('models--'+config['model_id'].replace('/','--'))/'snapshots'/config['revision']
+    index=read(snapshot/'model.safetensors.index.json',{})
+    if not index and not (snapshot/'model.safetensors').is_file():
+        return {'status':'PREPARED_NOT_RUN','evidence_level':'LOCAL_FILE_PRESENCE_ONLY',
+                'expected_weight_files':None,'present_weight_files':0,'present_bytes':0,
+                'reason_code':'WEIGHTS_NOT_PRESENT_SHARD_COUNT_UNRESOLVED'}
+    names=sorted(set(index.get('weight_map',{}).values())) or ['model.safetensors']
+    present=[name for name in names if (snapshot/name).is_file()]
+    return {'status':'SUCCEEDED' if len(present)==len(names) else 'PREPARED_NOT_RUN',
+            'evidence_level':'LOCAL_FILE_PRESENCE_ONLY','expected_weight_files':len(names),
+            'present_weight_files':len(present),'present_bytes':sum((snapshot/name).stat().st_size for name in present),
+            'note':'Presence is not proof of model load, optimizer update, or adapter reload.'}
+
+
+def prediction_runtime(run):
+    path=run/'predictions.jsonl'
+    if not path.exists():return None
+    latencies=[];tokens=0
+    with path.open() as stream:
+        for line in stream:
+            record=json.loads(line)
+            latency=record.get('timing',{}).get('e2e_seconds')
+            if latency is not None:
+                latencies.append(latency);tokens+=record.get('output_tokens',0)
+    latencies.sort();seconds=sum(latencies)
+    return {'measured_attempts':len(latencies),'generated_tokens':tokens,'summed_e2e_seconds':seconds,
+            'generated_tokens_per_summed_e2e_second':tokens/seconds if seconds else None,
+            'p95_e2e_seconds_nearest_rank':latencies[math.ceil(.95*len(latencies))-1] if latencies else None,
+            'decode_only_tokens_per_second':None,'ttft_seconds':None,'energy_joules':None}
+
+
 def collect(root, repo):
     campaign=read(repo/'runtime/medvlm_state.json',{})
     summary={'schema_version':'medvlm.public-result.v1','generated_at':datetime.now(timezone.utc).isoformat(),
              'preliminary_single_seed':True,'human_review':'not_performed','clinical_validation':False,
              'data':read(repo/'reports/public_summary/data_freeze.json'), 'models':{},'evaluations':[],
-             'paired':{},'external_paired':{},'external_evaluations':[],'image_diagnostics':{},'changes':{},
+             'data_repairs':read(repo/'reports/public_summary/vqarad_image_provenance_repair.json'),
+             'paired':{},'external_paired':{},'incomplete_comparisons':{},'external_evaluations':[],'image_diagnostics':{},'changes':{},
              'campaign':{k:campaign.get(k) for k in ('stages','current_model','updated_at','active_process')},
              'device':{k:v for k,v in read(root/'runs/device/jetson-inventory-20261023/summary.json',{}).items()
                                   if k in ('status','reason_code','evidence_level','device_outcome','wall_seconds','finished_at')},
@@ -66,6 +102,7 @@ def collect(root, repo):
         record['peak_allocated_bytes']=manifest.get('peak_cuda_allocated_bytes')
         record['peak_reserved_bytes']=manifest.get('peak_cuda_reserved_bytes')
         record['recipe']=read(root/'configs'/f'{key}-v1-20261023.json',{})
+        record['weights']=weight_inventory(record['recipe'])
         record['validation_curve']=[]
         events=train/'events.jsonl'
         if events.exists():
@@ -81,8 +118,8 @@ def collect(root, repo):
                       reload=read(train/'reload.json',{}).get('status','PREPARED_NOT_RUN'),
                       selected_checkpoint=selection.get('checkpoint'),selection=selection,reload_verified=selection.get('reload_verified',False),
                       model={k:model.get(k) for k in ('dtype','quantization','native_files','chat_template_sha256','trainable_parameters','frozen_parameters','vision_encoder_frozen','loader','processor_class')},
-                      target_modules_count=len(model.get('exact_target_modules',[])),
-                      target_modules_sha256=canonical_hash(model.get('exact_target_modules',[])),
+                      target_modules_count=len(model['exact_target_modules']) if 'exact_target_modules' in model else None,
+                      target_modules_sha256=canonical_hash(model['exact_target_modules']) if 'exact_target_modules' in model else None,
                       code={k:manifest.get('code',{}).get(k) for k in ('commit','dirty','source_tree_sha256','training_code_sha256')})
         summary['models'][key]=record
         for mode in ('base','tuned'):
@@ -98,10 +135,19 @@ def collect(root, repo):
                 'ttft_seconds':None,'energy_joules':None,'cohorts':metrics.get('cohorts',[]),
                 'korean_original_eval':metrics.get('korean_original_eval'),'vqa_subgroups':metrics.get('vqa_subgroups',[]),
                 'measurement':rm.get('measurement')})
+            summary['evaluations'][-1]['runtime']=prediction_runtime(run)
         pair=read(root/'runs'/f'{key}-paired-comparison.json')
-        if pair:summary['paired'][key]=pair
+        pair_complete=record['campaign'].get('status')=='SUCCEEDED' and all(
+            read(root/'runs'/f'{key}-test-{mode}-20261023/run_manifest.json',{}).get('status')=='SUCCEEDED'
+            for mode in ('base','tuned'))
+        if pair:
+            if pair_complete:summary['paired'][key]=pair
+            else:summary['incomplete_comparisons'][key]=pair
         external=read(root/'runs'/f'{key}-vqarad-paired-comparison.json')
-        if external:summary['external_paired'][key]=external
+        if external:
+            external_complete=all(read(root/'runs'/f'{key}-vqarad-{mode}-20261023/run_manifest.json',{}).get('status')=='SUCCEEDED' for mode in ('base','tuned'))
+            if external_complete:summary['external_paired'][key]=external
+            else:summary['incomplete_comparisons'][key+'-vqarad']=external
         for mode in ('base','tuned'):
             run=root/'runs'/f'{key}-vqarad-{mode}-20261023'
             rm=read(run/'run_manifest.json',{})
@@ -109,7 +155,8 @@ def collect(root, repo):
             if rm:
                 summary['external_evaluations'].append({'key':key,'model_id':MODELS[key],'mode':mode,
                     'status':rm.get('status'),'reason_code':rm.get('reason_code'),
-                    'peak_allocated_bytes':rm.get('peak_allocated_bytes'),'cohorts':metrics.get('cohorts',[])})
+                    'peak_allocated_bytes':rm.get('peak_allocated_bytes'),'cohorts':metrics.get('cohorts',[]),
+                    'vqa_subgroups':metrics.get('vqa_subgroups',[])})
         for mode in ('base','tuned'):
             diagnostic=read(root/'runs'/f'{key}-{mode}-image-diagnostic.json')
             if diagnostic:summary['image_diagnostics'][key+'-'+mode]=diagnostic
@@ -130,8 +177,9 @@ def collect(root, repo):
         probe=read(root/'manifests/models'/f'{name}.json',{})
         if not summary['models'][name]['revision']:
             summary['models'][name]['revision']=probe.get('revision')
-        summary['models'][name]['access_probe']={k:probe.get(k) for k in ('status','reason_code','http_status','access_verified_config','processor_class','declared_license','source_url')}
+        summary['models'][name]['access_probe']={k:probe.get(k) for k in ('status','reason_code','http_status','access_verified_config','processor_class','declared_license','source_url','checked_at','evidence_level','native_processor_cpu_status','weights_loaded','forward_tested','backward_tested')}
         summary['models'][name]['license_evidence']=probe.get('license_evidence')
+        summary['models'][name]['weight_access_probe']=read(root/'manifests/models'/f'{name}-weight-access.json')
     return portable(summary,root)
 
 
@@ -158,6 +206,8 @@ def report(summary, root, repo):
         if isinstance(original,dict):original=sum(x for x in original.values() if isinstance(x,int))
         if original is None:original=source.get('actual_downloaded_rows',source.get('original_qa_rows',source.get('qa_records')))
         lines.append(f"| {name} | {original if original is not None else '원본 manifest 참조'} | {count.get('train',0)} | {count.get('validation',0)} | {count.get('test',0)} | {source.get('resolved_applicable_license','source manifest 참조')} |")
+    if summary['data_repairs']:
+        lines += ['', '외부 VQA-RAD 평가를 준비할 때 이미지 해시 필드 누락을 발견해 provenance를 수정하고 새 aggregate freeze를 만들었다. 원본316파일과451개 영상 참조를 재검증했다. 질문·정답·ID·이미지·core 학습 분할은 그대로이며 이전 freeze도 보존했다. 수정 전 외부 추론·점수는 없었다. 상세 변경 이력은 `vqarad_image_provenance_repair.json`이다.']
     lines += ['', '학습용 코퍼스로 MedQuAD/PubMedQA와 SLAKE를 준비했다. 실제 사용·완료 여부는 모델별 실행 표를 따른다. KorMedMCQA는 한국어 원문 평가 전용, VQA-RAD는 외부 평가 전용이다. 합성·번역 의료 학습 데이터는 추가하지 않았다. 환자 독립성은 확인할 수 없으며, 이미지 유사 후보를 보수적으로 같은 그룹에 묶어 학습 데이터를 제외했다. 소스별 정확한 제외 수·권리·revision·분할 해시는 DATA_REPORT_KO.md와 공개 manifest를 참조한다.', '',
       '## 실제 학습 및 재로드', '', '| 모델 | v1 학습 상태 / 전체 셀 상태 | 실제 update | 처리 sample 횟수 | target token | 재로드 |', '|---|---|---:|---:|---:|---|']
     for key,m in summary['models'].items():
@@ -178,7 +228,22 @@ def report(summary, root, repo):
     for key,pair in summary['paired'].items():
         for c in pair['comparison']:
             lines.append(f"| {MODELS[key]} | {c['source_id']} | {c['n']} / {c['group_count']} | {points(c['delta'])} | {points(c['ci95'][0])} ~ {points(c['ci95'][1])} |")
+    lines += ['', '| 모델 | source | 개선 | 동일 | 퇴보 |', '|---|---|---:|---:|---:|']
+    for key,sources in summary['changes'].items():
+        for source,counts in sources.items():
+            lines.append(f"| {MODELS[key]} | {source} | {counts['improved']} | {counts['unchanged']} | {counts['regressed']} |")
+    lines += ['', '개선·퇴보는 같은 문항의 이산 정답/lexical EM 변화에 대한 사후 집계다. 예시 opaque ID와 상태 변화는 run_summary.json에 보존하고 원문·응답은 로컬 제한 artifact에만 둔다. 한국어 성능 변화에는 정답 내용과 출력 형식 준수의 변화가 함께 포함된다.']
     lines += ['', 'CI는 관측된 문서/이미지 그룹의 문항 표본 불확실성만 반영한다. 학습 seed 변동성·새 환자 임상 일반화는 측정하지 않았다. MedGemma의 SLAKE dataset-level 사전학습 노출은 알려져 있으나 정확한 test 노출 여부는 미상이다. 이번 실행 일반 모델들의 과거 노출도 미상으로 남겼다.', '',
+      '## VQA 하위집단', '',
+      '| 모델 | source | 조건 | 구분 | 값 | 예정/유효 | lexical EM | token F1 |',
+      '|---|---|---|---|---|---:|---:|---:|']
+    subgroups=0
+    for ev in summary['evaluations']+summary['external_evaluations']:
+        for group in ev.get('vqa_subgroups',[]):
+            c=group['metrics'];subgroups+=1
+            lines.append(f"| {ev['model_id']} | {group['source_id']} | {ev['mode']} | {group['dimension']} | {group['value'] or '미상'} | {c['scheduled']}/{c['valid_answers']} | {pct(metric(c))} | {pct(c['lexical_token_f1'])} |")
+    if not subgroups:lines.append('| — | — | PREPARED_NOT_RUN | — | — | — | N/A | N/A |')
+    lines += ['', '질문 유형과 영상 종류는 원본 metadata를 사용했다. 서로 겹치는 구분이므로 행들의 예정 수를 합산하지 않는다. 작은 하위집단의 차이는 임상 일반화를 뜻하지 않는다.', '',
       '## 추가 영상 진단·외부 평가', '',
       '| 모델 | 조건 | 예정 문항 | 차이와 해석 |', '|---|---|---:|---|']
     for key,d in summary['image_diagnostics'].items():
@@ -189,6 +254,17 @@ def report(summary, root, repo):
         for c in pair['comparison']:
             lines.append(f"| {MODELS[key]} | VQA-RAD 외부 test, Tuned − Base | {c['n']} | lexical EM {points(c['delta'])}, CI {points(c['ci95'][0])} ~ {points(c['ci95'][1])} |")
     if not summary['image_diagnostics'] and not summary['external_paired']:lines.append('| — | PREPARED_NOT_RUN | — | N/A |')
+    for key,model in summary['models'].items():
+        for name,outcome in model['campaign'].get('diagnostics',{}).items():
+            if outcome.get('status') in ('FAILED_REPRODUCIBLE','SKIPPED_BUDGET','BLOCKED_HARDWARE','BLOCKED_ACCESS'):
+                lines.append(f"| {MODELS[key]} | {name} | — | {outcome['status']}: {outcome.get('reason_code','예산 제한')} |")
+    if summary['external_evaluations']:
+        lines += ['', '| 모델 | VQA-RAD 조건 | 예정/시도/완료/유효 | lexical EM | token F1 | 기술 실패 |',
+                  '|---|---|---:|---:|---:|---:|']
+        for ev in summary['external_evaluations']:
+            for c in ev['cohorts']:
+                den='/'.join(str(c[k]) for k in ('scheduled','attempted','completed','valid_answers'))
+                lines.append(f"| {ev['model_id']} | {ev['mode']} ({ev['status']}) | {den} | {pct(metric(c))} | {pct(c['lexical_token_f1'])} | {pct(c['technical_failure_rate'])} |")
     lines += ['', '이미지 제외 조건에는 빈 이미지를 넣지 않는다. 동일 응답만으로 시각 정보가 무시됐다고 단정하지 않는다. 추가 진단은 본 평가 및 남은 모델 예산을 우선한 뒤 실행한다. 전문가 검토표는 로컬에만 준비하며 실제 검토 점수는 비어 있다.', '',
       '## 실행 비용·환경', '', 'RTX 3060 12GB에서 실제 CUDA 연산으로 학습 가능성을 확인했다. NVML kernel/userspace mismatch 때문에 nvidia-smi는 실패했지만 PyTorch forward/backward는 성공했다. 드라이버는 변경하지 않았다.', '',
       '| 기반 모델 | 누적 GPU 점유(시간) |', '|---|---:|']
@@ -206,6 +282,15 @@ def report(summary, root, repo):
       'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/complete_v1.py --data-root "$MEDVLM_DATA_ROOT"',
       'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/report_v1.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary --plot', '```', '',
       '완료한 run은 동일 config/data/model identity 확인 후 재사용한다. 진행 중인 소유 프로세스가 있으면 중복 실행하지 않는다. 예산 ledger와 checkpoint·source snapshot을 함께 보존한다.']
+    lines += ['', '## 실제 시험 추론 계측', '',
+              '| 모델 | 조건 | 계측 시도 수 | 생성 token | 합산 E2E(초) | token / 합산 E2E | E2E p95(초) | peak allocated / reserved bytes |',
+              '|---|---|---:|---:|---:|---:|---:|---:|']
+    for ev in summary['evaluations']:
+        timing=ev.get('runtime')
+        if not timing:continue
+        rate=timing['generated_tokens_per_summed_e2e_second'];p95=timing['p95_e2e_seconds_nearest_rank']
+        lines.append(f"| {ev['model_id']} | {ev['mode']} | {timing['measured_attempts']} | {timing['generated_tokens']} | {timing['summed_e2e_seconds']:.3f} | {rate:.3f} | {p95:.3f} | {ev['peak_allocated_bytes']} / {ev['peak_reserved_bytes']} |" if rate is not None and p95 is not None else f"| {ev['model_id']} | {ev['mode']} | {timing['measured_attempts']} | {timing['generated_tokens']} | N/A | N/A | N/A | N/A |")
+    lines += ['', 'E2E p95는 계측된 문항 지연의 nearest-rank 값이다. model load와 validation warmup은 제외하고 전처리·생성·parsing은 포함한다. peak memory는 run 전체 단위이며 source별 별도 peak로 해석하지 않는다.']
     return '\n'.join(lines)+'\n'
 
 
@@ -217,6 +302,7 @@ def adapter_cards(summary):
         lines.extend([f"## {m['model_id']}",'',f"학습 상태 `{m['status']}`, 재로드 `{m['reload']}`, 전체 셀 `{m['campaign'].get('status','PREPARED_NOT_RUN')}`.",'',
           '| 항목 | 실제 값 또는 사전 설정 |','|---|---|',
           f"| Base revision | `{m['revision']}` |",
+          f"| 로컬 native weights 파일 | {m['weights']['status']} ({m['weights'].get('present_weight_files',0)}/{m['weights'].get('expected_weight_files') or '총수 미확인'} files, {m['weights'].get('present_bytes',0)} bytes); 로드 성공과 별개 |",
           f"| Base native files digest | `{(native.get('native_files') or {}).get('sha256','미측정')}` |",
           f"| Processor / loader | {native.get('processor_class') or probe.get('processor_class')} / {native.get('loader')} |",
           f"| Native chat template SHA256 | `{native.get('chat_template_sha256')}` |",
@@ -234,7 +320,7 @@ def adapter_cards(summary):
           f"| 선언 license / 원본 근거 | {probe.get('declared_license')} / {probe.get('source_url')} |",''])
         evidence=m.get('license_evidence')
         if evidence:lines.extend([f"추가 이용 조건 근거: {evidence.get('exact_name')}. {evidence.get('scope_note','')} [{evidence.get('license_id','license')}]({evidence.get('source_url')}).",''])
-        lines.extend(['원본 설정, 정확한 target module 목록, 환경 버전, train/dev digest, validation 선정과 source snapshot은 해당 로컬 run의 `config.json`, `manifest.json`, `selection.json`, `reload.json`에 보존한다. 미실행 모델의 null은 측정값이 아니다.',''])
+        lines.extend(['원본 설정, 정확한 target module 목록, 환경 버전, train/dev digest, validation 선정과 source snapshot은 해당 로컬 run의 `config.json`, `manifest.json`, `selection.json`, `reload.json`에 보존한다. 동결 parameter 수는 로드한 quantized tensor의 numel 합으로, 원본 모델 규모와 다를 수 있다. 미실행 모델의 null은 측정값이 아니다.',''])
     return '\n'.join(lines)
 
 
@@ -285,6 +371,9 @@ def main():
         with (out/'paired_metrics.csv').open('w',encoding='utf-8-sig',newline='') as f:
             writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
     if args.plot:plots(summary,out)
-    print(json.dumps({'output':str(out),'trained':sum(x.get('optimizer_steps',0)>0 for x in summary['models'].values()),'evaluated_pairs':len(summary['paired'])}))
+    print(json.dumps({'output':str(out),
+        'optimizer_updated_models':sum(x.get('optimizer_steps',0)>0 for x in summary['models'].values()),
+        'trained_and_reloaded_models':sum(x['status']=='SUCCEEDED' and x['reload']=='SUCCEEDED' and x['reload_verified'] for x in summary['models'].values()),
+        'evaluated_pairs':len(summary['paired'])}))
 
 if __name__=='__main__':main()

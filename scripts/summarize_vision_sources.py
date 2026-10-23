@@ -47,7 +47,7 @@ def main():
                     "official_url": "https://huggingface.co/datasets/RadGenome/PMC-VQA", "resolved_revision": "b56ae594f794867893143b337b4118a835794647", "dataset_license": "CC BY-SA (exact version not specified by card)", "original_article_licenses": "CC0/CC BY per author card; retain PMCID license list", "code_license": "MIT repository only", "image_archive_bytes": {"images.zip": 18945102275, "images_2.zip": 2206255503}, "next_action": "Separate later-scale QA campaign retaining train/test/test_clean and version2 artifacts, PMCID/figure/license metadata"},
     })
     output = {"schema_version": "medvlm.vision-sources.public.v1", "checked_date_asia_seoul": "2026-10-23", "sources": sources,
-              "implemented_tests": {"command": "PYTHONPATH=src python -m pytest tests/test_slake.py tests/test_supplemental.py tests/test_vqarad.py -q", "passed": 13},
+              "verification_reference": "reports/public_summary/verification.json; source-specific test coverage is included in the core suite",
               "resume_commands": ["PYTHONPATH=src python -m mediflow_medvlm.data.slake --data-root ../medvlm-data --fetch", "PYTHONPATH=src python -m mediflow_medvlm.data.vqarad --data-root ../medvlm-data --fetch", "python scripts/summarize_vision_sources.py --data-root ../medvlm-data"],
               "cross_source_exact_pixel_duplicate_count": len(slake_pixels & vqa_pixels),
               "cross_source_perceptual_equivalence_review": "not performed; exact-pixel screen does not prove different patients",

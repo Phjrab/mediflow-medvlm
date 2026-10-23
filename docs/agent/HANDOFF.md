@@ -17,7 +17,7 @@ export WANDB_DISABLED=true
 
 GPU와 네트워크는 이 desktop의 일반 sandbox에서 보이지 않았으며 승인된 실행 환경에서는 작동했다. `nvidia-smi`의 NVML 불일치를 GPU 부재로 간주하지 말고 doctor의 실제 forward/backward 증거를 확인한다. 시스템 드라이버를 변경하지 않는다. 가중치와 x86 환경을 Jetson에 그대로 복사하지 않는다.
 
-학습 core freeze ID는 `1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5`이고 파일 SHA256은 `af46823da1e4f4408480de16634460c20d2cc2b9c04b54583d20ebb1a875b934`다. 외부 VQA-RAD를 추가한 aggregate freeze ID는 `4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07`이다. core 학습 파일을 aggregate 구축 과정에서 덮어쓰지 않았다. 모든 train/dev/test의 immutable JSONL은 `frozen/<split-sha256>/<split>.jsonl`이다.
+학습 core freeze ID는 `1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5`이고 파일 SHA256은 `af46823da1e4f4408480de16634460c20d2cc2b9c04b54583d20ebb1a875b934`다. 외부 VQA-RAD를 추가한 aggregate freeze ID는 `1562258c4b5b6f3b4c5c8948851fbb972da603cd63bff528aa7d278cf2253c86`이다. core 학습 파일을 aggregate 구축 과정에서 덮어쓰지 않았다. 모든 train/dev/test의 immutable JSONL은 `frozen/<split-sha256>/<split>.jsonl`이다.
 
 ## 재개 순서
 

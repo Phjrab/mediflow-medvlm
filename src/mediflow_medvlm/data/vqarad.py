@@ -187,6 +187,10 @@ def run(root, fetch=False):
                      fetched_at=manifest["retrieved_at"], raw_sha256=manifest["files"][0]["sha256"],
                      metadata={key: raw_row.get(key) for key in ("phrase_type", "qid_linked_id", "image_case_url", "image_name", "image_organ", "evaluation", "question_relation", "question_type", "answer_type")})
         row["input"]["images"] = [info["path"]]
+        # The raw QA JSON and the referenced JPEG are distinct verified assets.
+        # Keep both hashes so the shared renderer validates the actual image.
+        row["provenance"].update({"image_sha256": info["sha256"],
+                                  "transformation_version": "medvlm.vqarad.image-provenance.v2"})
         row["group_ids"].update({"image": "vqa_rad:" + info["decoded_pixel_hash"], "study": "vqa_rad:case:" + digest(raw_row["image_case_url"]), "parent": "vqa_rad:" + str(raw_row["qid_linked_id"])})
         row["grouping_quality"] = {"status": "verified", "level": "image_and_source_case", "patient_group_verified": False}
         row["metadata"].update({"image_sha256": info["sha256"], "decoded_pixel_hash": info["decoded_pixel_hash"], "image_decode_verified": True,

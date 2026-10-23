@@ -125,8 +125,8 @@
     }
   },
   "evidence_level": "CPU_TESTED",
-  "freeze_id": "4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07",
-  "manifest_path": "${MEDVLM_DATA_ROOT}/manifests/freeze-4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07.json",
+  "freeze_id": "1562258c4b5b6f3b4c5c8948851fbb972da603cd63bff528aa7d278cf2253c86",
+  "manifest_path": "${MEDVLM_DATA_ROOT}/manifests/freeze-1562258c4b5b6f3b4c5c8948851fbb972da603cd63bff528aa7d278cf2253c86.json",
   "near_duplicate_candidate_count": 2,
   "patient_group_verified": false,
   "raw_data_redistributed": false,
@@ -291,8 +291,8 @@
       "input_content_digest": "2e17dcdd3541c42b387f3ce137edfe7e5d17f261a77c63dc49d22e0f86ecd65d",
       "original_content_digest": "2d3e0e211977d9fab78d6e43829a87fa3621cfa031c8daeec08b48e32e569090",
       "path": "${MEDVLM_DATA_ROOT}/processed/vqa_rad/test.jsonl",
-      "sha256": "f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe",
-      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe/test.jsonl"
+      "sha256": "0ab3919e0afd4ac5ade7599c12bc4db680a33c8f854f4eecc980d43b5b6cc3a7",
+      "snapshot_path": "${MEDVLM_DATA_ROOT}/frozen/0ab3919e0afd4ac5ade7599c12bc4db680a33c8f854f4eecc980d43b5b6cc3a7/test.jsonl"
     },
     "vqa_rad/train": {
       "count": 0,

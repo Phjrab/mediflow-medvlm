@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-23T12:18:49.030990+00:00",
+  "changed_fields": [
+    "provenance.image_sha256",
+    "provenance.transformation_version"
+  ],
+  "core_and_other_split_bytes_unchanged": true,
+  "critical_error_count": 0,
+  "external_rows_verified": 451,
+  "input_supervision_ids_groups_unchanged": true,
+  "new_external_test_sha256": "0ab3919e0afd4ac5ade7599c12bc4db680a33c8f854f4eecc980d43b5b6cc3a7",
+  "new_freeze_id": "1562258c4b5b6f3b4c5c8948851fbb972da603cd63bff528aa7d278cf2253c86",
+  "old_external_test_sha256": "f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe",
+  "old_freeze_id": "4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07",
+  "old_immutable_manifest_preserved_sha256": "ecb82906497078f5f6f8af0b0d20f1dc48c7d32bdfa0d680799faf335cc94127",
+  "policy": "same predeclared deterministic cap64; no prior external test inference or score",
+  "prior_external_attempt": "FAILED_REPRODUCIBLE before protocol freeze or any inference",
+  "protocol_sha256": "f2983048e1e7747864c3eaa26956317784b9baf7b79f6dcb41470a42b32cbf41",
+  "raw_files_verified": 316,
+  "reason_code": "EXPLICIT_IMAGE_PROVENANCE_HASH_MISSING",
+  "record_count": 19866,
+  "schema_version": "medvlm.data-repair.v1",
+  "sft_data_changed": false,
+  "status": "SUCCEEDED",
+  "training_renderer_changed": false
+}

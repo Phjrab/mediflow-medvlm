@@ -1,0 +1,99 @@
+{
+  "schema_version": "medvlm.verification.v1",
+  "started_epoch": 1792758075.00795,
+  "finished_epoch": 1792758075.6450188,
+  "code_commit": "4e3a5841a75943735a95deaec3a8c6cf71a22690",
+  "tested_scope": "core and CPU contracts; optional native training tests skipped by default",
+  "command": "PYTHONPATH=src CUDA_VISIBLE_DEVICES= ../.venv-core310/bin/python -m pytest -o addopts= -q",
+  "exit_code": 0,
+  "log_sha256": "dcea270f77a648178bb798391bcb34075cf79b3e1d6ecfdb5dd9f42fcaeb68af",
+  "result_tail": [
+    "..................................................................... [ 47%]",
+    "..............................................ssssss................. [ 95%]",
+    ".......                                                                  [100%]",
+    "=============================== warnings summary ===============================",
+    "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+    "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+    "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+    "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+    "tests/test_slake.py::test_image_conditioned_input_conflicts_are_quarantined",
+    "tests/test_vqarad.py::test_vqarad_canonical_image_hash_is_consumable_by_renderer",
+    "  ${MEDVLM_REPO}/src/mediflow_medvlm/data/slake.py:148: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.",
+    "    pixels = list(gray.getdata())",
+    "",
+    "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+    "139 passed, 6 skipped, 6 warnings, 6 subtests passed in 0.51s"
+  ],
+  "previous_native_cpu_check": {
+    "status": "SUCCEEDED",
+    "passed": 16,
+    "scope": "synthetic CPU native LoRA, resume, and checkpoint hardening; not medical GPU evidence",
+    "command": "MEDVLM_RUN_TRAINING_TESTS=1 CUDA_VISIBLE_DEVICES='' PYTHONPATH=src ../.venv-medvlm/bin/python -m pytest tests/test_training_contracts.py tests/test_training_native.py tests/test_training_hardening.py",
+    "evidence_origin": "observed tool execution before cff6547 commit",
+    "separate_log_retained": false
+  },
+  "remote_ci": {
+    "commit": "4e3a5841a75943735a95deaec3a8c6cf71a22690",
+    "run_id": 39932678838,
+    "workflow": "Test",
+    "conclusion": "success",
+    "python_matrix": [
+      "3.10",
+      "3.11",
+      "3.12"
+    ]
+  },
+  "remote_ci_history": [
+    {
+      "commit": "cff65471c426856007e58adf62c8078101a63441",
+      "run_id": 39929597344,
+      "workflow": "Test",
+      "conclusion": "success",
+      "python_matrix": [
+        "3.10",
+        "3.11",
+        "3.12"
+      ]
+    },
+    {
+      "commit": "4e3a5841a75943735a95deaec3a8c6cf71a22690",
+      "run_id": 39932678838,
+      "workflow": "Test",
+      "conclusion": "success",
+      "python_matrix": [
+        "3.10",
+        "3.11",
+        "3.12"
+      ]
+    }
+  ],
+  "previous_core_checks": [
+    {
+      "started_epoch": 1792748488.6192737,
+      "finished_epoch": 1792748489.2637188,
+      "code_commit": "4e3a5841a75943735a95deaec3a8c6cf71a22690",
+      "exit_code": 0,
+      "log_sha256": "369cc263ba4e489a525d194b5801891fae1649e412ad5f8edec540e5c1afd8d8",
+      "result_tail": [
+        "......                                                                   [100%]",
+        "=============================== warnings summary ===============================",
+        "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+        "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+        "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+        "tests/test_slake.py::test_decode_identity_and_heldout_preservation",
+        "tests/test_slake.py::test_image_conditioned_input_conflicts_are_quarantined",
+        "  ${MEDVLM_REPO}/src/mediflow_medvlm/data/slake.py:148: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.",
+        "    pixels = list(gray.getdata())",
+        "",
+        "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+        "138 passed, 6 skipped, 5 warnings, 6 subtests passed in 0.51s"
+      ]
+    }
+  ],
+  "working_tree_dirty": true,
+  "checked_patch_sha256": "b9214ec60e21d98593ba20de8ceb206a26a44ba23699920f162c622adf0d5d04",
+  "checked_source_files": {
+    "src/mediflow_medvlm/data/vqarad.py": "044efeec0b92bb43039f727daedfd8acab189d458b9b18ae87cfe80828df46e4",
+    "tests/test_vqarad.py": "adf27d67f45febe116d43cdcba19bddef18f6f16622e1f3bb5888cda69903b16"
+  }
+}

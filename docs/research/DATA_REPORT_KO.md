@@ -26,7 +26,7 @@ SLAKE 실제 참조 이미지 **642개**, VQA-RAD 공식 이미지 **315개**를
 | 구분 | 원천과 목적 | canonical 수 | freeze ID |
 |---|---|---:|---|
 | **core v1 freeze** | MedQuAD·PQA-L·KorMedMCQA·SLAKE. 기존 학습·평가가 참조하는 고정본 | **19,415** | `1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5` |
-| **추가 aggregate freeze** | core 4종에 VQA-RAD 외부 test 451행만 추가 | **19,866** | `4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07` |
+| **추가 aggregate freeze** | core 4종에 VQA-RAD 외부 test 451행만 추가 | **19,866** | `1562258c4b5b6f3b4c5c8948851fbb972da603cd63bff528aa7d278cf2253c86` |
 
 두 manifest를 직접 비교한 결과, **core에 있던 모든 source split과 text 통합 split의 파일 SHA-256이 aggregate에서도 동일**하다. VQA-RAD 추가로 기존 train/dev/test를 다시 나누거나 기존 core bytes를 변경하지 않았다. core의 train/validation/test 합계는 10,429 / 3,115 / 5,871이며, aggregate에서는 test만 451행 늘어난다.
 
@@ -45,7 +45,7 @@ SLAKE 실제 참조 이미지 **642개**, VQA-RAD 공식 이미지 **315개**를
 | SLAKE/validation | 512 | `24a116369a69805616c67539c7e1f5f99810e630a11db1602696f598f54ea1c6` |
 | SLAKE/test | 1,061 | `7a41364e82af44ac6cac76ba5254f5012f8ef160b9ec56bb0dc0b9c02f59919f` |
 | KorMedMCQA/test | 3,009 | `5c4567bf8770dac8f1d111421baf47627a2ea1d696995dd4c878d76722bbc971` |
-| VQA-RAD/test | 451 | `f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe` |
+| VQA-RAD/test | 451 | `0ab3919e0afd4ac5ade7599c12bc4db680a33c8f854f4eecc980d43b5b6cc3a7` |
 
 ## 3. 원천별 정제와 분할 결정
 
@@ -173,3 +173,7 @@ PYTHONPATH=src python -m mediflow_medvlm.data.vqarad --data-root "$MEDVLM_DATA_R
 이 CLI의 `all`은 MedQuAD/PQA-L/KorMedMCQA 3종이다. 영상 source는 별도 명령으로 실행한다. 새 자료 변경 후에만 `python -m mediflow_medvlm.data freeze --data-root "$MEDVLM_DATA_ROOT"`를 실행해 새 freeze를 만들며, 기존 core/aggregate manifest와 불변 사본은 보존한다.
 
 이미 성공한 공개 데이터 작업에 추가 사용자 승인은 필요하지 않다. 사용자 또는 외부 제공자의 조치가 필요한 항목은 AI-Hub의 실제 승인 자격/원본, MedQA·MedMCQA의 미해결 데이터 이용 범위다. 대용량 caption/QA 확장과 한국어 추가 학습은 이번 v1 데이터 완료 수량에 포함되지 않는다.
+
+## 외부 VQA-RAD 영상 provenance 수정
+
+2026-10-23 21:18 KST, 최초 외부 평가 protocol 생성에서 JPEG hash 대신 QA JSON hash가 참조되는 계약 불일치를 발견했다. 원본316파일 및451개 test 행의 실제 영상 hash는 모두 유지됐다. `provenance.image_sha256`과 transformation version만 보완하고 새 aggregate freeze를 만들었다. 질문·정답·ID·그룹·이미지·core 학습 split은 변경하지 않았다. 이전 aggregate `4dc1e59694d90858b3c3bd81f0963ec798aba09180b014308e789471422e7b07`와 test snapshot `f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe`는 보존했다. 수정 전 외부 추론·점수는 없었으며, 기존 cap64 선택 정책을 유지했다. 상세 증거는 `reports/public_summary/vqarad_image_provenance_repair.json`이다.

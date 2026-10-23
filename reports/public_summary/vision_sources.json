@@ -217,7 +217,7 @@
       "canonical_files": {
         "test": {
           "count": 451,
-          "sha256": "f70e35d9273fd9ea5e2a653be6b6e5cfef654962d11e3bf0fa5a80a612a9ccfe"
+          "sha256": "0ab3919e0afd4ac5ade7599c12bc4db680a33c8f854f4eecc980d43b5b6cc3a7"
         },
         "train": {
           "count": 0,
@@ -314,10 +314,7 @@
       "next_action": "Separate later-scale QA campaign retaining train/test/test_clean and version2 artifacts, PMCID/figure/license metadata"
     }
   },
-  "implemented_tests": {
-    "command": "PYTHONPATH=src python -m pytest tests/test_slake.py tests/test_supplemental.py tests/test_vqarad.py -q",
-    "passed": 13
-  },
+  "verification_reference": "reports/public_summary/verification.json; source-specific test coverage is included in the core suite",
   "resume_commands": [
     "PYTHONPATH=src python -m mediflow_medvlm.data.slake --data-root ../medvlm-data --fetch",
     "PYTHONPATH=src python -m mediflow_medvlm.data.vqarad --data-root ../medvlm-data --fetch",

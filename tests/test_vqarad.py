@@ -4,6 +4,37 @@ import pytest
 from mediflow_medvlm.data import vqarad
 
 
+def test_vqarad_canonical_image_hash_is_consumable_by_renderer(tmp_path):
+    import json
+    from PIL import Image
+    from mediflow_medvlm.training.rendering import image_paths
+    raw = tmp_path / 'raw/vqa_rad'
+    images = tmp_path / 'images/vqa_rad'
+    manifests = tmp_path / 'manifests/sources'
+    for directory in (raw, images, manifests):directory.mkdir(parents=True)
+    asset = images / 'fixture.jpg'
+    Image.new('RGB', (16, 16), (20, 60, 90)).save(asset)
+    qa = raw / 'VQA_RAD Dataset Public.json'
+    qa.write_text(json.dumps([{'qid': 1, 'phrase_type': 'test_freeform',
+        'image_name': asset.name, 'question': 'Engineering image fixture?',
+        'answer': 'yes', 'image_case_url': 'https://example.invalid/fixture',
+        'qid_linked_id': 1}]))
+    qa_hash = hashlib.sha256(qa.read_bytes()).hexdigest()
+    (manifests / 'vqa_rad.json').write_text(json.dumps({
+        'resolved_revision': 'fixture-vqarad-revision', 'retrieved_at': '2026-10-23T00:00:00Z',
+        'files': [{'sha256': qa_hash}]}))
+    vqarad.run(tmp_path)
+    row = json.loads((tmp_path / 'processed/vqa_rad/test.jsonl').read_text())
+    paths, metadata = image_paths(row)
+    assert paths == [asset]
+    assert metadata[0]['sha256'] == hashlib.sha256(asset.read_bytes()).hexdigest()
+    assert row['provenance']['local_asset_sha256'] == qa_hash
+    assert metadata[0]['sha256'] != qa_hash
+    asset.write_bytes(asset.read_bytes() + b'modified')
+    with pytest.raises(ValueError, match='image hash changed'):
+        image_paths(row)
+
+
 def entry(name="image.jpg"):
     return {"id": "fixture-file", "attributes": {"name": name, "size": 3, "current_version": 1,
             "extra": {"hashes": {"sha256": hashlib.sha256(b"img").hexdigest()}}},
