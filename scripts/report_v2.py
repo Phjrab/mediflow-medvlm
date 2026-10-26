@@ -800,7 +800,7 @@ def markdown(summary, stages):
 
 
 def csv_text(rows, fields):
-    out = io.StringIO(); writer = csv.DictWriter(out, fieldnames=fields, extrasaction='ignore')
+    out = io.StringIO(); writer = csv.DictWriter(out, fieldnames=fields, extrasaction='ignore', lineterminator='\n')
     writer.writeheader(); writer.writerows(rows)
     return out.getvalue()
 

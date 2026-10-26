@@ -1,5 +1,12 @@
 # 작업 기록
 
+## 2026-10-26 22:35 KST — VQA v2 완료·한국어 학습 시작
+
+- VQA validation8+본평가/진단12개 전체 성공,20개 산출물 identity/SHA/점수 재계산 검증 통과. SLAKE1061개 normalized EM: Qwen3.5 Base52.40%→adapter70.50%, MedGemma36.38%→69.37%. VQA-RAD451개는47.89%→48.78%,43.24%→48.34%다. 문자열 점수이며 임상 정확도가 아니다.
+- 구현 ec0d1433f526f4b9d896e0c4f79fc5db8c024a13 push와 CI40327855285 success 확인. 원문·가중치·인증값은 Git에 포함하지 않았다.
+- VQA가 GPU를 반환한 뒤13:32 UTC에 텍스트 worker1502009 시작. Qwen3-1.7B KO smoke 실제20update/320samples/16245supervised tokens, adapter_changed=true와 fresh-process reload 성공. 원본 Base에서 별도 KO full250update 실행 중. 나머지 셀/공통 텍스트 평가/익명 검토표는 아직 미완료다.
+- 데이터 감사 함수 source snapshot과 재현 절차를 문서화했고 완료된 aggregate만 사용하는 그림을 추가했다.
+
 - 2026-10-26 22:00 KST 구현 체크포인트: AIHub71875 실제17,280 QA→17,210 canonical, Kor4068 전부 보호. 고정multilingual E5 .92/top5의3,396후보는확정중복이아니며train3010/dev198격리,test188flag. KO4000=1500/1300/1200, MIX8000=같은KO+EN4000, 공통dev1516 동결. 실제token243394/1137306, 250/500updates 선언; 새학습은아직GPU대기. 원래v1 보고서18개SHA불변. VQA validation8개완료후256-token프로토콜고정, Qwen3.5 SLAKE1061 Base556→Tuned748 lexical EM 및 no-image완료, MedGemma평가진행중. 전체입력4530개CPU native인코딩검사오버플로0. 실제실행·예측은Git밖에보존하며최종결과로과장하지않음.
 
 - 2026-10-23: 사용자 pack 전체 계약을 읽음. 현재 repository SHA는 snapshot과 일치. initial unit tests 8/8 (Python3.12). 새 branch 생성.

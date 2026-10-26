@@ -1,0 +1,67 @@
+{
+  "checked_at": "2026-10-26T12:13:25.293468+00:00",
+  "evidence_level": "CPU_TESTED",
+  "finite_campaign": "explicit finite campaign wall limit and cumulative elapsed time are enforced without any 36-hour clamp; unlimited remains null",
+  "migration": "read-only eligibility proof; no automatic identity bypass and exact_resume_verified=false until code semantics and optimizer/RNG restoration are independently verified",
+  "native_fixture": {
+    "actual_optimizer_updates": 1001,
+    "adapter_changed": true,
+    "epochs": 1,
+    "mock_monotonic_increment_hours": 37,
+    "samples": 1001
+  },
+  "resource_policy": {
+    "budget_mode": "unlimited",
+    "campaign_wall_seconds": null,
+    "job_timeout_seconds": null,
+    "per_model_gpu_hours": null,
+    "run_wall_seconds": null,
+    "schema_version": "medvlm.resource-policy.v1",
+    "total_gpu_hours": null
+  },
+  "status": "SUCCEEDED",
+  "tests": [
+    {
+      "command": "MEDVLM_RUN_TRAINING_TESTS=1 CUDA_VISIBLE_DEVICES='' PYTHONPATH=src ../.venv-medvlm/bin/python -m pytest -o addopts='' -q tests/test_resource_policy.py tests/test_training_contracts.py tests/test_training_hardening.py tests/test_training_native.py tests/test_campaign_resume.py",
+      "environment": "Python3.12 native CPU",
+      "passed": 41,
+      "seconds": 21.5,
+      "subtests_passed": 20
+    },
+    {
+      "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts='' -q",
+      "environment": "Python3.10 current full repository",
+      "passed": 169,
+      "seconds": 0.6,
+      "skipped": 7,
+      "subtests_passed": 23,
+      "warnings": 6
+    },
+    {
+      "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts='' -q tests/test_resource_policy.py tests/test_campaign_resume.py",
+      "environment": "Python3.10 final wrapper delta",
+      "passed": 25,
+      "seconds": 0.23,
+      "subtests_passed": 20
+    }
+  ],
+  "owned_files": {
+    "configs/resource_policy.json": "69702be037dd310e83cd63180e2a052342579b59eb7fd82c782ff96f1c104538",
+    "configs/runtime.example.yaml": "bf12532b94754be108103b8a5904a141496b13901457f4686064c5254836d361",
+    "configs/training.qwen3-17b.example.json": "af6b40f35ca9a7e8dee3b72491b707af8c9a97be7050a488dcac5e66e394a07c",
+    "configs/training.qwen3-17b.smoke.example.json": "a69bb29538846e60601afc473876abbfe1366c02e4f9fca43ae07ba28e1fff08",
+    "configs/training.qwen3-4b.example.json": "73b6e190e263d352148e3b262c48d9ae9e980ad1ad80284934f664f4f8172ea9",
+    "configs/training.smolvlm.example.json": "c078b473027c3ed8834553ca3012011e68edf6e17c10777ce1c33d3012919ab6",
+    "scripts/complete_v1.py": "c9c37935e9591a615cf4aaff9e45ba0466b3ac423f500fd58104122b6c3bd2e0",
+    "src/mediflow_medvlm/cli.py": "33faa9076f6ca59c9c9d2754a2604fd579cb008497184e13b8e075eabe6b3412",
+    "src/mediflow_medvlm/runtime.py": "d93a7eff77985620ef11d70df22c52d9a995aa9289eb0daafe6a338f19aaca06",
+    "src/mediflow_medvlm/training/config.py": "b60c317d5f026a9e5a3c3629b7529f5cfd94304409d3b9c5efcc2cee11f1a40d",
+    "src/mediflow_medvlm/training/runner.py": "45729559ac5fc62ea9755e2aa38cb3d4439cbf579cc638667c90baf515a631ba",
+    "tests/test_resource_policy.py": "271309af43ae047de90a611eb6343c25c8f465e8744d6465621a587f62bfb7c1",
+    "tests/test_training_contracts.py": "738f3721cb65e4efe06b25a70ee28ebdfcc6ce2d9e7490081e7a84128b743941",
+    "tests/test_training_hardening.py": "869ce3368b63a741e8c82ebb08564615ae488a99f12c83fdb81d4607bf51b4aa"
+  },
+  "past_run_artifacts_modified": false,
+  "original_receipt_sha256": "37a8880347c517b9bdc2ed622ef620657578f5cc79cb97aca2e0ac141f06f30f",
+  "source_hashes_reverified": true
+}

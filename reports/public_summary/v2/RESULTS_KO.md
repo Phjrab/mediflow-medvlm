@@ -2,12 +2,12 @@
 
 ## 현재 단계
 
-기준 시각: 2026-10-26T13:06:23.113944+00:00. 실제 파일을 읽은 시점의 상태다. 실행 중 항목의 중간 예측은 완료 점수에 포함하지 않았다.
+기준 시각: 2026-10-26T13:35:00.136371+00:00. 실제 파일을 읽은 시점의 상태다. 실행 중 항목의 중간 예측은 완료 점수에 포함하지 않았다.
 
 | 단계 | 완료·무결성 검증 | 예정 | 상태 |
 |---|---:|---:|---|
-| VQA 본평가·이미지 진단 | 5 | 12 | {"SUCCEEDED": 5, "NOT_RUN": 6, "RUNNING": 1} |
-| KO/MIX smoke·본학습·재로드 | 0 | 8 | {"NOT_RUN": 8} |
+| VQA 본평가·이미지 진단 | 12 | 12 | {"SUCCEEDED": 12} |
+| KO/MIX smoke·본학습·재로드 | 1 | 8 | {"SUCCEEDED": 1, "RUNNING": 1, "NOT_RUN": 6} |
 | 텍스트 평가 조건 | 0 | 9 | {"NOT_RUN": 9} |
 
 VQA validation 결정: **SUCCEEDED**, 선택된 출력 상한 256 tokens. Validation의 길이 종료 규칙으로 128→256을 한 번 검토했다. 테스트로 상한을 선택하지 않았다.
@@ -41,8 +41,8 @@ KO4,000(250 update), MIX8,000(500 update)는 seed 20261023 한 pass를 계획한
 
 | 학습 run | 상태 | 실제 update | 실제 처리 문항 | supervised tokens | 재로드 확인 |
 |---|---|---:|---:|---:|---|
-| qwen3_17b-ko-smoke-v2-20261026 | NOT_RUN | 미실행 | 미실행 | 미실행 | False |
-| qwen3_17b-ko-full-v2-20261026 | NOT_RUN | 미실행 | 미실행 | 미실행 | False |
+| qwen3_17b-ko-smoke-v2-20261026 | SUCCEEDED | 20 | 320 | 16245 | True |
+| qwen3_17b-ko-full-v2-20261026 | RUNNING | 0 | 0 | 0 | False |
 | qwen3_17b-mix-smoke-v2-20261026 | NOT_RUN | 미실행 | 미실행 | 미실행 | False |
 | qwen3_17b-mix-full-v2-20261026 | NOT_RUN | 미실행 | 미실행 | 미실행 | False |
 | qwen3_4b-ko-smoke-v2-20261026 | NOT_RUN | 미실행 | 미실행 | 미실행 | False |
@@ -77,6 +77,12 @@ VQA: 두 모델의 Base/Tuned는 같은 짧은 답변 prompt와 선택된 생성
 | qwen35_2b/tuned_v1 | slake/image | ALL | 1061 | 70.50% | 70.50% | 73.85% | 0 | 1 |
 | qwen35_2b/tuned_v1 | slake/image | OPEN | 645 | 61.09% | 61.09% | 66.59% | 0 | 1 |
 | qwen35_2b/tuned_v1 | slake/image | CLOSED | 416 | 85.10% | 85.10% | 85.10% | 0 | 1.0 |
+| qwen35_2b/base | vqa_rad/image | ALL | 451 | 47.67% | 47.89% | 51.13% | 0 | 1 |
+| qwen35_2b/base | vqa_rad/image | OPEN | 179 | 16.76% | 17.32% | 25.11% | 0 | 1 |
+| qwen35_2b/base | vqa_rad/image | CLOSED | 272 | 68.01% | 68.01% | 68.26% | 0 | 1.0 |
+| qwen35_2b/tuned_v1 | vqa_rad/image | ALL | 451 | 48.78% | 48.78% | 52.16% | 0 | 1 |
+| qwen35_2b/tuned_v1 | vqa_rad/image | OPEN | 179 | 12.29% | 12.29% | 20.81% | 0 | 1 |
+| qwen35_2b/tuned_v1 | vqa_rad/image | CLOSED | 272 | 72.79% | 72.79% | 72.79% | 0 | 1.0 |
 | qwen35_2b/base | slake/no_image | ALL | 32 | 25.00% | 25.00% | 25.78% | 0 | 1.0 |
 | qwen35_2b/base | slake/no_image | OPEN | 17 | 5.88% | 5.88% | 7.35% | 0 | 1 |
 | qwen35_2b/base | slake/no_image | CLOSED | 15 | 46.67% | 46.67% | 46.67% | 0 | 1 |
@@ -86,15 +92,36 @@ VQA: 두 모델의 Base/Tuned는 같은 짧은 답변 prompt와 선택된 생성
 | medgemma15_4b/base | slake/image | ALL | 1061 | 20.08% | 36.38% | 46.23% | 49 | 1 |
 | medgemma15_4b/base | slake/image | OPEN | 645 | 13.02% | 13.49% | 29.24% | 48 | 2 |
 | medgemma15_4b/base | slake/image | CLOSED | 416 | 31.01% | 71.88% | 72.58% | 1 | 1.0 |
+| medgemma15_4b/tuned_v1 | slake/image | ALL | 1061 | 69.37% | 69.37% | 72.76% | 0 | 1 |
+| medgemma15_4b/tuned_v1 | slake/image | OPEN | 645 | 61.55% | 61.55% | 66.89% | 0 | 1 |
+| medgemma15_4b/tuned_v1 | slake/image | CLOSED | 416 | 81.49% | 81.49% | 81.85% | 0 | 1.0 |
+| medgemma15_4b/base | vqa_rad/image | ALL | 451 | 24.39% | 43.24% | 49.96% | 4 | 1 |
+| medgemma15_4b/base | vqa_rad/image | OPEN | 179 | 5.03% | 8.38% | 24.48% | 4 | 3 |
+| medgemma15_4b/base | vqa_rad/image | CLOSED | 272 | 37.13% | 66.18% | 66.73% | 0 | 1.0 |
+| medgemma15_4b/tuned_v1 | vqa_rad/image | ALL | 451 | 48.34% | 48.34% | 51.62% | 0 | 1 |
+| medgemma15_4b/tuned_v1 | vqa_rad/image | OPEN | 179 | 12.85% | 12.85% | 20.74% | 0 | 1 |
+| medgemma15_4b/tuned_v1 | vqa_rad/image | CLOSED | 272 | 71.69% | 71.69% | 71.94% | 0 | 1.0 |
+| medgemma15_4b/base | slake/no_image | ALL | 32 | 12.50% | 12.50% | 13.42% | 3 | 3.5 |
+| medgemma15_4b/base | slake/no_image | OPEN | 17 | 5.88% | 5.88% | 5.88% | 2 | 9 |
+| medgemma15_4b/base | slake/no_image | CLOSED | 15 | 20.00% | 20.00% | 21.97% | 1 | 1 |
+| medgemma15_4b/tuned_v1 | slake/no_image | ALL | 32 | 34.38% | 34.38% | 34.38% | 0 | 1.0 |
+| medgemma15_4b/tuned_v1 | slake/no_image | OPEN | 17 | 35.29% | 35.29% | 35.29% | 0 | 1 |
+| medgemma15_4b/tuned_v1 | slake/no_image | CLOSED | 15 | 33.33% | 33.33% | 33.33% | 0 | 1 |
 
 strict는 기존 NFKC·casefold·공백 정규화이고, v2는 문장 끝 .!?。！？만 추가 제거한다. 숫자·단위·부정과 내부 구두점은 유지한다. 정답 구절 포함률을 정확도로 사용하지 않았다.
 
 | 모델 | 비교 | source/단계 | n/groups | 정답률 또는 lexical EM 차이 | 관측 group bootstrap 95% CI |
 |---|---|---|---:|---:|---|
 | qwen35_2b | tuned_v1 − base | slake/slake | 1061/71 | +18.10%p | [+14.68, +21.63]%p |
+| qwen35_2b | tuned_v1 − base | vqa_rad/vqarad | 451/203 | +0.89%p | [-2.94, +4.85]%p |
 | qwen35_2b | tuned_v1 − base | slake/noimage | 32/26 | +12.50%p | [+2.94, +24.14]%p |
+| medgemma15_4b | tuned_v1 − base | slake/slake | 1061/71 | +32.99%p | [+29.59, +36.45]%p |
+| medgemma15_4b | tuned_v1 − base | vqa_rad/vqarad | 451/203 | +5.10%p | [+1.08, +9.03]%p |
+| medgemma15_4b | tuned_v1 − base | slake/noimage | 32/26 | +21.88%p | [+9.38, +36.67]%p |
 | qwen35_2b | base_no_image − base_image | slake/image_diagnostic | 32/26 | -43.75%p | [-60.61, -27.78]%p |
 | qwen35_2b | tuned_v1_no_image − tuned_v1_image | slake/image_diagnostic | 32/26 | -40.62%p | [-59.38, -22.58]%p |
+| medgemma15_4b | base_no_image − base_image | slake/image_diagnostic | 32/26 | -34.38%p | [-51.43, -16.13]%p |
+| medgemma15_4b | tuned_v1_no_image − tuned_v1_image | slake/image_diagnostic | 32/26 | -43.75%p | [-62.50, -22.58]%p |
 
 이미지 진단은 같은 32개 ID의 image/no-image 결과만 비교한다. native no-image 실행 실패는 지원을 가정하거나 blank image로 바꾸지 않는다. VQA-RAD 외부 source 성능은 임상 일반화의 증명이 아니다.
 
@@ -102,16 +129,16 @@ strict는 기존 NFKC·casefold·공백 정규화이고, v2는 문장 끝 .!?。
 |---|---|---:|---:|
 | qwen35_2b-slake-base-v2-20261026 | SUCCEEDED | 0.2408 | 1.995/2.055 |
 | qwen35_2b-slake-tuned-v2-20261026 | SUCCEEDED | 0.2730 | 2.015/2.074 |
-| qwen35_2b-vqarad-base-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
-| qwen35_2b-vqarad-tuned-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
+| qwen35_2b-vqarad-base-v2-20261026 | SUCCEEDED | 0.3932 | 2.039/2.172 |
+| qwen35_2b-vqarad-tuned-v2-20261026 | SUCCEEDED | 0.4504 | 2.059/2.193 |
 | qwen35_2b-noimage-base-v2-20261026 | SUCCEEDED | 0.1007 | 1.829/1.863 |
 | qwen35_2b-noimage-tuned-v2-20261026 | SUCCEEDED | 0.1305 | 1.849/1.883 |
 | medgemma15_4b-slake-base-v2-20261026 | SUCCEEDED | 0.5620 | 3.151/3.307 |
-| medgemma15_4b-slake-tuned-v2-20261026 | RUNNING | 미측정 | 미측정 |
-| medgemma15_4b-vqarad-base-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
-| medgemma15_4b-vqarad-tuned-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
-| medgemma15_4b-noimage-base-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
-| medgemma15_4b-noimage-tuned-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
+| medgemma15_4b-slake-tuned-v2-20261026 | SUCCEEDED | 0.5722 | 3.207/3.357 |
+| medgemma15_4b-vqarad-base-v2-20261026 | SUCCEEDED | 0.5377 | 3.153/3.309 |
+| medgemma15_4b-vqarad-tuned-v2-20261026 | SUCCEEDED | 0.5704 | 3.208/3.342 |
+| medgemma15_4b-noimage-base-v2-20261026 | SUCCEEDED | 0.2474 | 3.059/3.125 |
+| medgemma15_4b-noimage-tuned-v2-20261026 | SUCCEEDED | 0.1271 | 3.090/3.188 |
 | qwen3_17b-base-text-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
 | qwen3_17b-en_v1-text-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
 | qwen3_17b-ko-text-v2-20261026 | NOT_RUN | 미측정 | 미측정 |
@@ -134,15 +161,30 @@ strict는 기존 NFKC·casefold·공백 정규화이고, v2는 문장 끝 .!?。
 | qwen35_2b/slake | tuned_v1 | ALL | 256 | 72.27% | 70.31% | 70.31% |
 | qwen35_2b/slake | tuned_v1 | OPEN | 154 | 64.94% | 62.99% | 62.99% |
 | qwen35_2b/slake | tuned_v1 | CLOSED | 102 | 83.33% | 81.37% | 81.37% |
+| qwen35_2b/vqarad | base | ALL | 64 | 29.69% | 42.19% | 42.19% |
+| qwen35_2b/vqarad | base | OPEN | 22 | 0.00% | 9.09% | 9.09% |
+| qwen35_2b/vqarad | base | CLOSED | 42 | 45.24% | 59.52% | 59.52% |
+| qwen35_2b/vqarad | tuned_v1 | ALL | 64 | 48.44% | 42.19% | 42.19% |
+| qwen35_2b/vqarad | tuned_v1 | OPEN | 22 | 0.00% | 0.00% | 0.00% |
+| qwen35_2b/vqarad | tuned_v1 | CLOSED | 42 | 73.81% | 64.29% | 64.29% |
 | medgemma15_4b/slake | base | ALL | 256 | 0.00% | 20.70% | 35.94% |
 | medgemma15_4b/slake | base | OPEN | 154 | 0.00% | 14.29% | 14.29% |
 | medgemma15_4b/slake | base | CLOSED | 102 | 0.00% | 30.39% | 68.63% |
+| medgemma15_4b/slake | tuned_v1 | ALL | 256 | 69.92% | 70.70% | 70.70% |
+| medgemma15_4b/slake | tuned_v1 | OPEN | 154 | 64.29% | 62.99% | 62.99% |
+| medgemma15_4b/slake | tuned_v1 | CLOSED | 102 | 78.43% | 82.35% | 82.35% |
+| medgemma15_4b/vqarad | base | ALL | 64 | 0.00% | 20.31% | 43.75% |
+| medgemma15_4b/vqarad | base | OPEN | 22 | 0.00% | 0.00% | 13.64% |
+| medgemma15_4b/vqarad | base | CLOSED | 42 | 0.00% | 30.95% | 59.52% |
+| medgemma15_4b/vqarad | tuned_v1 | ALL | 64 | 46.88% | 40.62% | 40.62% |
+| medgemma15_4b/vqarad | tuned_v1 | OPEN | 22 | 4.55% | 4.55% | 4.55% |
+| medgemma15_4b/vqarad | tuned_v1 | CLOSED | 42 | 69.05% | 59.52% | 59.52% |
 
 위 표는 v1과 v2의 동일 ID·입력·정답 교집합만 재집계한 것이다. v1 부분집합과 v2 전체집합을 직접 빼지 않는다. prompt·생성 상한·정규화가 함께 바뀐 프로토콜 묶음 효과이며 특정 변수 하나의 원인으로 단정하지 않는다.
 
 현재 resource policy: **unlimited**. total/model/run/job/campaign 시간 상한은 {"total_gpu_hours": null, "per_model_gpu_hours": null, "run_wall_seconds": null, "job_timeout_seconds": null, "campaign_wall_seconds": null}. v1의 24 GPU-hour/모델별 6-hour는 과거 실행 당시 설정이다.
 
-실제 누적 정산 사용 6.1852시간; v1 기준 5.5687시간; 정산 증가 0.6165시간. 진행 중 미정산 세션의 읽기 시점 경과 0.0500시간은 누적 정산값과 분리했다. 사용량 ledger를 초기화하거나 수정하지 않았다.
+실제 누적 정산 사용 6.6997시간; v1 기준 5.5687시간; 정산 증가 1.1309시간. 진행 중 미정산 세션의 읽기 시점 경과 0.0035시간은 누적 정산값과 분리했다. 사용량 ledger를 초기화하거나 수정하지 않았다.
 
 학습 seed는 하나다. KO/MIX는 총 문항·token·update 수가 달라 언어 구성만의 효과를 분리할 수 없다. 모델 사전학습의 test 노출 여부는 미상이다. v1에서 본 test를 포함하므로 새로운 blind 결과가 아니다. 자유서술 결과에 전문가 정확도 점수는 없다.
 

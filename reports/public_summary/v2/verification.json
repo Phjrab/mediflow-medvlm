@@ -9,7 +9,7 @@
     "same paired protocol/config/precision/generation"
   ],
   "errors": [],
-  "generated_at": "2026-10-26T13:06:23.113944+00:00",
+  "generated_at": "2026-10-26T13:35:00.136371+00:00",
   "new_model_load_or_gpu_work": false,
   "receipts": [
     {
@@ -95,7 +95,7 @@
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/state.json",
       "kind": "campaign_state_snapshot",
-      "sha256": "80f31338cb48d01cde63a134c0fe90b67456ef5a72648c8e5247aab177817653"
+      "sha256": "abb6780d3f795b3d6dd5a190ce99159f0cba0ed96413630837c60010f3a20e08"
     },
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/text/plan.json",
@@ -105,7 +105,7 @@
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/text/state.json",
       "kind": "campaign_state_snapshot",
-      "sha256": "56468b841b9a5099e8e4a4c8ba5daa748620d81d0878ea21cbd5c615374e91e0"
+      "sha256": "f98f790f2c062d10ca9ad10554e1abc299397e62c64560e92a9716bce48fda0c"
     },
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/validation-decision.json",
@@ -231,6 +231,41 @@
       "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-slake-tuned-v2-20261026/metrics.json",
       "kind": "completed_evaluation_artifact_verified",
       "sha256": "3255323df4d3ac281e377e1b234ae7e3513aa4a300d46106184869af2b01c37e"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-vqarad-base-v2-20261026/run_manifest.json",
+      "kind": "evaluation_manifest_snapshot",
+      "sha256": "b25cd3242aa98947d0547234125f81a4bf2dcdcf58ded2707a602873b69bed33"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/protocols/vqarad-test.json",
+      "kind": "frozen_protocol_inputs_references_images_verified",
+      "sha256": "9e873ac5e318bebb86b5c12fe2a2d966f8c0600bdcbe75274ae236b7061881a1"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-vqarad-base-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "b02b1eff8af3824831d3d5f2cc374043aeb2ee512a830570e864c8ffa85162ae"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-vqarad-base-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "cd41385732285d8ec6e300bbca46c7c55fb2e9484e3f42f89a34305a7976c6ea"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-vqarad-tuned-v2-20261026/run_manifest.json",
+      "kind": "evaluation_manifest_snapshot",
+      "sha256": "66466718b2958130a05ad1c53a606cb6a52d23f2acbb8dee16ab53ea74d2959d"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-vqarad-tuned-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "e55964cf12d8aba390f017200acc3d0b0890a171a1b5340bbda6636dc7c3221a"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-vqarad-tuned-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "8f959e8a4d25f462558f05711bd24c2cf3324ae96b671c48e6020f17081aa294"
     },
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/qwen35_2b-noimage-base-v2-20261026/run_manifest.json",
@@ -360,7 +395,97 @@
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-slake-tuned-v2-20261026/run_manifest.json",
       "kind": "evaluation_manifest_snapshot",
-      "sha256": "e2c6e99886f5634420e62922fd66ebcf4185438189dc6d4d9a4716b1be2c5fb6"
+      "sha256": "138b2bb11c4e64d684b897f9f9120a4937917267b5da005b451b8bd3f9874146"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-slake-tuned-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "071337d66a6f6215e2ef0e2e722028806b27097a7aa03754bc02ec0fbf73bb5a"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-slake-tuned-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "c50f58ed7aaf892719c86c2414d1b09bc5c7166f5dbd66c362f63af282d48ba0"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-vqarad-base-v2-20261026/run_manifest.json",
+      "kind": "evaluation_manifest_snapshot",
+      "sha256": "ed0fafe53b8b980d43a6e78e13db30318b888dfe954cae2b1ba7c06977f99164"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-vqarad-base-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "31c66835d0065540966b3239fc9089a14153afe880821d525e84c0508a255516"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-vqarad-base-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "8111a03ea7433213c53e027c0393f08d13e2c5386b17b7884d0efec9a359fa98"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-vqarad-tuned-v2-20261026/run_manifest.json",
+      "kind": "evaluation_manifest_snapshot",
+      "sha256": "6abbba9907afd885d4b79682d7518571bf299b28657286dcb662f16af7e13ca5"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-vqarad-tuned-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "e51649b81b8318d9da315218a5bef0bd8e6346dfd8888dc5d6f2cf7ac9a0d061"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-vqarad-tuned-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "0c5e222249cc8b673ccfcfd52da15b52606c54b7ab192f496eb024b34dbe74e8"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-noimage-base-v2-20261026/run_manifest.json",
+      "kind": "evaluation_manifest_snapshot",
+      "sha256": "21427f3cf3d9e44ba41e772909db36985d76b870411c6365d7b1886ca8078713"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-noimage-base-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "a98f31408e4c5ea18cedc99be629895c75d30c051a73f6f452d864403fd7b2c8"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-noimage-base-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "09469abac57955a42f4862d3737bc2cfd7ad6a6727a2cd2dfc0042964ed032f8"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-noimage-tuned-v2-20261026/run_manifest.json",
+      "kind": "evaluation_manifest_snapshot",
+      "sha256": "4f574614f9837c48c681b56b2eb2fba92434dbd8ebd2e20da6dde1c0316d52fa"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-noimage-tuned-v2-20261026/predictions.jsonl",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "71f3e0142c2a9b8209dcf9c7d9f541a59004f18123632383049bbf18030bad92"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/vqa/runs/medgemma15_4b-noimage-tuned-v2-20261026/metrics.json",
+      "kind": "completed_evaluation_artifact_verified",
+      "sha256": "73ca2591bec98b654b6b1995e8a9d5ceac91daeaf165e75f580867abd37823c1"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/text/runs/qwen3_17b-ko-smoke-v2-20261026/config.json",
+      "kind": "training_reload_artifact_verified",
+      "sha256": "a94e9a51b422321aa67745f5d060ed256a4033a0bcb97033bf44f248a27c1145"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/text/runs/qwen3_17b-ko-smoke-v2-20261026/manifest.json",
+      "kind": "training_reload_artifact_verified",
+      "sha256": "a5786cc920ab3799688b2ab36a10a33f9eb6a37602cafbbbd1218be22b3b296d"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/text/runs/qwen3_17b-ko-smoke-v2-20261026/selection.json",
+      "kind": "training_reload_artifact_verified",
+      "sha256": "df8a725cb554a833fb025afbdb3c757f7610f37f2e2b7e3d1d65f491aefddff0"
+    },
+    {
+      "artifact": "${MEDVLM_DATA_ROOT}/v2/text/runs/qwen3_17b-ko-smoke-v2-20261026/reload.json",
+      "kind": "training_reload_artifact_verified",
+      "sha256": "3aeab9882217a96180e7d6513b93362864a54a300c417f1d022822e12899e07a"
     },
     {
       "artifact": "${MEDVLM_DATA_ROOT}/v2/review/plan.json",
@@ -385,7 +510,7 @@
     {
       "artifact": "${MEDVLM_DATA_ROOT}/runtime/gpu_budget.json",
       "kind": "readonly_usage_ledger_snapshot",
-      "sha256": "905234debab51fb5524e5bda3063657c94d5ee2b36be2ccb748d8cd7f2ce2337"
+      "sha256": "279c93256ca0d966f3ea4724d6090a10ac2471d4bbbffdd7beb1897a6845ed33"
     },
     {
       "artifact": "reports/public_summary/run_summary.json",
@@ -396,6 +521,6 @@
   "schema_version": "medvlm.public-verification.v2",
   "status": "PASS_FOR_COMPLETED_ARTIFACTS",
   "v1_modified": false,
-  "verified_evaluation_count": 13,
-  "verified_training_reload_count": 0
+  "verified_evaluation_count": 20,
+  "verified_training_reload_count": 1
 }

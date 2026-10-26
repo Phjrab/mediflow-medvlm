@@ -1,6 +1,6 @@
 {
   "aihub_71762": "BLOCKED_DELIVERY",
-  "generated_at": "2026-10-26T13:06:23.113944+00:00",
+  "generated_at": "2026-10-26T13:35:00.136371+00:00",
   "human_review": "NOT_PERFORMED",
   "jetson": "USER_DEFERRED",
   "review_preparation": {
@@ -22,19 +22,19 @@
   "text_training_and_reload": {
     "planned": 8,
     "statuses": {
-      "NOT_RUN": 8
+      "NOT_RUN": 6,
+      "RUNNING": 1,
+      "SUCCEEDED": 1
     },
-    "verified_succeeded": 0
+    "verified_succeeded": 1
   },
   "verification_errors": 0,
   "vqa_main": {
     "planned": 12,
     "statuses": {
-      "NOT_RUN": 6,
-      "RUNNING": 1,
-      "SUCCEEDED": 5
+      "SUCCEEDED": 12
     },
-    "verified_succeeded": 5
+    "verified_succeeded": 12
   },
   "vqa_validation": "SUCCEEDED"
 }

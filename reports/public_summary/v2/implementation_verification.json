@@ -7,5 +7,10 @@
   "exit_code": 0,
   "log_sha256": "b7d2623cc2f809fd2a32de29dbaac70268bddd51d89e8ec3432b9ec5b4bbb55c",
   "gpu_execution_claim": false,
-  "native_runtime_verification": "Separate native environment receipt; no training success inferred from CPU tests."
+  "native_runtime_verification": "Separate native environment receipt; no training success inferred from CPU tests.",
+  "additional_milestone_tests": {
+    "result": "233 passed, 7 skipped, 23 subtests passed",
+    "log_sha256": "52e7749bf2b89cff9f0386779f8cbcd887418eb9276720b2c8216d103b693c45",
+    "reason": "aggregate plot selection tests and CSV newline correction"
+  }
 }

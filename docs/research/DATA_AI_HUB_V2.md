@@ -58,3 +58,67 @@ export PYTHONPATH="$PWD/src"
 완성 ZIP, 원본 폴더, 순번이 연속된 `.zip.part001`/`.zip.001`/`.zip.partaa` 입력을 지원한다. 조각은 삭제하지 않고 완성 ZIP을 재병합하지 않는다. 표준 multi-disk `.z01` 포맷은 임의로 연결하지 않는다. 원본 압축의 루트 `/` 표시는 스트리밍 멤버 이름으로만 처리하며 실제 파일경로로 추출하지 않는다. 경로 traversal·심볼릭 링크·중복 멤버·CRC 오류는 거절한다. 25GiB 원본 cap과 20GiB/15% 디스크 여유 기준은 유지한다.
 
 `aihub-build`와 `aihub-corpora`의 필수 인자는 `python -m mediflow_medvlm.data --help`에 있다. 같은 corpus를 재개할 때 기존 source/token/semantic/selection receipts와 frozen SHA를 검증하며, 변경된 입력을 기존 성공으로 덮어쓰지 않는다. 71762에는 실제 로컬 원본 또는 사용 가능한 전달 경로와 명시 pairing 근거가 추가로 필요하다.
+
+## Native token·E5 감사 소스와 재현
+
+실제 감사 구현은 `src/mediflow_medvlm/data/aihub.py`의 `token_audit()`와 `semantic_audit()`다. 보존본은 `${MEDVLM_DATA_ROOT}/v2/prepared/aihub_71875/9b5469c6b67bded6f9d4280eef95443d918780612d587aad6c432104b17d5767/source_snapshot/aihub.py`의 514행/546행이며, 파일 SHA-256은 `4bd3f70cb93fa4228f33fe460dc2df9123ebd2bf917e2ae0f64a5936b3eede11`이다. 보존본과 현재 파일의 두 함수 소스는 각각 SHA `7229597aadf0bbc0a9fd23827b7ce5cc7be76d87355e18162d321558ebe7f3d0`, `4499e286ab1efd71d9eafd63e3dfdb0b51b24351e60138b514ecdbd1cbe3d6ce`로 같다. 호출용 Python heredoc 자체는 별도 `.py`/`.sh`로 저장하지 않았다. 아래는 보존된 함수와 receipt로 재구성한 호출이다.
+
+기존 성공 결과의 재사용은 **읽기 전용 SHA 검증**으로 충분하다. 다음 명령은 임베딩·토큰을 다시 계산하지 않고 기존 audit, policy, encoding, 실제 embedding 바이트를 검증한다.
+
+```bash
+export MEDVLM_DATA_ROOT="$(realpath ../medvlm-data)"
+(cd "$MEDVLM_DATA_ROOT/v2" && sha256sum --check <<'SHA'
+4bd3f70cb93fa4228f33fe460dc2df9123ebd2bf917e2ae0f64a5936b3eede11  prepared/aihub_71875/9b5469c6b67bded6f9d4280eef95443d918780612d587aad6c432104b17d5767/source_snapshot/aihub.py
+13e6033a88500b7808cfd6720ed09718882d1b5485f3bab1b8375b5a5c355794  manifests/aihub_71875_qwen_token_audit-20261026.json
+b4ca4eb9fba1a0d7a2879b68c949ef9fc34012e27a91c5e69a7d6204774ce8ae  manifests/en_validation_qwen_token_audit-20261026.json
+f28fb923ea865bfef5f7c37ce639576dc0d4f65ed0dd62a03cbffc288a330d72  manifests/semantic_kormed_v2/policy.json
+2ef83997e1f110f2a6035c2679b8d73c4bc3c946c9e80f204a3e6f8afa0408ac  manifests/semantic_kormed_v2/encoding.json
+a3e966bd1765a7304a1fb30ef5c3aa690ce9f41d29706b5cbb9bfe92b1e4c988  manifests/semantic_kormed_v2/embeddings.npy
+51466ba5c39c00d6b46bc944b2cbb70f1cf2d7db045a74e00ab549e1cedac41e  manifests/semantic_kormed_v2/audit.json
+SHA
+)
+```
+
+정말 재계산할 때만 다음을 실행한다. **CPU 전용이며 새로운 `audit_replays` 디렉터리에만 쓴다.** 원래 입력 순서는 AI-Hub train/validation/test 뒤 EN train이고, 보호셋은 공식 KorMedMCQA dev/test 전부다. 두 tokenizer의 pinned revision은 기존 token receipt에서 읽는다. `max_length=2048`, cosine cutoff `0.92`, `top_k=5`를 유지한다. 원래 corpus·threshold·freeze·성공 audit는 수정하지 않으며, 새 출력의 경로가 달라지므로 경로를 포함한 receipt SHA가 원본과 같다고 기대하지 않는다. 이 재계산 명령은 문서 작성 과정에서 실행하지 않았다.
+
+```bash
+export PYTHONPATH="$PWD/src"
+CUDA_VISIBLE_DEVICES="" ../.venv-medvlm/bin/python - <<'PY'
+import importlib.util, json, os
+from datetime import datetime, timezone
+from pathlib import Path
+from mediflow_medvlm.data.io import sha256, read_jsonl, atomic_json
+
+root = Path(os.environ['MEDVLM_DATA_ROOT'])
+v2 = root / 'v2'
+snapshot = v2 / 'prepared/aihub_71875/9b5469c6b67bded6f9d4280eef95443d918780612d587aad6c432104b17d5767/source_snapshot/aihub.py'
+assert sha256(snapshot) == '4bd3f70cb93fa4228f33fe460dc2df9123ebd2bf917e2ae0f64a5936b3eede11'
+spec = importlib.util.spec_from_file_location('mediflow_medvlm.data._audit_snapshot', snapshot)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+pool_path = v2 / 'prepared/aihub_71875/e6094782398096bffb8131fc91ac3c787919b4e37aba3c54c2d85b0b371b177a/audit.json'
+assert sha256(pool_path) == '277761bd2e21809c92e60274728cf7b5299d7b5578be20e1c9814e20bd527ea2'
+pool = json.loads(pool_path.read_text())
+freeze = json.loads((root / 'manifests/freeze-1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5.json').read_text())
+def load(entry):
+    path = Path(entry.get('snapshot_path', entry['path']))
+    assert sha256(path) == entry['sha256']
+    rows = read_jsonl(path)
+    assert len(rows) == entry['count']
+    return rows
+candidates = sum((load(pool['canonical_files'][s]) for s in ('train','validation','test')), []) + load(freeze['splits']['text/train'])
+protected = sum((load(freeze['splits']['kormedmcqa/' + s]) for s in ('validation','test')), [])
+old_token = json.loads((v2 / 'manifests/aihub_71875_qwen_token_audit-20261026.json').read_text())
+configs = {k: {'model_id': m['model_id'], 'revision': m['revision'], 'cache_dir': str(root / 'models/hub')} for k, m in old_token['models'].items()}
+out = v2 / 'audit_replays' / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+out.mkdir(parents=True, exist_ok=False, mode=0o700)
+token = module.token_audit(candidates, configs, max_length=2048)
+token['input_receipts'] = {'aihub_pool_audit_sha256': sha256(pool_path), 'v1_text_train_sha256': freeze['splits']['text/train']['sha256']}
+atomic_json(out / 'token.json', token)
+en_token = module.token_audit(load(freeze['splits']['text/validation']), configs, max_length=2048)
+en_token['input_sha256'] = freeze['splits']['text/validation']['sha256']
+atomic_json(out / 'en_validation_token.json', en_token)
+module.semantic_audit(candidates, protected, v2 / 'manifests/multilingual_embedding_model.json', out / 'semantic', threshold=.92, top_k=5)
+print(json.dumps({'output_dir': str(out), 'candidates': len(candidates), 'protected': len(protected)}))
+PY
+```

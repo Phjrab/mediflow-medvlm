@@ -5,6 +5,8 @@ qwen35_2b-validation256-base-v2-20261026,qwen35_2b,base,validation256,slake,medi
 qwen35_2b-validation256-tuned-v2-20261026,qwen35_2b,tuned_v1,validation256,slake,medical_vqa,en,,32,32,32,,22,1.0,,,0.6875,0.6875,0.7333333333333333,0.0,0.0,0
 qwen35_2b-slake-base-v2-20261026,qwen35_2b,base,slake,slake,medical_vqa,en,,1061,1061,1061,,556,1.0,,,0.5240339302544769,0.5240339302544769,0.5639782774561286,0.0,0.0,0
 qwen35_2b-slake-tuned-v2-20261026,qwen35_2b,tuned_v1,slake,slake,medical_vqa,en,,1061,1061,1061,,748,1.0,,,0.704995287464656,0.704995287464656,0.7384722409227592,0.0,0.0,0
+qwen35_2b-vqarad-base-v2-20261026,qwen35_2b,base,vqarad,vqa_rad,medical_vqa,en,,451,451,451,,216,1.0,,,0.4789356984478936,0.4789356984478936,0.5113451589061345,0.0,0.0,0
+qwen35_2b-vqarad-tuned-v2-20261026,qwen35_2b,tuned_v1,vqarad,vqa_rad,medical_vqa,en,,451,451,451,,220,1.0,,,0.4878048780487805,0.4878048780487805,0.5216152657394343,0.0,0.0,0
 qwen35_2b-noimage-base-v2-20261026,qwen35_2b,base,noimage,slake,medical_vqa,en,,32,32,32,,8,1.0,,,0.25,0.25,0.2578125,0.0,0.0,0
 qwen35_2b-noimage-tuned-v2-20261026,qwen35_2b,tuned_v1,noimage,slake,medical_vqa,en,,32,32,32,,12,1.0,,,0.375,0.375,0.375,0.0,0.0,0
 medgemma15_4b-validation128-base-v2-20261026,medgemma15_4b,base,validation128,slake,medical_vqa,en,,32,32,32,,6,1.0,,,0.1875,0.1875,0.27621576792772445,0.0,0.0,4
@@ -12,3 +14,8 @@ medgemma15_4b-validation128-tuned-v2-20261026,medgemma15_4b,tuned_v1,validation1
 medgemma15_4b-validation256-base-v2-20261026,medgemma15_4b,base,validation256,slake,medical_vqa,en,,32,32,32,,6,1.0,,,0.1875,0.1875,0.27590333234743175,0.0,0.0,4
 medgemma15_4b-validation256-tuned-v2-20261026,medgemma15_4b,tuned_v1,validation256,slake,medical_vqa,en,,32,32,32,,18,1.0,,,0.5625,0.5625,0.6125,0.0,0.0,0
 medgemma15_4b-slake-base-v2-20261026,medgemma15_4b,base,slake,slake,medical_vqa,en,,1061,1061,1061,,386,1.0,,,0.36380772855796417,0.36380772855796417,0.4623234705925832,0.0,0.0,49
+medgemma15_4b-slake-tuned-v2-20261026,medgemma15_4b,tuned_v1,slake,slake,medical_vqa,en,,1061,1061,1061,,736,1.0,,,0.6936852026390198,0.6936852026390198,0.7275851622458597,0.0,0.0,0
+medgemma15_4b-vqarad-base-v2-20261026,medgemma15_4b,base,vqarad,vqa_rad,medical_vqa,en,,451,451,451,,195,1.0,,,0.43237250554323725,0.43237250554323725,0.4996470573663375,0.0,0.0,4
+medgemma15_4b-vqarad-tuned-v2-20261026,medgemma15_4b,tuned_v1,vqarad,vqa_rad,medical_vqa,en,,451,451,451,,218,1.0,,,0.48337028824833705,0.48337028824833705,0.5161818533769753,0.0,0.0,0
+medgemma15_4b-noimage-base-v2-20261026,medgemma15_4b,base,noimage,slake,medical_vqa,en,,32,32,32,,4,1.0,,,0.125,0.125,0.13424744897959184,0.0,0.0,3
+medgemma15_4b-noimage-tuned-v2-20261026,medgemma15_4b,tuned_v1,noimage,slake,medical_vqa,en,,32,32,32,,11,1.0,,,0.34375,0.34375,0.34375,0.0,0.0,0

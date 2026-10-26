@@ -1,7 +1,17 @@
 model,phase,left,right,normalization,source_id,task_type,language,n,group_count,delta,ci95,bootstrap_unit,bootstrap_resamples,metric
 qwen35_2b,slake,base,tuned_v1,v2_normalized,slake,medical_vqa,en,1061,71,0.18096135721017909,"[0.14682539682539683, 0.21627408993576017]",observed_source_group,2000,end_to_end_lexical_exact_match
 qwen35_2b,slake,base,tuned_v1,strict,slake,medical_vqa,en,1061,71,0.18096135721017909,"[0.14682539682539683, 0.21627408993576017]",observed_source_group,2000,end_to_end_lexical_exact_match
+qwen35_2b,vqarad,base,tuned_v1,v2_normalized,vqa_rad,medical_vqa,en,451,203,0.008869179600886918,"[-0.029411764705882353, 0.048458149779735685]",observed_source_group,2000,end_to_end_lexical_exact_match
+qwen35_2b,vqarad,base,tuned_v1,strict,vqa_rad,medical_vqa,en,451,203,0.011086474501108648,"[-0.02813852813852814, 0.05084745762711865]",observed_source_group,2000,end_to_end_lexical_exact_match
 qwen35_2b,noimage,base,tuned_v1,v2_normalized,slake,medical_vqa,en,32,26,0.125,"[0.029411764705882353, 0.2413793103448276]",observed_source_group,2000,end_to_end_lexical_exact_match
 qwen35_2b,noimage,base,tuned_v1,strict,slake,medical_vqa,en,32,26,0.125,"[0.029411764705882353, 0.2413793103448276]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,slake,base,tuned_v1,v2_normalized,slake,medical_vqa,en,1061,71,0.3298774740810556,"[0.29590017825311943, 0.3645266594124048]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,slake,base,tuned_v1,strict,slake,medical_vqa,en,1061,71,0.49293119698397736,"[0.4503239740820734, 0.5345149253731343]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,vqarad,base,tuned_v1,v2_normalized,vqa_rad,medical_vqa,en,451,203,0.050997782705099776,"[0.010845986984815618, 0.09030837004405286]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,vqarad,base,tuned_v1,strict,vqa_rad,medical_vqa,en,451,203,0.2394678492239468,"[0.18468468468468469, 0.29314420803782504]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,noimage,base,tuned_v1,v2_normalized,slake,medical_vqa,en,32,26,0.21875,"[0.09375, 0.36666666666666664]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,noimage,base,tuned_v1,strict,slake,medical_vqa,en,32,26,0.21875,"[0.09375, 0.36666666666666664]",observed_source_group,2000,end_to_end_lexical_exact_match
 qwen35_2b,image_diagnostic,base_image,base_no_image,v2_normalized,slake,medical_vqa,en,32,26,-0.4375,"[-0.6060606060606061, -0.2777777777777778]",observed_source_group,2000,end_to_end_lexical_exact_match
 qwen35_2b,image_diagnostic,tuned_v1_image,tuned_v1_no_image,v2_normalized,slake,medical_vqa,en,32,26,-0.40625,"[-0.59375, -0.22580645161290322]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,image_diagnostic,base_image,base_no_image,v2_normalized,slake,medical_vqa,en,32,26,-0.34375,"[-0.5142857142857142, -0.16129032258064516]",observed_source_group,2000,end_to_end_lexical_exact_match
+medgemma15_4b,image_diagnostic,tuned_v1_image,tuned_v1_no_image,v2_normalized,slake,medical_vqa,en,32,26,-0.4375,"[-0.625, -0.22580645161290322]",observed_source_group,2000,end_to_end_lexical_exact_match
