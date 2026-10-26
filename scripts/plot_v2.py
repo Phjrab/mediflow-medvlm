@@ -113,6 +113,8 @@ def save_figure(fig, output, name, metadata):
         if path.is_symlink():
             raise ValueError('refusing to replace a symlinked plot')
         fig.savefig(path, dpi=180, facecolor='white', metadata=metadata)
+        if suffix == 'svg':
+            path.write_text('\n'.join(line.rstrip() for line in path.read_text().splitlines()) + '\n')
         result.append(path.name)
     return result
 
