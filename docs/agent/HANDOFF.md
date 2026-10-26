@@ -1,38 +1,35 @@
 # 실행 인계
 
-## 현재 후속 작업 — 2026-10-26
+## 현재 후속 작업 — 2026-10-27 06:46 KST
 
-사용자 후속 지시로 v2 작업을 진행 중이다. 아래 상태는 중간 인계이며 최종 완료 실적이 아니다. 기존 `runtime/medvlm_state.json`과 `reports/public_summary/{RESULTS_KO.md,run_summary.json,stage_status.json}`은 **v1의 역사 상태**다. 후속 전체 작업의 최종 root 상태는 아직 작성 전이며 v1 상태 파일로 v2 완료 여부를 판단하지 않는다. 새 결과는 `reports/public_summary/v2/`에 구분한다.
+실행 가능한 v2 선언 행렬은 완료했다. 전체 상태는 `COMPLETED_AVAILABLE_WORK_WITH_EXTERNAL_BLOCKER`이며 AI-Hub 71762는 `BLOCKED_DELIVERY`다. `reports/public_summary/v2/READOUT_KO.md`가 핵심 해석, `RESULTS_KO.md`가 전체 결과, `verification.json`이 실제 산출물 검증 근거다. `runtime/medvlm_state.json`은 변경하지 않은 v1 역사 상태이고, v2 인계는 `runtime/medvlm_state_v2.json`에 별도로 둔다.
 
-- 현재 실행 정책: `configs/resource_policy.json`의 `budget_mode=unlimited`. `total_gpu_hours`, `per_model_gpu_hours`, `run_wall_seconds`, `job_timeout_seconds`, `campaign_wall_seconds`는 모두 `null`이다. `resolve_resource_policy()`가 해석한 현재 정책을 따른다. 이전 config/checkpoint의 24/6 제한을 되살리지 않으며 원장·model/run/phase/session 사용량과 checkpoint floor는 보존한다. 네트워크 요청 timeout·교착 진단·사용자 중단 처리는 유지한다.
-- Jetson: `USER_DEFERRED`. 10/26 사용자 요청으로 접속·호스트키 확인·설치·변환·장치 추론을 범위에서 제외했다. 10/23 호스트키 미검증 이력은 아래에 보존하되 현재 재개 선행 조건이나 사용자 할 일로 취급하지 않는다.
-- AI-Hub 71875: 실제 준비 완료 canonical 17,210개(train 15,297 / validation 956 / test 957). 사용자 제공 원본 경로를 사용하므로 API 키를 추가 필수 조건으로 만들지 않는다. 실제 수량·권리·제외·분할 근거는 v2 import manifest와 공개 요약을 따른다.
-- AI-Hub 71762: 전달 파일 약 4.25GB에 대해 connector의 파일당 256MiB 제한이 있었고 브라우저 다운로드는 `ERR_BLOCKED_BY_CLIENT`로 차단됐다. 사용자의 로컬 원본 경로 응답을 기다린다. 승인 또는 인증 누락으로 단정하지 않고 경계를 우회하지 않는다. 원본 확보와 명시 pairing 근거가 없는 단계는 완료로 표시하지 않는다.
-- MedMCQA: 공식 팀 MIT 답변과 원저자 ZIP을 확인해 원본 193,155행을 확보·감사했다. 선택적 영어 canonical train 20,000 / validation 2,816 / test 0을 별도 준비했다. KO/MIX 주 corpus와 기존 freeze에 넣지 않았으며 학습하지 않았다.
-- 한국어 텍스트 실험: KO 4,000개(객관식1,500/단답1,300/서술1,200), MIX 같은 KO4,000+EN4,000과 공통 dev1,516을 동결했다. KorMedMCQA4,068 보호를 위한 lexical/semantic 후보 감사와 실제 native token 검사를 완료했다. KO250 update/243,394 target tokens, MIX500 update/1,137,306 target tokens의 한 pass이며 원본 Base에서 시작한다. 20-update smoke·새 process reload 후 본 실행, 동일 dev48개로 checkpoint를 선택한다. **13:32 UTC에 VQA가 끝나고 텍스트 행렬을 시작했다. 첫 Qwen3-1.7B KO smoke20·재로드 성공 후 본학습이 진행 중이며 전체 텍스트 완료 전이다.** 상태는 `v2/text/state.json`, 대기 프로세스는 `v2/text/queued-launch.json`, 불변 계획은 `v2/text/plan.json`이다.
-- VQA v2: Qwen3.5-2B/MedGemma의 기존 Base·선정 v1 adapter를 재사용하며 새 VLM 학습은 하지 않는다. validation8개 실행으로 짧은 답변 형식과256-token 상한을 고정했고 전체SLAKE1061/VQA-RAD451 및 no-image32 평가를 완료했다. Validation8+본평가·진단12개 모두 성공하고 산출물 검증을 통과했다. 상태는 `$MEDVLM_DATA_ROOT/v2/vqa/state.json`, 선언은 같은 폴더의 `plan.json`, 결정은 `validation-decision.json`, 로그·예측은 같은 v2 폴더에 둔다. 기존 v1 test를 새로운 blind test라고 부르지 않는다.
+- 현재 resource policy는 unlimited이며 total/model/run/job/campaign 상한은 모두 null이다. 사용량 원장·재개 identity·checkpoint floor는 보존했다. 시간 상한 없음이 추가 무한 실험을 뜻하지 않는다.
+- 71875 실제 canonical 17,210개(train15,297/dev956/test957), KO4,000/MIX8,000, 공통 dev1,516을 준비·동결했다. KorMedMCQA 전체 dev/test4,068 보호를 위해 lexical/semantic 후보를 검사했고 후보 train/dev3,208행을 보수적으로 제외했다. 후보를 확정 중복이라고 부르지 않는다.
+- 네 KO/MIX 본학습과 네 smoke 모두 성공했고 새 process 재로드를 통과했다. 원본 Base에서 독립 학습했으며 Qwen3-4B KO는 full250 update 중 validation step200, 나머지는 최종 step250/500을 선택했다. 텍스트9조건×4,530문항을 완료했다. MedGemma는 adapter 없는 native text Base다.
+- 기존 VLM 가중치로 VQA validation8+본평가·진단12를 완료했다. VLM 재학습은 하지 않았다. MedGemma의 SLAKE dataset-level 사전학습 노출과 정확한 test 노출 미상 한계를 유지한다.
+- MedMCQA는 공식 MIT 근거로 원본193,155행 확보·감사, optional canonical22,816행을 준비했다. 주 KO/MIX에는 미포함이고 추가 학습하지 않았다. v1 예측의 형식/길이/OPEN-CLOSED/8,450→8,400 재분석은 완료했다.
+- 익명 검토표4개·64비교행은 동일16문항이며 사람의 검토는0건이다. 전달 사본만 편집하고 private key는 별도 보존한다. 추가seed는 NOT_SELECTED, 예비모델은 fallback 불필요다.
+- 71762 약4.25GB 파일은 링크를 받았지만 connector256MiB 한도와 브라우저 ERR_BLOCKED_BY_CLIENT로 원본0bytes다. 실제 pairing은 UNRESOLVED_PAIRING이다. 필요한 외부 입력은 로컬 원본 경로와 제공 가능한 가이드다. 이미 받은71875에 API 키를 요구하지 않는다.
+- Jetson은 USER_DEFERRED다. 과거 호스트키 미검증 이력은 아래에 보존하며 현재 사용자 할 일로 요청하지 않는다.
 
-저장소 최상위에서 기존 환경과 data root를 사용한다. 먼저 현재 소유 worker/PID와 v2 상태·로그를 확인하고 **실행 중이면 두 번째 worker를 시작하지 않는다.** 다음은 진행 중 작업이 종료되거나 중단된 뒤의 재개 명령이다.
+완료 평가29개(validation포함), 학습·재로드8개, 검토표4개를 검증했다. CPU234passed·7skipped·23subtests와 별도 native41passed·20subtests를 구분한다. v1 공개 파일18개와 실행 소스 스냅샷14개의 보존을 재확인했다. 실행 소유 worker가 종료됐으며 재개 전에는 상태와 실제 PID를 다시 확인한다. 공개 결과는 원문·예측·가중치·비밀값을 포함하지 않는다.
+
+저장소에서 다음 명령을 사용한다. 성공 결과는 검증·재사용하며 v1 보고서는 재생성하지 않는다.
 
 ```bash
 export MEDVLM_DATA_ROOT="$(realpath ../medvlm-data)"
 export PYTHONPATH="$PWD/src"
 export WANDB_DISABLED=true
-# validation까지만 수행 또는 성공 결과 재사용
-../.venv-medvlm/bin/python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT" --validation-only
-# 고정 validation 결정 후 선언된 SLAKE/VQA-RAD·이미지 제외 평가까지 계속
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
 ../.venv-medvlm/bin/python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT"
-# VQA와 대기 프로세스 종료 여부를 먼저 확인한 뒤 텍스트 행렬 재개
 ../.venv-medvlm/bin/python scripts/run_text_v2.py --data-root "$MEDVLM_DATA_ROOT" --phase all
-# 완료 artifact만 검증·집계. 원래 v1 보고서는 재생성하지 않는다.
 ../.venv-medvlm/bin/python scripts/report_v2.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary/v2
-# 기존 v1 예측의 CPU 재분석만 재생성
-../.venv-medvlm/bin/python scripts/analyze_v1_followup.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary/v2
+MPLCONFIGDIR=/tmp/medvlm-v2-mpl-cache ../.venv-medvlm/bin/python scripts/plot_v2.py --summary reports/public_summary/v2/run_summary.json --output reports/public_summary/v2/figures
 ```
 
-사용량 원장은 `$MEDVLM_DATA_ROOT/runtime/gpu_budget.json`이며 현재 정책과 별개로 보존한다. v1 freeze·checkpoint·source snapshot·prediction·config·기존 결과표를 덮어쓰지 않는다. 과거 미완료 run을 재개해야 한다면 검증된 resource-policy-only migration을 사용하며 identity 검사를 끄지 않는다. 정책 변경만으로 완료한 네 모델을 다시 학습하지 않는다. fallback 불필요 후보를 새 필수 셀로 만들지 않는다.
-
-현재 사용자가 제공해야 할 입력은 **71762의 접근 가능한 로컬 원본 경로(및 제공 가능한 가이드·전처리 코드)**다. 이미 허용된 GPU 실행이나 MedGemma 접근, 제외한 Jetson 확인을 다시 요청하지 않는다. 새 실적과 최종 검증·commit/push 결과는 후속 통합 보고에서 갱신한다.
+전용 작업 branch `codex/medical-finetune-v1-20261023`만 사용한다. 최종 commit/push/CI 영수증은 작업공간의 `outputs/v2/git_receipt.json`에 별도 기록하여 commit 자기참조를 피한다. 데이터·모델·비밀값은 Git 밖에 보존한다. main merge·배포·유료 cloud·OS/드라이버 교체는 수행하지 않는다.
 
 ## 보존된 2026-10-23 v1 인계
 

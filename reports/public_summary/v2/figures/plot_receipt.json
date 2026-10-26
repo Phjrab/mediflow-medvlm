@@ -2,20 +2,23 @@
   "clinical_accuracy": null,
   "files": [
     "vqa_v2.png",
-    "vqa_v2.svg"
+    "vqa_v2.svg",
+    "text_v2.png",
+    "text_v2.svg"
   ],
   "protocol_hashes": [
+    "82f136da0125f2b12aa6019db9f21298785265ce14397b474c5321b431a66030",
     "ac4543a91bf6a4cfdecb5123ad7f1a5d30ee60fa2cf45ae589e0ca5fbf637617",
     "f714df5aa50c3177a1b359e875e5bb6f9790aa953c0de97da4a431471a41608d"
   ],
   "raw_predictions_or_source_text_read": false,
-  "report_generated_at": "2026-10-26T13:35:00.136371+00:00",
+  "report_generated_at": "2026-10-26T21:45:55.750228+00:00",
   "schema_version": "medvlm.aggregate-plots.v2",
   "seed": 20261023,
-  "summary_sha256": "3fb9cd09be275011f252be754c323046c470c37e20fd21062a6372ed90c4ba8a",
-  "text_completed_metric_cells": 0,
+  "summary_sha256": "e4dee9131da081fba066c01d51b051aef8e454292fd2372be14f5394d21606df",
+  "text_completed_metric_cells": 27,
   "text_planned_metric_cells": 27,
-  "text_plot_status": "NOT_READY_NO_VERIFIED_TEXT_RESULTS",
+  "text_plot_status": "GENERATED",
   "vqa_completed_metric_cells": 24,
   "vqa_planned_metric_cells": 24
 }

@@ -1,32 +1,31 @@
 {
   "aihub_71762": "BLOCKED_DELIVERY",
-  "generated_at": "2026-10-26T13:35:00.136371+00:00",
+  "execution_matrix_status": "SUCCEEDED",
+  "generated_at": "2026-10-26T21:45:55.750228+00:00",
   "human_review": "NOT_PERFORMED",
   "jetson": "USER_DEFERRED",
   "review_preparation": {
     "human_review_count": 0,
     "planned_packets": 4,
-    "prepared_review_pairs": 0,
-    "status": "INCOMPLETE_PREPARATION",
-    "verified_prepared_packets": 0
+    "prepared_review_pairs": 64,
+    "status": "PREPARED_NOT_RUN",
+    "verified_prepared_packets": 4
   },
   "schema_version": "medvlm.stage-status.v2",
-  "status": "IN_PROGRESS_OR_PARTIAL",
+  "status": "COMPLETED_AVAILABLE_WORK_WITH_EXTERNAL_BLOCKER",
   "text_evaluation": {
     "planned": 9,
     "statuses": {
-      "NOT_RUN": 9
+      "SUCCEEDED": 9
     },
-    "verified_succeeded": 0
+    "verified_succeeded": 9
   },
   "text_training_and_reload": {
     "planned": 8,
     "statuses": {
-      "NOT_RUN": 6,
-      "RUNNING": 1,
-      "SUCCEEDED": 1
+      "SUCCEEDED": 8
     },
-    "verified_succeeded": 1
+    "verified_succeeded": 8
   },
   "verification_errors": 0,
   "vqa_main": {

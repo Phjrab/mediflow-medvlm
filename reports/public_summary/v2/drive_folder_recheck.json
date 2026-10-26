@@ -1,0 +1,25 @@
+{
+  "schema_version": "medvlm.input-folder-recheck.v2",
+  "checked_at_utc": "2026-10-26 20:00:15 UTC",
+  "scope": "user-supplied Drive folder direct-child metadata only",
+  "files": [
+    {
+      "file_id": "1ls_efbqMmu7y2Znl3BsA75WVKsuySJty",
+      "name": "09.필수의료 의학지식 데이터.zip",
+      "size_bytes": 136478457,
+      "modified_time": "2026-10-26T10:54:42.495Z"
+    },
+    {
+      "file_id": "10uVXVidJGazSb_PF8qhEgX_dRcCYk03P",
+      "name": "120.초거대AI 사전학습용 헬스케어 질의응답 데이터.zip",
+      "size_bytes": 4248340940,
+      "modified_time": "2026-10-26T10:54:26.059Z"
+    }
+  ],
+  "listed_file_count": 2,
+  "new_deliverable_files_observed": false,
+  "download_retried": false,
+  "content_hash_revalidated": false,
+  "aihub_71762_status": "BLOCKED_DELIVERY",
+  "note": "The listing still contains the two previously identified archives. No additional guide or split archive was listed. Prior connector-size and browser-download blockers remain; metadata visibility is not raw acquisition."
+}

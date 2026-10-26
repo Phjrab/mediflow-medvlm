@@ -12,5 +12,74 @@
     "result": "233 passed, 7 skipped, 23 subtests passed",
     "log_sha256": "52e7749bf2b89cff9f0386779f8cbcd887418eb9276720b2c8216d103b693c45",
     "reason": "aggregate plot selection tests and CSV newline correction"
-  }
+  },
+  "final_core_regression": {
+    "checked_at": "2026-10-26T16:55:47.863104+00:00",
+    "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -q",
+    "exit_code": 0,
+    "result": "PASS; quiet output, seven native-runtime tests skipped in core environment",
+    "log_sha256": "71cfb8215245cb97bcbdd336419baf849bfd6a21cf01b1a0fb7662f91cf7301b",
+    "reason": "Final report checkpoint-exposure fields and aggregate-status refinements; no runtime/training recipe changes"
+  },
+  "final_report_plot_checks": {
+    "checked_at": "2026-10-26T20:48:46.360922+00:00",
+    "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts= -q tests/test_report_v2.py tests/test_plot_v2.py",
+    "exit_code": 0,
+    "result": "12 passed",
+    "log_sha256": "c16c68f86ee0c4e8cfd0af3f76078be45441ee151395fbde5800145c08e189b5",
+    "report_script_sha256": "0c2a4b39e3bedd8ef107124a9f4411530d06bf63f76db919db459e98ad559c23",
+    "plot_script_sha256": "95f45a4d1a50335c0769b2a61e753b9c78fa443edd3f2ec78e1fe1e7f80ccfa5",
+    "reason": "Carry the known MedGemma SLAKE exposure limitation into the standalone VQA figure caption"
+  },
+  "prior_report_plot_checks": [
+    {
+      "checked_at": "2026-10-26T18:17:34.564752+00:00",
+      "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts= -q tests/test_report_v2.py tests/test_plot_v2.py",
+      "exit_code": 0,
+      "result": "12 passed",
+      "log_sha256": "8df57c9b381a420da960c470cf26ad622e051d953d79e4b18b5cd1c994502f14",
+      "report_script_sha256": "503f3bb88e2b26c3fc6dc6892dbaa966e9eb2789ee49f1a4213c6e95389a4e25",
+      "plot_script_sha256": "ee4f368ff22b7b368210fdb934beb8cae506685f05278d49bb7c407bc0deed1f"
+    },
+    {
+      "checked_at": "2026-10-26T20:34:25.893726+00:00",
+      "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts= -q tests/test_report_v2.py tests/test_plot_v2.py",
+      "exit_code": 0,
+      "result": "12 passed",
+      "log_sha256": "8df57c9b381a420da960c470cf26ad622e051d953d79e4b18b5cd1c994502f14",
+      "report_script_sha256": "0c2a4b39e3bedd8ef107124a9f4411530d06bf63f76db919db459e98ad559c23",
+      "plot_script_sha256": "ee4f368ff22b7b368210fdb934beb8cae506685f05278d49bb7c407bc0deed1f",
+      "reason": "Preserve known SLAKE exposure and distinguish completed execution from recovery instructions; no scoring or inference changes"
+    }
+  ],
+  "final_full_regression": {
+    "checked_at": "2026-10-26T21:24:32.642815+00:00",
+    "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts= -q",
+    "exit_code": 0,
+    "result": "234 passed, 7 skipped, 6 warnings, 23 subtests passed",
+    "log_sha256": "7bc15e180912152ad86799d66bc742671b1fe00a221902e14c985ac9cfcf1145",
+    "sources_sha256": {
+      "scripts/report_v2.py": "eb2f011cbf39e17b53fa677f087723f574c388c9eede4dd09fe43575ede2ec6e",
+      "scripts/plot_v2.py": "95f45a4d1a50335c0769b2a61e753b9c78fa443edd3f2ec78e1fe1e7f80ccfa5",
+      "tests/test_report_v2.py": "686bd3daf0ad70e024e0bf93a2a1e877eb41007efce53804abb788d1b852edd5"
+    },
+    "native_tests": "Prior separate native-runtime receipt retained; training/evaluation core has not changed.",
+    "note": "Latest complete regression includes text/pixel mismatch rejection and reports classification-only F1 as not applicable, rather than not run. No scoring, inference, or training changes."
+  },
+  "prior_full_regressions": [
+    {
+      "checked_at": "2026-10-26T21:05:42.578259+00:00",
+      "command": "PYTHONPATH=src ../.venv-core310/bin/python -m pytest -o addopts= -q",
+      "exit_code": 0,
+      "result": "234 passed, 7 skipped, 6 warnings, 23 subtests passed",
+      "log_sha256": "2dfeeae32d5d99c883dff943aeebe40f8774e8c0275219a2673b8e4f20f2ce2d",
+      "sources_sha256": {
+        "scripts/report_v2.py": "711d965fbc1ad124feb7ad4c94ed17bad9a2059ff571b2941e445adf8013d6ee",
+        "scripts/plot_v2.py": "95f45a4d1a50335c0769b2a61e753b9c78fa443edd3f2ec78e1fe1e7f80ccfa5",
+        "tests/test_report_v2.py": "686bd3daf0ad70e024e0bf93a2a1e877eb41007efce53804abb788d1b852edd5"
+      },
+      "native_tests": "Prior separate native-runtime receipt retained; training/evaluation core has not changed.",
+      "note": "Latest complete regression after adding hash-consistent text/pixel mismatch rejection. Includes the 13 report/plot tests. Supersedes earlier report/plot source snapshots for current code."
+    }
+  ]
 }

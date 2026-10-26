@@ -200,6 +200,9 @@ class Evidence:
             if phase == 'noimage':
                 require(manifest['image_condition'] == 'no_image', 'NO_IMAGE_PROTOCOL_MISMATCH')
                 require(all(not p.get('vision_ingested') and not p.get('pixel_tensor_keys') for p in predictions), 'NO_IMAGE_PIXEL_EVIDENCE')
+            elif phase == 'text':
+                require(all(s['task_type'] != 'medical_vqa' and not s['input'].get('images') for s in samples), 'TEXT_PROTOCOL_HAS_IMAGES')
+                require(all(p.get('vision_ingested') is False and not p.get('pixel_tensor_keys') for p in predictions), 'TEXT_RUN_PIXEL_EVIDENCE')
             elif samples[0]['task_type'] == 'medical_vqa':
                 require(manifest['image_condition'] == 'image', 'IMAGE_PROTOCOL_MISMATCH')
                 require(all(p.get('vision_ingested') and p.get('pixel_tensor_keys') for p in predictions
@@ -216,6 +219,10 @@ class Evidence:
                         peak_allocated_bytes=manifest.get('peak_allocated_bytes'), peak_reserved_bytes=manifest.get('peak_reserved_bytes'),
                         wall_seconds=manifest.get('wall_seconds'), load_seconds=manifest.get('load_seconds'),
                         recorded_evaluation_code_sha256=manifest.get('code', {}).get('source_tree_sha256'))
+            if phase == 'text':
+                cell['text_modality_evidence'] = {'verified_predictions': len(predictions),
+                    'vision_ingested_records': 0, 'native_pixel_tensor_records': 0,
+                    'source_inputs_have_images': False}
             self.receipt(config_path, 'evaluation_config_verified')
             self.receipt(origin_path, 'native_model_recorded_training_identity')
             for name in ('predictions.jsonl', 'metrics.json'):
@@ -277,6 +284,9 @@ class Evidence:
             result.update(verified=True, reload_verified=True, adapter_digest=selection['adapter']['digest'],
                           native_model_recorded_digest=manifest['model']['native_files']['sha256'],
                           selected_checkpoint_steps=cp.get('optimizer_steps'),
+                          selected_checkpoint_samples=cp.get('samples_processed'),
+                          selected_checkpoint_supervised_tokens=cp.get('supervised_tokens'),
+                          selected_checkpoint_validation_loss=cp.get('best_validation_loss'),
                           config_hash=manifest['config_hash'], freeze_manifest_sha256=manifest['data']['freeze_manifest_sha256'])
             exclusions = read(folder / 'excluded.json', [])
             result['preflight_excluded_count'] = len(exclusions)
@@ -338,7 +348,8 @@ def data_summary(root, evidence):
     result = {'text_corpora': {'status': 'NOT_PREPARED'}}
     if corpus:
         evidence.receipt(corpus_path, 'text_corpus_manifest')
-        result['text_corpora'] = {'status': 'PREPARED_NOT_RUN', 'seed': corpus['seed'], 'max_length': corpus['max_length'], 'corpora': {}}
+        result['text_corpora'] = {'status': 'SUCCEEDED', 'scope': 'corpus preparation only; training is reported separately',
+                                 'seed': corpus['seed'], 'max_length': corpus['max_length'], 'corpora': {}}
         for condition, item in corpus['corpora'].items():
             freeze = read(item['freeze_manifest'])
             require(canonical_hash({k:v for k,v in freeze.items() if k != 'freeze_id'}) == freeze['freeze_id'], 'CORPUS_FREEZE_ID_MISMATCH')
@@ -661,7 +672,7 @@ def collect(root):
                    'effective_batch': 16, 'lora': {'rank': 8, 'alpha': 16, 'dropout': .05},
                    'checkpoint_validation': 'same common dev file; 48 source-balanced samples; seed 20261023; not q_type-stratified',
                    'medgemma_text_condition': 'original base, no VQA adapter', 'additional_seeds': 'NOT_SELECTED'},
-        'limitations': ['Pretraining/test overlap and memorization are unknown.',
+        'limitations': ['MedGemma has known dataset-level SLAKE pretraining exposure; exact test exposure is unknown. Past exposure of the general models is also unknown.',
             'Previously observed v1 test items are included; this is not a new blind benchmark.',
             'One seed does not measure training-seed variance; group bootstrap only resamples observed examples.',
             'KO4000 and MIX8000 differ in total examples, tokens and optimizer updates; effects are not attributable solely to language mix.',
@@ -676,8 +687,11 @@ def collect(root):
         'aihub_71762': data['aihub_71762']['status'], 'jetson': 'USER_DEFERRED', 'human_review': 'NOT_PERFORMED',
         'review_preparation': {k:review[k] for k in ('status','planned_packets','verified_prepared_packets','prepared_review_pairs','human_review_count')},
         'verification_errors': len(evidence.errors)}
-    stage['status'] = 'SUCCEEDED' if all(stage[k]['verified_succeeded'] == stage[k]['planned'] for k in
+    stage['execution_matrix_status'] = 'SUCCEEDED' if all(stage[k]['verified_succeeded'] == stage[k]['planned'] for k in
         ('vqa_main', 'text_training_and_reload', 'text_evaluation')) and validation['status'] == 'SUCCEEDED' and review['verified_prepared_packets'] == 4 and not evidence.errors else 'IN_PROGRESS_OR_PARTIAL'
+    stage['status'] = stage['execution_matrix_status']
+    if stage['status'] == 'SUCCEEDED' and stage['aihub_71762'] != 'SUCCEEDED':
+        stage['status'] = 'COMPLETED_AVAILABLE_WORK_WITH_EXTERNAL_BLOCKER'
     verification = {'schema_version': 'medvlm.public-verification.v2', 'generated_at': summary['generated_at'],
         'status': 'PASS_FOR_COMPLETED_ARTIFACTS' if not evidence.errors else 'FAILED_VERIFICATION',
         'base_weight_bytes_rehashed': False, 'new_model_load_or_gpu_work': False, 'v1_modified': False,
@@ -730,28 +744,31 @@ def markdown(summary, stages):
     if selected:
         lines += [f"최종 KO q_type 선택은 {json.dumps(selected['ko_selected_counts'])}; MIX는 같은 KO에 {json.dumps(selected['en_selected_counts'])}를 더한다. 공통 dev는 {selected['common_validation_count']}개(AI-Hub {selected['ko_validation_count']} + EN {sum(selected['en_validation_selected_counts'].values())})다. 최초 균등 q_type quota와 dev 1,912개에서 바뀐 이유는 고정 threshold의 후보 격리로 long/train과 dev가 줄었기 때문이다. 평가 성능으로 선택하거나 threshold를 바꾸지 않았다.", '']
     lines += ['KO4,000(250 update), MIX8,000(500 update)는 seed 20261023 한 pass를 계획한다. 각각 독립 smoke 20 update와 새 프로세스 재로드를 먼저 확인한다. LR 2e-4, LoRA rank 8/alpha 16/dropout 0.05, effective batch 16이다. KO/MIX checkpoint 비교에는 동일 공통 dev 파일에서 source별 균형으로 고른 48개를 쓴다. q_type별 층화 표본을 보장하지 않는다.', '',
-              '| 학습 run | 상태 | 실제 update | 실제 처리 문항 | supervised tokens | 재로드 확인 |', '|---|---|---:|---:|---:|---|']
+              '| 학습 run | 상태 | 실제 update | 실제 처리 문항 | supervised tokens | 선택 update | 재로드 확인 |', '|---|---|---:|---:|---:|---:|---|']
     for c in summary['training']:
-        lines.append(f"| {c['run_id']} | {c['status']} | {c.get('optimizer_steps', '미실행')} | {c.get('samples_processed', '미실행')} | {c.get('supervised_tokens', '미실행')} | {c['reload_verified']} |")
-    lines += ['', '## 확인 결과', '', 'KorMedMCQA는 동일 전체 3,009문항의 micro/macro subject 정답률, coverage, invalid, 유효 응답 정답률을 함께 표시한다. 무응답·실패는 전체 분모에 남긴다.', '',
+        lines.append(f"| {c['run_id']} | {c['status']} | {c.get('optimizer_steps', '미실행')} | {c.get('samples_processed', '미실행')} | {c.get('supervised_tokens', '미실행')} | {c.get('selected_checkpoint_steps', '미확정')} | {c['reload_verified']} |")
+    lines += ['', '실제 처리량은 전체 run의 실행량이며, 평가는 validation으로 선택한 checkpoint를 사용한다. 선택 시점의 문항·token·loss는 run_summary.json에 별도로 기록한다. 각 run의 최신·선택 checkpoint와 검증 이벤트를 보존하며, 선택되지 않은 중간 checkpoint 파일은 기존 보관 정책에 따라 정리한다. 이전 v1 실험은 변경하지 않는다.']
+    lines += ['', '## 확인 결과', '', 'KorMedMCQA는 동일 전체 3,009문항의 micro/macro subject 정답률, coverage, invalid, 유효 응답 정답률을 함께 표시한다. 무응답·실패는 전체 분모에 남긴다. [직군별 세부 지표](metrics.csv)는 source_id=kormedmcqa와 subject 열로 확인할 수 있다.', '',
               '| 모델/조건 | n | 전체 micro | subject macro | coverage | invalid 형식 | 유효 응답 정답률 |', '|---|---:|---:|---:|---:|---:|---:|']
     for c in summary['evaluations']:
         if c.get('verified') and c['phase'] == 'text' and c['metrics']['kormedmcqa']:
             k = c['metrics']['kormedmcqa']
             lines.append(f"| {c['model']}/{c['condition']} | {k['scheduled']} | {pct(k['micro_end_to_end_correct_fraction'])} | {pct(k['macro_subject_end_to_end_correct_fraction'])} | {pct(k['coverage'])} | {pct(k['invalid_format_rate'])} | {pct(k['micro_answered_accuracy'])} |")
-    lines += ['', '완료된 텍스트 평가가 없으면 위 표는 비어 있다. MedGemma 텍스트 조건은 원본 Base이며 VQA adapter를 사용하지 않는다.', '',
-              '| 모델/조건 | AI-Hub q_type | n | 전체 MCQ 정답률 또는 lexical EM | lexical F1 |', '|---|---|---:|---:|---:|']
+    lines += ['', '완료된 텍스트 평가가 없으면 위 표는 비어 있다. MedGemma 텍스트 조건은 원본 Base이며 VQA adapter를 사용하지 않는다. 검증된 text 실행은 원문 입력과 native pixel tensor 기록에서 영상 입력이 없음을 확인했다.', '',
+              '| 모델/조건 | AI-Hub q_type | n | 전체 MCQ 정답률 또는 lexical EM | lexical F1 | coverage | 잘림 |', '|---|---|---:|---:|---:|---:|---:|']
     for c in summary['evaluations']:
         if c.get('verified'):
             for a in c['metrics']['aihub_q_types']:
-                lines.append(f"| {c['model']}/{c['condition']} | {a['type']} | {a['scheduled']} | {pct(a.get('end_to_end_correct_fraction', a.get('end_to_end_lexical_exact_match')))} | {pct(a.get('lexical_token_f1'))} |")
-    lines += ['', 'short/long의 EM/F1는 문자열 일치도이며 임상 정확도가 아니다. MCQ q_type 1, short 2, long 3을 따로 집계했다.', '',
-              '| 모델/조건 | 영어 retention source | n | 전체 정답률/lexical EM | lexical F1 |', '|---|---|---:|---:|---:|']
+                f1 = '해당 없음' if a['task_type'] == 'medical_mcq' else pct(a.get('lexical_token_f1'))
+                lines.append(f"| {c['model']}/{c['condition']} | {a['type']} | {a['scheduled']} | {pct(a.get('end_to_end_correct_fraction', a.get('end_to_end_lexical_exact_match')))} | {f1} | {pct(a.get('coverage'))} | {a.get('truncated_count', 0)} |")
+    lines += ['', 'short/long의 EM/F1는 문자열 일치도이며 임상 정확도가 아니다. MCQ q_type 1, short 2, long 3을 따로 집계했다. 잘림은 사전에 고정한 생성 상한에 도달한 건수이며 기술 실패와 구분한다. 잘린 응답도 전체 평가 분모에 유지하므로, 특히 자유서술 점수는 답변 길이 제한과 함께 해석한다.', '',
+              '| 모델/조건 | 영어 retention source | n | 전체 정답률/lexical EM | lexical F1 | coverage | 잘림 |', '|---|---|---:|---:|---:|---:|---:|']
     for c in summary['evaluations']:
         if c.get('verified') and c['phase'] == 'text':
             for a in c['metrics']['cohorts']:
                 if a['source_id'] in ('pubmedqa_labeled', 'medquad'):
-                    lines.append(f"| {c['model']}/{c['condition']} | {a['source_id']} | {a['scheduled']} | {pct(a.get('end_to_end_correct_fraction', a.get('end_to_end_lexical_exact_match')))} | {pct(a.get('lexical_token_f1'))} |")
+                    f1 = '해당 없음' if a['source_id'] == 'pubmedqa_labeled' else pct(a.get('lexical_token_f1'))
+                    lines.append(f"| {c['model']}/{c['condition']} | {a['source_id']} | {a['scheduled']} | {pct(a.get('end_to_end_correct_fraction', a.get('end_to_end_lexical_exact_match')))} | {f1} | {pct(a.get('coverage'))} | {a.get('truncated_count', 0)} |")
     lines += ['', 'VQA: 두 모델의 Base/Tuned는 같은 짧은 답변 prompt와 선택된 생성 상한을 쓴다. SLAKE 1,061개, VQA-RAD 451개 전체와 고정 32개 no-image 진단을 구분한다.', '',
               '| 모델/조건 | source/이미지 | OPEN/CLOSED | n | strict EM | v2 EM | v2 F1 | 잘림 | 출력 단어 중앙값 |', '|---|---|---|---:|---:|---:|---:|---:|---:|']
     for c in summary['evaluations']:
@@ -783,17 +800,21 @@ def markdown(summary, stages):
             lines.append(f"| {item['model']}/{item['phase']} | {item['condition']} | {g['answer_type']} | {g['support']} | {pct(g['v1_strict_em'])} | {pct(g['v2_strict_em'])} | {pct(g['v2_normalized_em'])} |")
     lines += ['', '위 표는 v1과 v2의 동일 ID·입력·정답 교집합만 재집계한 것이다. v1 부분집합과 v2 전체집합을 직접 빼지 않는다. prompt·생성 상한·정규화가 함께 바뀐 프로토콜 묶음 효과이며 특정 변수 하나의 원인으로 단정하지 않는다.', '']
     usage = summary['usage']; policy = usage['policy']
-    lines += [f"현재 resource policy: **{policy['budget_mode']}**. total/model/run/job/campaign 시간 상한은 {json.dumps({k: v for k,v in policy.items() if k not in ('schema_version','budget_mode')})}. v1의 24 GPU-hour/모델별 6-hour는 과거 실행 당시 설정이다.", '',
+    policy_label = '누적 GPU 시간 상한 없음' if policy['budget_mode'] == 'unlimited' else '유한 GPU 시간 상한 적용'
+    resume_note = ('선언된 GPU 실행 행렬과 검토표 준비를 완료했다. 아래 명령은 복구·무결성 확인을 위한 재개 절차이며, 검증된 완료 학습·평가는 재사용한다.'
+                   if stages.get('execution_matrix_status') == 'SUCCEEDED' else
+                   '미완료 조건은 동일 선언과 artifact를 사용해 재개하고, 모두 끝난 뒤 이 보고서를 다시 생성한다. 완료 조건을 새로 학습하는 명령이 아니다.')
+    lines += [f"현재 resource policy: **{policy['budget_mode']}** — {policy_label}. total/model/run/job/campaign 시간 상한은 {json.dumps({k: v for k,v in policy.items() if k not in ('schema_version','budget_mode')})}. v1의 24 GPU-hour/모델별 6-hour는 과거 실행 당시 설정이다.", '',
               f"실제 누적 정산 사용 {usage['completed_accounted_seconds']/3600:.4f}시간; v1 기준 "
               + (f"{usage['v1_baseline_seconds']/3600:.4f}시간; 정산 증가 {usage['completed_delta_from_v1_seconds']/3600:.4f}시간." if usage['v1_baseline_seconds'] is not None else '미확인.')
               + f" 진행 중 미정산 세션의 읽기 시점 경과 {usage['active_unsettled_elapsed_seconds']/3600:.4f}시간은 누적 정산값과 분리했다. 사용량 ledger를 초기화하거나 수정하지 않았다.", '',
-              '학습 seed는 하나다. KO/MIX는 총 문항·token·update 수가 달라 언어 구성만의 효과를 분리할 수 없다. 모델 사전학습의 test 노출 여부는 미상이다. v1에서 본 test를 포함하므로 새로운 blind 결과가 아니다. 자유서술 결과에 전문가 정확도 점수는 없다.', '',
-              '## 다음 단계', '', '미완료 조건은 동일 선언과 artifact를 사용해 재개하고, 모두 끝난 뒤 이 보고서를 다시 생성한다. 완료 조건을 새로 학습하는 명령이 아니다.', '', '```bash',
+              '학습 seed는 하나다. KO/MIX는 총 문항·token·update 수가 달라 언어 구성만의 효과를 분리할 수 없다. MedGemma의 SLAKE dataset-level 사전학습 노출은 알려져 있으나 정확한 test 노출 여부는 미상이다. 일반 모델들의 과거 노출도 미상으로 남긴다. v1에서 본 test를 포함하므로 새로운 blind 결과가 아니다. 자유서술 결과에 전문가 정확도 점수는 없다.', '',
+              '## 다음 단계', '', resume_note, '', '```bash',
               'export MEDVLM_DATA_ROOT="$(realpath ../medvlm-data)"',
-              'PYTHONPATH=src python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT" --validation-only',
-              'PYTHONPATH=src python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT"',
-              'PYTHONPATH=src python scripts/run_text_v2.py --data-root "$MEDVLM_DATA_ROOT" --phase all',
-              'PYTHONPATH=src python scripts/report_v2.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary/v2', '```', '',
+              'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT" --validation-only',
+              'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT"',
+              'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/run_text_v2.py --data-root "$MEDVLM_DATA_ROOT" --phase all',
+              'PYTHONPATH=src ../.venv-medvlm/bin/python scripts/report_v2.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary/v2', '```', '',
               '현재 캠페인이 실행 중이면 중복 실행하지 않는다. v2/vqa/state.json과 v2/text/state.json의 완료·실패 상태를 확인한 뒤 재개한다. verification.json의 실패가 있으면 해당 artifact를 조사하고 점수를 사용하지 않는다.', '',
               '## 사용자가 할 일', '', '현재 허용된 나머지 작업은 계속 진행할 수 있다. AI-Hub 71762를 이어가려면 정상적으로 확보한 원본의 로컬 경로가 필요하다. 접근 제한을 우회하지 않았고 71875 준비에 새 API key는 필요하지 않았다. Jetson은 사용자 보류 상태로 유지한다.', '']
     return '\n'.join(lines)

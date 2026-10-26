@@ -1,18 +1,35 @@
 # 현재 작업 맥락
 
-## 2026-10-26 후속 범위와 현재 상태
+## 현재 후속 작업 — 2026-10-27 06:46 KST
 
-현재 사용자는 기존 v1 결과를 보존하면서 GPU 시간 상한 해제, 한국어 의료 SFT, 기존 예측 재분석과 VQA v2를 요청했다. 기준 branch는 `codex/medical-finetune-v1-20261023`, 후속 시작 시 HEAD는 `e16f8c6df3244a78cd9c30ba5ce7e43d5b8f45a3`였다. 코드·데이터 준비·로컬 GPU 실행·오류 수정·전용 branch commit/push는 승인됐고 main merge·배포·유료 서비스·시스템/드라이버 교체·원문/비밀값/가중치 공개 업로드는 제외한다.
+실행 가능한 v2 선언 행렬은 완료했다. 전체 상태는 `COMPLETED_AVAILABLE_WORK_WITH_EXTERNAL_BLOCKER`이며 AI-Hub 71762는 `BLOCKED_DELIVERY`다. `reports/public_summary/v2/READOUT_KO.md`가 핵심 해석, `RESULTS_KO.md`가 전체 결과, `verification.json`이 실제 산출물 검증 근거다. `runtime/medvlm_state.json`은 변경하지 않은 v1 역사 상태이고, v2 인계는 `runtime/medvlm_state_v2.json`에 별도로 둔다.
 
-현재 정책은 `configs/resource_policy.json`의 unlimited이며 누적 전체/모델별 GPU 시간 및 run/job/campaign 시간 상한은 `null`이다. 기록·재개 무결성·usage floor는 유지한다. 과거 v1의 24/6 상한과 1-pass/1,000-step recipe는 실행 당시 기록으로 남기고 기존 config나 checkpoint를 소급 수정하지 않는다. 실행 범위는 유한한 선언 행렬이며 성능이 좋아질 때까지 반복하지 않는다.
+- 현재 resource policy는 unlimited이며 total/model/run/job/campaign 상한은 모두 null이다. 사용량 원장·재개 identity·checkpoint floor는 보존했다. 시간 상한 없음이 추가 무한 실험을 뜻하지 않는다.
+- 71875 실제 canonical 17,210개(train15,297/dev956/test957), KO4,000/MIX8,000, 공통 dev1,516을 준비·동결했다. KorMedMCQA 전체 dev/test4,068 보호를 위해 lexical/semantic 후보를 검사했고 후보 train/dev3,208행을 보수적으로 제외했다. 후보를 확정 중복이라고 부르지 않는다.
+- 네 KO/MIX 본학습과 네 smoke 모두 성공했고 새 process 재로드를 통과했다. 원본 Base에서 독립 학습했으며 Qwen3-4B KO는 full250 update 중 validation step200, 나머지는 최종 step250/500을 선택했다. 텍스트9조건×4,530문항을 완료했다. MedGemma는 adapter 없는 native text Base다.
+- 기존 VLM 가중치로 VQA validation8+본평가·진단12를 완료했다. VLM 재학습은 하지 않았다. MedGemma의 SLAKE dataset-level 사전학습 노출과 정확한 test 노출 미상 한계를 유지한다.
+- MedMCQA는 공식 MIT 근거로 원본193,155행 확보·감사, optional canonical22,816행을 준비했다. 주 KO/MIX에는 미포함이고 추가 학습하지 않았다. v1 예측의 형식/길이/OPEN-CLOSED/8,450→8,400 재분석은 완료했다.
+- 익명 검토표4개·64비교행은 동일16문항이며 사람의 검토는0건이다. 전달 사본만 편집하고 private key는 별도 보존한다. 추가seed는 NOT_SELECTED, 예비모델은 fallback 불필요다.
+- 71762 약4.25GB 파일은 링크를 받았지만 connector256MiB 한도와 브라우저 ERR_BLOCKED_BY_CLIENT로 원본0bytes다. 실제 pairing은 UNRESOLVED_PAIRING이다. 필요한 외부 입력은 로컬 원본 경로와 제공 가능한 가이드다. 이미 받은71875에 API 키를 요구하지 않는다.
+- Jetson은 USER_DEFERRED다. 과거 호스트키 미검증 이력은 아래에 보존하며 현재 사용자 할 일로 요청하지 않는다.
 
-Jetson은 사용자 요청으로 `USER_DEFERRED`다. v1 호스트키 미검증 이력은 보존하지만 현재 접속·검증·변환·장치 추론은 하지 않는다. `runtime/medvlm_state.json`은 v1 역사 상태이며 v2 전체 root 최종 상태는 아직 없다. 후속 결과는 `reports/public_summary/v2/`에 저장한다.
+완료 평가29개(validation포함), 학습·재로드8개, 검토표4개를 검증했다. CPU234passed·7skipped·23subtests와 별도 native41passed·20subtests를 구분한다. v1 공개 파일18개와 실행 소스 스냅샷14개의 보존을 재확인했다. 실행 소유 worker가 종료됐으며 재개 전에는 상태와 실제 PID를 다시 확인한다. 공개 결과는 원문·예측·가중치·비밀값을 포함하지 않는다.
 
-AI-Hub 71875는 실제 canonical 17,210개(train 15,297 / validation 956 / test 957)를 준비했다. 71762 약 4.25GB 전달 파일은 connector 256MiB 상한과 브라우저 `ERR_BLOCKED_BY_CLIENT` 때문에 아직 확보하지 못했고 로컬 원본 경로 문의가 대기 중이다. 이것을 API 키 필수나 사용자 승인 실패로 바꾸지 않는다. 정상 제공 원본부터 계속 처리하며 명시 pairing이 확인되지 않은 부분은 분리한다. MedMCQA는 공식 MIT 근거로 원본 193,155행 확보·감사와 optional canonical 22,816행을 완료했으나 한국어 주 실험에 넣지 않았다.
+저장소에서 다음 명령을 사용한다. 성공 결과는 검증·재사용하며 v1 보고서는 재생성하지 않는다.
 
-Qwen3-1.7B/4B의 KO-v2 4,000개(객관식1,500/단답1,300/서술1,200)와 MIX-v2 8,000개(같은 KO4,000+영어4,000), 공통 validation1,516을 동결했다. KorMedMCQA dev/test4,068 보호를 위한 lexical 검사와 E5 의미 유사도 후보 감사를 완료했으며 후보 train/dev3,208개를 보수적으로 제외했다. 후보를 확정 중복으로 부르지 않고 test957은 보존한다. KO250/MIX500 update 한 pass를 원본 Base에서 시작하며 각각20-update smoke와 fresh-process reload를 먼저 수행한다. 13:32 UTC에 텍스트 실행을 시작했다. 첫 Qwen3-1.7B KO smoke20과 fresh-process reload를 완료하고 본학습 중이며 전체 행렬은 아직 미완료다. 기존 Qwen3.5-2B/MedGemma Base·선정 adapter의 VQA validation8개가 완료되어256-token 상한을 고정했고 전체SLAKE1,061/VQA-RAD451 및no-image32 평가20개(validation포함)를 완료·검증했다. 재개 진입점은 `scripts/run_vqa_v2.py`와 `scripts/run_text_v2.py --phase all`; 상태는 각 `v2/{vqa,text}/state.json`이다. 소유 worker와 대기 queue가 살아 있으면 중복 실행하지 않는다. 실제 완료 artifact만 v2 보고서에 반영한다.
+```bash
+export MEDVLM_DATA_ROOT="$(realpath ../medvlm-data)"
+export PYTHONPATH="$PWD/src"
+export WANDB_DISABLED=true
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+../.venv-medvlm/bin/python scripts/run_vqa_v2.py --data-root "$MEDVLM_DATA_ROOT"
+../.venv-medvlm/bin/python scripts/run_text_v2.py --data-root "$MEDVLM_DATA_ROOT" --phase all
+../.venv-medvlm/bin/python scripts/report_v2.py --data-root "$MEDVLM_DATA_ROOT" --output reports/public_summary/v2
+MPLCONFIGDIR=/tmp/medvlm-v2-mpl-cache ../.venv-medvlm/bin/python scripts/plot_v2.py --summary reports/public_summary/v2/run_summary.json --output reports/public_summary/v2/figures
+```
 
-기존 예측 재분석은 10개 실행의 파일·protocol·model/adapter identity를 검증한 뒤 완료했다. 8,450→8,400은 양 모델 모두 MedQuAD 50개가 native context 길이를 초과해 제외된 결과이고 나머지는 525 updates로 모두 처리했다. KorMedMCQA의 형식 유효성 전환과 both-valid 정답 변화, MedGemma의 길이·구절 포함·잘림, VQA-RAD OPEN/CLOSED를 분리했다. 구절 포함이나 문자열 점수를 임상 정확도로 표현하지 않는다. 전문가 검토는 `not_performed`다.
+전용 작업 branch `codex/medical-finetune-v1-20261023`만 사용한다. 최종 commit/push/CI 영수증은 작업공간의 `outputs/v2/git_receipt.json`에 별도 기록하여 commit 자기참조를 피한다. 데이터·모델·비밀값은 Git 밖에 보존한다. main merge·배포·유료 cloud·OS/드라이버 교체는 수행하지 않는다.
 
 ## 보존된 2026-10-23 v1 맥락
 

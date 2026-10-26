@@ -1,0 +1,42 @@
+{
+  "checked_at": "2026-10-26T21:46:45.462938+00:00",
+  "baseline_commit": "e16f8c6df3244a78cd9c30ba5ce7e43d5b8f45a3",
+  "v1_public_files": {
+    "reports/public_summary/ADAPTER_CARDS.md": true,
+    "reports/public_summary/RESULTS_KO.md": true,
+    "reports/public_summary/data_forge_compatibility.json": true,
+    "reports/public_summary/data_freeze.json": true,
+    "reports/public_summary/data_quality.json": true,
+    "reports/public_summary/data_resume_safety_review.json": true,
+    "reports/public_summary/data_sources.json": true,
+    "reports/public_summary/final_artifact_verification.json": true,
+    "reports/public_summary/medgemma_format_diagnostic.json": true,
+    "reports/public_summary/paired_metrics.csv": true,
+    "reports/public_summary/paired_scores.png": true,
+    "reports/public_summary/paired_scores.svg": true,
+    "reports/public_summary/run_summary.json": true,
+    "reports/public_summary/stage_status.json": true,
+    "reports/public_summary/upstream_exposure.json": true,
+    "reports/public_summary/verification.json": true,
+    "reports/public_summary/vision_sources.json": true,
+    "reports/public_summary/vqarad_image_provenance_repair.json": true
+  },
+  "execution_source_files": {
+    "src/mediflow_medvlm/runtime.py": true,
+    "src/mediflow_medvlm/training/__init__.py": true,
+    "src/mediflow_medvlm/training/__main__.py": true,
+    "src/mediflow_medvlm/training/config.py": true,
+    "src/mediflow_medvlm/training/models.py": true,
+    "src/mediflow_medvlm/training/rendering.py": true,
+    "src/mediflow_medvlm/training/runner.py": true,
+    "src/mediflow_medvlm/evaluation/__init__.py": true,
+    "src/mediflow_medvlm/evaluation/__main__.py": true,
+    "src/mediflow_medvlm/evaluation/expert_review.py": true,
+    "src/mediflow_medvlm/evaluation/image_diagnostics.py": true,
+    "src/mediflow_medvlm/evaluation/metrics.py": true,
+    "src/mediflow_medvlm/evaluation/runner.py": true,
+    "src/mediflow_medvlm/evaluation/v2.py": true
+  },
+  "all_unchanged": true,
+  "scope": "18 historical public report files and 14 frozen runtime/training/evaluation source files; not a claim of hashing every raw/model file"
+}

@@ -148,6 +148,7 @@ def render(summary, output):
     figure.text(.055, .92, 'Protocol v2 · image present · normalized EM · support shown above each completed bar', fontsize=11)
     figure.legend(handles=[Patch(color=COLORS[c], label=CONDITION_LABELS[c]) for c in ('base','tuned_v1')],
                   loc='upper right', bbox_to_anchor=(.965,.977), ncol=2, frameon=False)
+    figure.text(.055,.083,'MedGemma has prior dataset-level SLAKE training exposure; exact test exposure remains unknown.',fontsize=9)
     figure.text(.055,.057,'Seed 20261023. Previously observed v1 tests are included; not a new blind benchmark. One seed; no clinical accuracy claim.',fontsize=9)
     figure.text(.055,.031,'EM keeps numbers, units and negation. Blank positions marked Incomplete are not zero. Snapshot: '+captured,fontsize=9)
     figure.subplots_adjust(left=.075,right=.975,bottom=.16,top=.83,hspace=.42,wspace=.19)

@@ -1,5 +1,32 @@
 # 작업 기록
 
+## 2026-10-27 06:46 KST — v2 선언 행렬 최종 완료
+
+텍스트9조건·VQA20조건, KO/MIX smoke/full8개와 fresh-process reload, 검토표4개 준비를 모두 검증했다. 전체47,202개 예측을 완료했고 기술 실패는 최종 verification과 metrics로 확인했다. 보고서·그림을 최종 summary로 생성했고 v1공개18파일·실행소스14파일 보존을 확인했다. CPU234passed·7skipped·23subtests, native41passed·20subtests 근거를 보존했다. AIHub71762 BLOCKED_DELIVERY/UNRESOLVED_PAIRING, Jetson USER_DEFERRED, human_review not_performed0건, 추가seed NOT_SELECTED, MedMCQA 추가학습 PREPARED_NOT_RUN을 분리했다. 전달 위치는 작업공간 outputs/v2이며 commit/push/CI 결과는 같은 폴더 git_receipt.json에 기록한다.
+
+## 2026-10-27 06:03 KST — Qwen 공통 평가·검토표 준비 완료
+
+- Qwen3-4B Base/EN-v1/KO-v2/MIX-v2 각각4,530문항 평가 완료. KorMedMCQA3,009 정답은1,314/1,638/1,544/1,627(coverage80.76%/99.83%/100%/100%). PubMedQA500 정답은177/384/255/384이며 Base coverage91.8%, 나머지100%다. AI-Hub MCQ777 정답은451/528/563/558.
+- MIX는 이 단일 seed에서 EN과 PubMedQA 정답 수가 같고, KorMedMCQA는11문항 적었다. AI-Hub MCQ는30문항 많았다. KO/MIX의 데이터·token·update 노출량이 달라 언어 혼합의 인과 효과나 임상적 우월성을 주장하지 않는다. 1.7B의 PubMedQA coverage도 네 조건 모두100%임을 확인했다.
+- 두 Qwen의8개 조건, VQA20개, 새 학습·재로드8개와 익명 검토표4개 검증 오류0. 텍스트36,240개 예측에서 vision_ingested=false 및 native pixel tensor 없음 확인. 검토표는 동일16문항을 공유하는64개 비교행이며 사람 검토0건이다.
+- 실제 native MedGemma Base 텍스트 추론 시작. VQA adapter는 사용하지 않으며 마지막4,530문항 평가는 아직 진행 중이다.
+- 최종 보고의 native text 검증을 강화했다. hash가 일치하더라도 픽셀 입력이 섞인 text 결과를 거부하는 회귀검사를 추가했다. Core Python3.10 전체234passed/7skipped/6warnings/23subtests passed. 알려진 MedGemma SLAKE dataset-level 노출과 정확한 test 노출 미상은 결과 보고와 VQA 도표에 함께 유지했다.
+- 사용자 Drive 폴더 재조회 결과 기존71875/71762 ZIP 두 개만 보이며 추가 가이드·분할 archive는 없었다. 원본 다운로드를 재시도하거나 차단 경계를 우회하지 않았다.
+
+## 2026-10-27 03:43 KST — Qwen3-1.7B 공통 평가 완료
+
+- Base/EN-v1/KO-v2/MIX-v2 각각4,530문항을 평가하고 실제 예측·protocol·adapter·점수 재계산 검증을 통과했다. KorMedMCQA3,009 정답 수는572/1,176/1,143/1,183, coverage는54.90%/99.80%/100%/100%다. 전체 Base 대비 차이에는 형식 준수 개선이 포함된다.
+- PubMedQA500 정답은209/372/169/353이다. KO의 영어 성능 하락을 그대로 보존했다. AI-Hub MCQ777 정답은174/430/482/467. MIX와 EN의 KorMedMCQA 차이는7문항으로, 학습량 차이와 단일 seed를 고려하지 않고 우월성을 주장하지 않는다. test 결과로 학습량·prompt·parser를 바꾸지 않았다.
+- Base–KO/Base–MIX 익명 검토표 각16행을 실제 생성하고 빈 사람 점수와 hash를 확인했다. 동일16문항을 공유하며 human_review=not_performed다.
+- 완료 학습·재로드8개, 평가24개(VQA20+text4), 검토표2개의 보고서 검증 오류0. Qwen3-4B Base 평가가 시작됐으며 나머지5개 텍스트 조건은 아직 완료되지 않았다.
+
+## 2026-10-27 02:04 KST — 한국어 KO/MIX 학습·재로드 완료
+
+- Qwen3-1.7B/4B 각각 KO와 MIX를 원본 Base에서 별도로 학습했다. 네 smoke20update와 네 full one-pass의 adapter 갱신·새 process reload가 모두 성공했다(8/8). KO 각각4,000samples/250updates/243,394target tokens, MIX 각각8,000samples/500updates/1,137,306target tokens.
+- validation 선택은 Qwen3-1.7B KO250/MIX500, Qwen3-4B KO200/MIX500이다. Qwen3-4B KO의 선택 checkpoint 노출은3,200samples/196,330target tokens이며 전체 실행량과 구분한다. test로 checkpoint를 선택하지 않았다.
+- 9개 공통 텍스트 조건의 실제 평가가 시작됐다. 각 조건4,530문항(KorMedMCQA3,009/AI-Hub957/PubMedQA500/MedQuAD64). 실행 시점에는 평가와 익명 검토표 준비가 아직 완료되지 않았다.
+- CPU 전체 회귀검사 재실행 종료코드0. 완료된7개 학습·재로드와20개 VQA 평가에 대한 보고서 검증 오류0(마지막 학습 완료 전 집계). 최종 집계는 텍스트 평가 후 갱신한다.
+
 ## 2026-10-26 22:35 KST — VQA v2 완료·한국어 학습 시작
 
 - VQA validation8+본평가/진단12개 전체 성공,20개 산출물 identity/SHA/점수 재계산 검증 통과. SLAKE1061개 normalized EM: Qwen3.5 Base52.40%→adapter70.50%, MedGemma36.38%→69.37%. VQA-RAD451개는47.89%→48.78%,43.24%→48.34%다. 문자열 점수이며 임상 정확도가 아니다.

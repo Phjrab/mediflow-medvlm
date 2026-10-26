@@ -44,7 +44,8 @@ def evaluation_fixture(root):
     manifest = {**identity, 'run_id': 'run', 'identity_hash': canonical_hash(identity), 'model': origin['model'],
                 'status': 'SUCCEEDED', 'scheduled': 1, 'predictions': 1, 'precision': 'nf4', 'generation': {'do_sample': False}}
     prediction = {'sample_id': 's', 'input_hash': canonical_hash(s['input']), 'run_id': 'run', 'pair_id': 'pair',
-        'model_identity': manifest['identity_hash'], 'status': 'answered', 'parsed_answer': 'answer', 'raw_output': 'answer'}
+        'model_identity': manifest['identity_hash'], 'status': 'answered', 'parsed_answer': 'answer', 'raw_output': 'answer',
+        'vision_ingested': False, 'pixel_tensor_keys': []}
     folder.mkdir(parents=True)
     (folder / 'predictions.jsonl').write_text(json.dumps(prediction) + '\n')
     dump(folder / 'metrics.json', {'scores': score_rows([s], [prediction], vqa_normalizer=normalize_vqa)})
@@ -72,6 +73,19 @@ def test_running_prediction_is_not_scored(tmp_path):
     (folder / 'predictions.jsonl').write_text('half a json line')
     result = report.Evidence(tmp_path).evaluation('fixture', 'base', 'text', folder, protocol, config, expected_count=1)
     assert result['status'] == 'RUNNING' and not result['verified'] and result['metrics'] is None
+
+
+def test_text_run_rejects_hash_consistent_pixel_input(tmp_path):
+    folder, protocol, config = evaluation_fixture(tmp_path)
+    path = folder / 'predictions.jsonl'
+    prediction = json.loads(path.read_text())
+    prediction.update(vision_ingested=True, pixel_tensor_keys=['pixel_values'])
+    path.write_text(json.dumps(prediction) + '\n')
+    manifest = report.read(folder / 'run_manifest.json')
+    manifest['artifact_hashes']['predictions.jsonl'] = file_hash(path)
+    dump(folder / 'run_manifest.json', manifest)
+    result = report.Evidence(tmp_path).evaluation('fixture', 'base', 'text', folder, protocol, config, expected_count=1)
+    assert result['status'] == 'FAILED_VERIFICATION' and not result['verified']
 
 
 def test_vqa_strict_normalized_and_failed_denominators():
