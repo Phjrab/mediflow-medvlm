@@ -1,0 +1,159 @@
+{
+  "archive_bytes": 55285460,
+  "archive_sha256": "16c1fbc6f47d548d2af7837b18e893aa45f45c0be9bda0a9adfff3c625bf9262",
+  "canonical_files": {
+    "test": {
+      "count": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "train": {
+      "count": 20000,
+      "sha256": "e0b6b5c525920e5acf9fe8d76d1ce01f6b787cddaeb1aa59aa5793d1b482fd42"
+    },
+    "validation": {
+      "count": 2816,
+      "sha256": "29ba1e8e7dd9ce1e521f0ebc2f53f9ebd4ca3c96063ba5e4ae1312dbc6a7677d"
+    }
+  },
+  "canonical_location": "${MEDVLM_DATA_ROOT}/v2/optional/medmcqa/16c1fbc6f47d548d2af7837b18e893aa45f45c0be9bda0a9adfff3c625bf9262/processed/",
+  "choice_type_counts": {
+    "dev.json": {
+      "multi": 1367,
+      "single": 2816
+    },
+    "test.json": {
+      "multi": 2016,
+      "single": 4134
+    },
+    "train.json": {
+      "multi": 62057,
+      "single": 120765
+    }
+  },
+  "conflict_input_group_count": 1,
+  "cop_base": 1,
+  "cop_base_evidence": "https://github.com/medmcqa/medmcqa/blob/c59ef14ca1990266c4107c7864b45a20fd93e5e0/dataset.py",
+  "core_ko_mix_included": false,
+  "critical_error_count": 0,
+  "eligible_after_cleaning": {
+    "train": 120728,
+    "validation": 2816
+  },
+  "evidence_level": "CPU_TESTED",
+  "excluded_counts": {
+    "train": {
+      "conflicting_answer_text": 2,
+      "deterministic_optional_train_cap": 100728,
+      "not_single_choice": 62057,
+      "within_split_exact_input_duplicate": 35
+    },
+    "validation": {
+      "not_single_choice": 1367
+    }
+  },
+  "first_prepared_at": "2026-10-26T12:07:22.909715+00:00",
+  "input_normalization": "NFC/whitespace/casefold; option-order independent; retain numbers, units, punctuation, negation",
+  "license": "MIT",
+  "license_evidence": [
+    "https://github.com/medmcqa/medmcqa/issues/2#issuecomment-1329300257",
+    "https://github.com/medmcqa/medmcqa/blob/c59ef14ca1990266c4107c7864b45a20fd93e5e0/LICENSE.md"
+  ],
+  "license_scope": "Official team explicitly confirmed MIT for current dataset; underlying exam/book rights are not individually enumerated.",
+  "manifest_sha256": "e72267190168ec8cff42786c83e0abe975e153421f3083687e1a407b747caa61",
+  "near_duplicate_and_translation_screening": "NOT_PERFORMED; optional cohort not approved for core training mixture",
+  "official_evidence_files_sha256": {
+    "LICENSE.md": "aef55ea755c1bf14400349d722ba1d6d0efe56fd03ed74657bcde4c38fb60ad7",
+    "README.md": "e4cec88e7de3802651255ff55891443633788360bede637a3cb04a35e58fd123",
+    "dataset.py": "2fce03b0fc8fb1a4a388990aba9eb4d67248a40ab3a8142e52e534905a2418b4",
+    "license_comment.json": "359d24f36d0f2959abae01fe23ec6184b1f8db1ddcb238ec1f9dee1e50e27c6b",
+    "repo_commit.json": "caa47a16da45967e3dbda2b31966f6d1be7ef7283c486e51c3d974fdb6757a58"
+  },
+  "raw_counts": {
+    "dev.json": 4183,
+    "test.json": 6150,
+    "train.json": 182822
+  },
+  "raw_member_sha256": {
+    "dev.json": "a2b5f53890f4e742b728378fb847bc5338088d48ea01218676379f587270af31",
+    "test.json": "5cfb861ee583911a311b7bfe7c2de0db83bbaab2d3a7711ff949e489013187ae",
+    "train.json": "afa1b32379409fce3090a39411a769e5f1739d8bd2c43acb0806a3e070f711ba"
+  },
+  "raw_redistribution": false,
+  "repo_revision": "c59ef14ca1990266c4107c7864b45a20fd93e5e0",
+  "retrieved_via": "official_author_README_Google_Drive",
+  "schema_version": "medvlm.medmcqa.optional.v2",
+  "seed": 20261023,
+  "source_cop_counts": {
+    "dev.json": {
+      "1": 1348,
+      "2": 1085,
+      "3": 925,
+      "4": 825
+    },
+    "test.json": {
+      "None": 6150
+    },
+    "train.json": {
+      "1": 53591,
+      "2": 47826,
+      "3": 42442,
+      "4": 38963
+    }
+  },
+  "source_id": "medmcqa",
+  "source_revision": "official-zip-16c1fbc6f47d548d2af7837b18e893aa45f45c0be9bda0a9adfff3c625bf9262",
+  "source_url": "https://drive.google.com/uc?export=download&id=15VkJdq5eyWIkfb_aoD3oS8i4tScbHYky",
+  "status": "SUCCEEDED",
+  "subject_counts": {
+    "train": {
+      "Anaesthesia": 349,
+      "Anatomy": 1505,
+      "Biochemistry": 991,
+      "Dental": 987,
+      "ENT": 514,
+      "Forensic Medicine": 709,
+      "Gynaecology & Obstetrics": 1035,
+      "Medicine": 1803,
+      "Microbiology": 1277,
+      "Ophthalmology": 785,
+      "Orthopaedics": 332,
+      "Pathology": 1617,
+      "Pediatrics": 879,
+      "Pharmacology": 1584,
+      "Physiology": 1072,
+      "Psychiatry": 458,
+      "Radiology": 520,
+      "Skin": 226,
+      "Social & Preventive Medicine": 1309,
+      "Surgery": 1740,
+      "Unknown": 308
+    },
+    "validation": {
+      "Anaesthesia": 24,
+      "Anatomy": 147,
+      "Biochemistry": 122,
+      "Dental": 845,
+      "ENT": 39,
+      "Forensic Medicine": 44,
+      "Gynaecology & Obstetrics": 154,
+      "Medicine": 185,
+      "Microbiology": 74,
+      "Ophthalmology": 43,
+      "Orthopaedics": 15,
+      "Pathology": 259,
+      "Pediatrics": 133,
+      "Pharmacology": 179,
+      "Physiology": 133,
+      "Psychiatry": 10,
+      "Radiology": 57,
+      "Skin": 11,
+      "Social & Preventive Medicine": 91,
+      "Surgery": 249,
+      "Unknown": 2
+    }
+  },
+  "test_raw_preserved": true,
+  "test_scoring": "DISALLOWED_OFFICIAL_LABELS_UNAVAILABLE",
+  "train_cap": 20000,
+  "training_executed": false
+}

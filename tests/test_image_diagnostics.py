@@ -51,6 +51,8 @@ def run_files(root, protocol, *, no_image=False, all_rows=True):
     manifest = {"run_id": root.name, "pair_id": "pair", "identity_hash": root.name + "-identity",
                 "protocol_hash": protocol["protocol_hash"], "model_id": "fixture/model", "model_revision": "fixed",
                 "config_hash": "config", "precision": "none", "adapter_path": None,
+                "model": {"native_files": {"sha256": "native-base"},
+                          "chat_template_sha256": "native-template", "dtype": "bfloat16"},
                 "generation": {"do_sample": False, "budgets": protocol["max_new_tokens"]}}
     (root / "run_manifest.json").write_text(json.dumps(manifest))
     predictions = []
@@ -165,7 +167,8 @@ def test_matched_report_retains_failures_and_uses_image_groups(tmp_path):
     assert result["human_review"] == "not_performed" and result["clinical_accuracy"] is None
 
 
-@pytest.mark.parametrize("mutation", ["adapter", "model", "generation", "condition", "pixels"])
+@pytest.mark.parametrize("mutation", ["adapter", "model", "generation", "condition", "pixels",
+                                      "native_files", "chat_template_sha256", "dtype", "missing_loaded_model"])
 def test_report_rejects_unmatched_conditions(tmp_path, mutation):
     parent, path, _ = fixture(tmp_path, count=1)
     derived_path = tmp_path / "no-image.json"; derived = derive_no_image_protocol(path, derived_path, cap=1)
@@ -176,6 +179,9 @@ def test_report_rejects_unmatched_conditions(tmp_path, mutation):
     elif mutation == "generation": manifest["generation"]["do_sample"] = True
     elif mutation == "condition": predictions[0].pop("image_condition")
     elif mutation == "pixels": predictions[0]["pixel_tensor_keys"] = ["pixel_values"]
+    elif mutation == "native_files": manifest["model"]["native_files"]["sha256"] = "other-base"
+    elif mutation in {"chat_template_sha256", "dtype"}: manifest["model"][mutation] = "different"
+    elif mutation == "missing_loaded_model": manifest.pop("model")
     (no_image_path.parent / "run_manifest.json").write_text(json.dumps(manifest))
     write_rows(no_image_path, predictions)
     with pytest.raises(ValueError):

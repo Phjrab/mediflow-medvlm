@@ -1,0 +1,1284 @@
+{
+  "base_weight_bytes_rehashed": false,
+  "clinical_accuracy": null,
+  "evidence_level": "VERIFIED_EXISTING_PREDICTIONS",
+  "human_review": "not_performed",
+  "kormedmcqa_validity": [
+    {
+      "model": "qwen3_17b",
+      "partitions": [
+        {
+          "base_correct": 55,
+          "base_correct_fraction": 0.3873239436619718,
+          "base_statuses": {
+            "answered": 142
+          },
+          "contribution_to_total_delta": -0.0078125,
+          "improved": 18,
+          "net_correct_delta": -2,
+          "partition": "both_valid",
+          "regressed": 20,
+          "support": 142,
+          "tuned_correct": 53,
+          "tuned_correct_fraction": 0.3732394366197183,
+          "tuned_statuses": {
+            "answered": 142
+          },
+          "unchanged": 104
+        },
+        {
+          "base_correct": 0,
+          "base_correct_fraction": 0.0,
+          "base_statuses": {
+            "invalid_format": 113
+          },
+          "contribution_to_total_delta": 0.19140625,
+          "improved": 49,
+          "net_correct_delta": 49,
+          "partition": "invalid_to_valid",
+          "regressed": 0,
+          "support": 113,
+          "tuned_correct": 49,
+          "tuned_correct_fraction": 0.4336283185840708,
+          "tuned_statuses": {
+            "answered": 113
+          },
+          "unchanged": 64
+        },
+        {
+          "base_correct": 1,
+          "base_correct_fraction": 1.0,
+          "base_statuses": {
+            "answered": 1
+          },
+          "contribution_to_total_delta": -0.00390625,
+          "improved": 0,
+          "net_correct_delta": -1,
+          "partition": "valid_to_invalid",
+          "regressed": 1,
+          "support": 1,
+          "tuned_correct": 0,
+          "tuned_correct_fraction": 0.0,
+          "tuned_statuses": {
+            "invalid_format": 1
+          },
+          "unchanged": 0
+        },
+        {
+          "base_correct": 0,
+          "base_correct_fraction": null,
+          "base_statuses": {},
+          "contribution_to_total_delta": 0.0,
+          "improved": 0,
+          "net_correct_delta": 0,
+          "partition": "both_invalid",
+          "regressed": 0,
+          "support": 0,
+          "tuned_correct": 0,
+          "tuned_correct_fraction": null,
+          "tuned_statuses": {},
+          "unchanged": 0
+        }
+      ],
+      "support": 256
+    },
+    {
+      "model": "qwen3_4b",
+      "partitions": [
+        {
+          "base_correct": 102,
+          "base_correct_fraction": 0.4927536231884058,
+          "base_statuses": {
+            "answered": 207
+          },
+          "contribution_to_total_delta": 0.05078125,
+          "improved": 20,
+          "net_correct_delta": 13,
+          "partition": "both_valid",
+          "regressed": 7,
+          "support": 207,
+          "tuned_correct": 115,
+          "tuned_correct_fraction": 0.5555555555555556,
+          "tuned_statuses": {
+            "answered": 207
+          },
+          "unchanged": 180
+        },
+        {
+          "base_correct": 0,
+          "base_correct_fraction": 0.0,
+          "base_statuses": {
+            "invalid_format": 48
+          },
+          "contribution_to_total_delta": 0.1015625,
+          "improved": 26,
+          "net_correct_delta": 26,
+          "partition": "invalid_to_valid",
+          "regressed": 0,
+          "support": 48,
+          "tuned_correct": 26,
+          "tuned_correct_fraction": 0.5416666666666666,
+          "tuned_statuses": {
+            "answered": 48
+          },
+          "unchanged": 22
+        },
+        {
+          "base_correct": 0,
+          "base_correct_fraction": 0.0,
+          "base_statuses": {
+            "answered": 1
+          },
+          "contribution_to_total_delta": 0.0,
+          "improved": 0,
+          "net_correct_delta": 0,
+          "partition": "valid_to_invalid",
+          "regressed": 0,
+          "support": 1,
+          "tuned_correct": 0,
+          "tuned_correct_fraction": 0.0,
+          "tuned_statuses": {
+            "invalid_format": 1
+          },
+          "unchanged": 1
+        },
+        {
+          "base_correct": 0,
+          "base_correct_fraction": null,
+          "base_statuses": {},
+          "contribution_to_total_delta": 0.0,
+          "improved": 0,
+          "net_correct_delta": 0,
+          "partition": "both_invalid",
+          "regressed": 0,
+          "support": 0,
+          "tuned_correct": 0,
+          "tuned_correct_fraction": null,
+          "tuned_statuses": {},
+          "unchanged": 0
+        }
+      ],
+      "support": 256
+    }
+  ],
+  "limitations": [
+    "Post-hoc descriptive analysis of previously observed v1 tests; no new blind test.",
+    "Validity partitions are descriptive, not a causal attribution of medical knowledge.",
+    "Reference phrase occurrence can be negated, contradicted or quoted and is not accuracy.",
+    "Native model identity is compared to recorded training receipts; no new weight load or inference."
+  ],
+  "new_training_or_inference": false,
+  "receipts": [
+    {
+      "adapter_digest": null,
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "aa61af6ef70c3384c164e315a97db817303c1c57203df42ca050eb1b201924f9",
+      "model_id": "Qwen/Qwen3-1.7B",
+      "model_revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "native_model_recorded_digest": "4d457421c1028aeb7bf5d539ace87ab5687adda2a02f6164a29efbb41bb531c0",
+      "precision": "nf4",
+      "predictions_sha256": "c2da52dd68049c9254a3fb4001141ef102e268682fb6946d410ea8cf51b62ebe",
+      "protocol_file_sha256": "aa9faa47f3ee09ae4682222bde26c8290bb6294634da6aa6d5792bfd3c4a4ba0",
+      "protocol_hash": "cf0fd52ab005d643b22bf9f54d3c1304f64aaffb21abc7c0c130bdc786feaaff",
+      "run_id": "qwen3_17b-test-base-20261023",
+      "run_manifest_sha256": "f53d322259740ee3100f6ce50874581dfbe228868c97759257b638c4f5bd1a11",
+      "scheduled": 820,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": "0a1d2fbcf96b01b9fd84c6b4377930e0f042ba5f6b4f0432bdef9a932e83a0d9",
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "e9898396748e0c6dc622a15cf26d72bd61890c74613ba0a260c1cf136c96d1f2",
+      "model_id": "Qwen/Qwen3-1.7B",
+      "model_revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "native_model_recorded_digest": "4d457421c1028aeb7bf5d539ace87ab5687adda2a02f6164a29efbb41bb531c0",
+      "precision": "nf4",
+      "predictions_sha256": "d535c1d83748bbbf9af07553096523ae10b3acdf615646b0c53c1cde412f6e34",
+      "protocol_file_sha256": "aa9faa47f3ee09ae4682222bde26c8290bb6294634da6aa6d5792bfd3c4a4ba0",
+      "protocol_hash": "cf0fd52ab005d643b22bf9f54d3c1304f64aaffb21abc7c0c130bdc786feaaff",
+      "run_id": "qwen3_17b-test-tuned-20261023",
+      "run_manifest_sha256": "828a7cad1aac52432337e724a3c8346760d5a710dc88a2d5cf7c2dc11a2f7d95",
+      "scheduled": 820,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": null,
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "0605442eec2cc3bc21fbd002048f20666bd37afef230f72a9edcc7ec4138563f",
+      "model_id": "Qwen/Qwen3-4B",
+      "model_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "native_model_recorded_digest": "e2f061ac45cee943a3360c21c7713caef4bbe58dda2cdf92098e2a349e48f5a1",
+      "precision": "nf4",
+      "predictions_sha256": "6123c574dd128d0782ebbed152bbb9413f182dd4be3f28d2cd9e71482d78bf2c",
+      "protocol_file_sha256": "aa9faa47f3ee09ae4682222bde26c8290bb6294634da6aa6d5792bfd3c4a4ba0",
+      "protocol_hash": "cf0fd52ab005d643b22bf9f54d3c1304f64aaffb21abc7c0c130bdc786feaaff",
+      "run_id": "qwen3_4b-test-base-20261023",
+      "run_manifest_sha256": "5ba731d1a6c7ab90fb9c22d36c79983193c3c58e011e524ab71fe9f831e4ddeb",
+      "scheduled": 820,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": "5781b132ee742c376b99dd879348519b649f2b1bab18e973a7beb4554088dee4",
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "e4e21f3056d9b8b7e3cf0ab369b33d55ec2168dd2a5b96831d1cdb516e728493",
+      "model_id": "Qwen/Qwen3-4B",
+      "model_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "native_model_recorded_digest": "e2f061ac45cee943a3360c21c7713caef4bbe58dda2cdf92098e2a349e48f5a1",
+      "precision": "nf4",
+      "predictions_sha256": "5699742ca3143ea55d40b0098a126840c0053d12c7c18746eb50bfc8622e79df",
+      "protocol_file_sha256": "aa9faa47f3ee09ae4682222bde26c8290bb6294634da6aa6d5792bfd3c4a4ba0",
+      "protocol_hash": "cf0fd52ab005d643b22bf9f54d3c1304f64aaffb21abc7c0c130bdc786feaaff",
+      "run_id": "qwen3_4b-test-tuned-20261023",
+      "run_manifest_sha256": "cd631e85655b2e4e161cfa6cb5b8df10b62060a43ec2a84a54bebd3e2437acf5",
+      "scheduled": 820,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": null,
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "10643f3d3ec793673af5da9e144dbe6ea643c486d4426eb7f10798f9f0b50686",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "model_revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "native_model_recorded_digest": "33733078d018113212f156467c2de6137bebe8de691ad5f28c90359c33156aa7",
+      "precision": "nf4",
+      "predictions_sha256": "49faa7e06ff43ee3adad59d35cc598dbac6147c5e40adfb4a463c3f348539fad",
+      "protocol_file_sha256": "0505a190524e8b6eb9a1c2ecf0dc1d0bdd8f52e52e486de084b37194231a28cf",
+      "protocol_hash": "d989f8268eb5f5843da8e2d2d0f48130d5d57cfdeb0ce18ae68c16f917095fe2",
+      "run_id": "medgemma15_4b-test-base-20261023",
+      "run_manifest_sha256": "baa2927e2390981132cd39ef2e4e7e2b4d0337fc289686fd44ec9854fa35778e",
+      "scheduled": 256,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": "8f40335b936fd587873a23a2cfeab2b1ae3bf4b52d52a44a1bc27a8aafb1c31f",
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "47197050446c3a1db8379a56ffc83ed14a10fcd210e28cb5f0e00935545a3b1a",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "model_revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "native_model_recorded_digest": "33733078d018113212f156467c2de6137bebe8de691ad5f28c90359c33156aa7",
+      "precision": "nf4",
+      "predictions_sha256": "e80c45261554fdd913a552108bab2f39111bd7005ec73be87c4438f43894ae73",
+      "protocol_file_sha256": "0505a190524e8b6eb9a1c2ecf0dc1d0bdd8f52e52e486de084b37194231a28cf",
+      "protocol_hash": "d989f8268eb5f5843da8e2d2d0f48130d5d57cfdeb0ce18ae68c16f917095fe2",
+      "run_id": "medgemma15_4b-test-tuned-20261023",
+      "run_manifest_sha256": "ae496c9cf3e6d669a270e3187d5273c14e908d466a52cbbe278adfde6082c549",
+      "scheduled": 256,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": null,
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "9782f0f97a19d4db9e012cba5bac5718d191732f5adc9e193477d5eecb0a4bf9",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "native_model_recorded_digest": "9f30f5743130cf4b209ef381c4f017be0e8b648d6aa9c9e20d7061a09b60bf47",
+      "precision": "nf4",
+      "predictions_sha256": "b5b358a404588044d54f436bd5483748ec31405c5b4a29b88e19b55827890151",
+      "protocol_file_sha256": "f2983048e1e7747864c3eaa26956317784b9baf7b79f6dcb41470a42b32cbf41",
+      "protocol_hash": "5746eab2a675d5819e81b8596a6800be3b2b55370b360678f6ab3f5e2e53707e",
+      "run_id": "qwen35_2b-vqarad-base-20261023",
+      "run_manifest_sha256": "6d59894adbcf8805ab6753d986bd0ea14fa81566313a76d0cc33d437ea27f1fd",
+      "scheduled": 64,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": "6e7eb2fe1e9f88c95d1ab7fe416ea805dfdeb160fd4f7854942ad13c9724d5be",
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "2425d9706fa1c1f5591632a8c924a89c3a53c5ca237cb82e47e244ace5150a35",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "native_model_recorded_digest": "9f30f5743130cf4b209ef381c4f017be0e8b648d6aa9c9e20d7061a09b60bf47",
+      "precision": "nf4",
+      "predictions_sha256": "30c0929d69904361df9323caaf1ba3ab23f8dfb337dd2c1581a1b0c8733b704b",
+      "protocol_file_sha256": "f2983048e1e7747864c3eaa26956317784b9baf7b79f6dcb41470a42b32cbf41",
+      "protocol_hash": "5746eab2a675d5819e81b8596a6800be3b2b55370b360678f6ab3f5e2e53707e",
+      "run_id": "qwen35_2b-vqarad-tuned-20261023",
+      "run_manifest_sha256": "9cf5a636bea980eeff2291a3dbf5afa8dbf6d99fc9fb3caa8d7c8fdff7aa9a18",
+      "scheduled": 64,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": null,
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "6ae1969751c1725534167d8d2e1b369c2b308a8aac97cc2fe5d502c7644413cc",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "model_revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "native_model_recorded_digest": "33733078d018113212f156467c2de6137bebe8de691ad5f28c90359c33156aa7",
+      "precision": "nf4",
+      "predictions_sha256": "01dcb22b03c76b5a06932bc14c92d7912d48b7697fa247369363292021752808",
+      "protocol_file_sha256": "f2983048e1e7747864c3eaa26956317784b9baf7b79f6dcb41470a42b32cbf41",
+      "protocol_hash": "5746eab2a675d5819e81b8596a6800be3b2b55370b360678f6ab3f5e2e53707e",
+      "run_id": "medgemma15_4b-vqarad-base-20261023",
+      "run_manifest_sha256": "97adf49b86958c065d902024b1d7fec3459cbce3803817a0254f1c0c431c8be3",
+      "scheduled": 64,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    },
+    {
+      "adapter_digest": "8f40335b936fd587873a23a2cfeab2b1ae3bf4b52d52a44a1bc27a8aafb1c31f",
+      "generation": {
+        "budgets": {
+          "context_qa": 16,
+          "medical_mcq": 16,
+          "medical_qa": 128,
+          "medical_vqa": 32
+        },
+        "do_sample": false
+      },
+      "identity_hash": "4d37e73726cfe9574971eca86a1506a60c548dceb7faf6910651e8762cce7298",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "model_revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "native_model_recorded_digest": "33733078d018113212f156467c2de6137bebe8de691ad5f28c90359c33156aa7",
+      "precision": "nf4",
+      "predictions_sha256": "ceb60352e93aa58f91ccfb6917a4dee7fa87e5354413b2fc2087708bd70f1eb6",
+      "protocol_file_sha256": "f2983048e1e7747864c3eaa26956317784b9baf7b79f6dcb41470a42b32cbf41",
+      "protocol_hash": "5746eab2a675d5819e81b8596a6800be3b2b55370b360678f6ab3f5e2e53707e",
+      "run_id": "medgemma15_4b-vqarad-tuned-20261023",
+      "run_manifest_sha256": "0ee1f0bee8f83b5098aab444a34aa0e32276e4c536210296c8bf2278545bceb5",
+      "scheduled": 64,
+      "verification": "recorded prediction/artifact hashes, frozen input/reference/image bytes, config and run/model identities, adapter bytes"
+    }
+  ],
+  "recorded_model_identity_verified": true,
+  "schema_version": "medvlm.v1-reanalysis.v2",
+  "status": "SUCCEEDED",
+  "training_8450_to_8400": [
+    {
+      "actual_optimizer_steps": 525,
+      "cause": "50 whole samples rejected by native template CONTEXT_OVERFLOW; no step-cap or budget omission",
+      "checkpoint_json_sha256": "e2e24b5295e88edfd3a855409d5b41a98926aa835272f3009f73fec8862f605e",
+      "effective_batch": 16,
+      "expected_updates": 525,
+      "max_length": 2048,
+      "max_optimizer_steps": 1000,
+      "model": "qwen3_17b",
+      "receipts": {
+        "config.json": "24cceef8aead178bbc25d6f430c484fe7dc47d305b9a8a82a8e550996215b7f7",
+        "events.jsonl": "e812bbea7207d7d20fcb6cb70a06f60a53e55a86a719c6051f9250fe4848b14a",
+        "excluded.json": "8f1337e6631ab6f3b47752c058de67833ba8bd2d592d49057355685fc2dff483",
+        "manifest.json": "92d55c63393525bdd89d91fd0937eefbdd6f5031741a79c97aa62806315d79f5",
+        "mask_audit.jsonl": "0470a44eff689ef3ae2244f9321bef32419139f064ca630ac8e9824065ed548b"
+      },
+      "remaining_unprocessed_usable": 0,
+      "sample_cap": 20000,
+      "sources": [
+        {
+          "prepared": 8000,
+          "processed": 7950,
+          "rejected": 50,
+          "rejection_reasons": {
+            "CONTEXT_OVERFLOW": 50
+          },
+          "selected_for_preflight": 8000,
+          "source_id": "medquad",
+          "supervised_tokens": 1982439,
+          "usable": 7950
+        },
+        {
+          "prepared": 450,
+          "processed": 450,
+          "rejected": 0,
+          "rejection_reasons": {},
+          "selected_for_preflight": 450,
+          "source_id": "pubmedqa_labeled",
+          "supervised_tokens": 1350,
+          "usable": 450
+        }
+      ],
+      "status": "SUCCEEDED",
+      "train_sha256": "b9455396d86410bef87415ab8f1b30b1fa4169e5c8a0585fcf080768fc62c2b8",
+      "training_selection": {
+        "excluded": 50,
+        "offered": 8450,
+        "sample_order_sha256": "9e3a13e96e107e300325b102bc93d8c324979633c32ef0e914d144ec883731a1",
+        "usable": 8400
+      }
+    },
+    {
+      "actual_optimizer_steps": 525,
+      "cause": "50 whole samples rejected by native template CONTEXT_OVERFLOW; no step-cap or budget omission",
+      "checkpoint_json_sha256": "d6ed6cde9a81a83d3261d7b310d5ac803a50ed739cce6060bbff0e04543b2674",
+      "effective_batch": 16,
+      "expected_updates": 525,
+      "max_length": 2048,
+      "max_optimizer_steps": 1000,
+      "model": "qwen3_4b",
+      "receipts": {
+        "config.json": "410c0d6fad6cce858c670e9c05d9f274bc8711e34a624575334c83d391518255",
+        "events.jsonl": "a3f25bd0654632c3a755a1f61dd33b598e83647069806f62de5eb048ab6f58b4",
+        "excluded.json": "8f1337e6631ab6f3b47752c058de67833ba8bd2d592d49057355685fc2dff483",
+        "manifest.json": "73c49b5db027109bd99228db1aa8047051ce92c78c43d2820d3248ce2995ef7e",
+        "mask_audit.jsonl": "0470a44eff689ef3ae2244f9321bef32419139f064ca630ac8e9824065ed548b"
+      },
+      "remaining_unprocessed_usable": 0,
+      "sample_cap": 20000,
+      "sources": [
+        {
+          "prepared": 8000,
+          "processed": 7950,
+          "rejected": 50,
+          "rejection_reasons": {
+            "CONTEXT_OVERFLOW": 50
+          },
+          "selected_for_preflight": 8000,
+          "source_id": "medquad",
+          "supervised_tokens": 1982439,
+          "usable": 7950
+        },
+        {
+          "prepared": 450,
+          "processed": 450,
+          "rejected": 0,
+          "rejection_reasons": {},
+          "selected_for_preflight": 450,
+          "source_id": "pubmedqa_labeled",
+          "supervised_tokens": 1350,
+          "usable": 450
+        }
+      ],
+      "status": "SUCCEEDED",
+      "train_sha256": "b9455396d86410bef87415ab8f1b30b1fa4169e5c8a0585fcf080768fc62c2b8",
+      "training_selection": {
+        "excluded": 50,
+        "offered": 8450,
+        "sample_order_sha256": "9e3a13e96e107e300325b102bc93d8c324979633c32ef0e914d144ec883731a1",
+        "usable": 8400
+      }
+    }
+  ],
+  "vqa_diagnostics": [
+    {
+      "condition": "base",
+      "groups": [
+        {
+          "answer_type": "ALL",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 20.60546875,
+            "median": 19.5,
+            "n": 256,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.0375464999622551,
+          "output_characters": {
+            "max": 187,
+            "mean": 85.34765625,
+            "median": 73.5,
+            "n": 256,
+            "p95": 162
+          },
+          "output_whitespace_words": {
+            "max": 30,
+            "mean": 15.5859375,
+            "median": 14.0,
+            "n": 256,
+            "p95": 28
+          },
+          "reference_characters": {
+            "max": 70,
+            "mean": 6.08984375,
+            "median": 4.0,
+            "n": 256,
+            "p95": 18
+          },
+          "reference_phrase_contains_count": 141,
+          "reference_phrase_contains_fraction": 0.55078125,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 256,
+          "truncated_count": 72,
+          "valid": 256
+        },
+        {
+          "answer_type": "OPEN",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 19.01948051948052,
+            "median": 15.5,
+            "n": 154,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.050177834942920135,
+          "output_characters": {
+            "max": 182,
+            "mean": 78.38311688311688,
+            "median": 59.5,
+            "n": 154,
+            "p95": 159
+          },
+          "output_whitespace_words": {
+            "max": 30,
+            "mean": 14.175324675324676,
+            "median": 12.0,
+            "n": 154,
+            "p95": 28
+          },
+          "reference_characters": {
+            "max": 70,
+            "mean": 8.227272727272727,
+            "median": 5.0,
+            "n": 154,
+            "p95": 27
+          },
+          "reference_phrase_contains_count": 70,
+          "reference_phrase_contains_fraction": 0.45454545454545453,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 154,
+          "truncated_count": 35,
+          "valid": 154
+        },
+        {
+          "answer_type": "CLOSED",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 23,
+            "median": 22.5,
+            "n": 102,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.01847566087380004,
+          "output_characters": {
+            "max": 187,
+            "mean": 95.86274509803921,
+            "median": 83.5,
+            "n": 102,
+            "p95": 162
+          },
+          "output_whitespace_words": {
+            "max": 29,
+            "mean": 17.715686274509803,
+            "median": 16.0,
+            "n": 102,
+            "p95": 28
+          },
+          "reference_characters": {
+            "max": 12,
+            "mean": 2.8627450980392157,
+            "median": 2.5,
+            "n": 102,
+            "p95": 5
+          },
+          "reference_phrase_contains_count": 71,
+          "reference_phrase_contains_fraction": 0.696078431372549,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 102,
+          "truncated_count": 37,
+          "valid": 102
+        }
+      ],
+      "model": "medgemma15_4b",
+      "source": "slake"
+    },
+    {
+      "condition": "tuned",
+      "groups": [
+        {
+          "answer_type": "ALL",
+          "generated_tokens": {
+            "max": 9,
+            "mean": 2.4765625,
+            "median": 2.0,
+            "n": 256,
+            "p95": 5
+          },
+          "lexical_exact_match": 0.69921875,
+          "lexical_exact_matches": 179,
+          "lexical_token_f1": 0.7340029761904762,
+          "output_characters": {
+            "max": 36,
+            "mean": 5.0078125,
+            "median": 4.0,
+            "n": 256,
+            "p95": 13
+          },
+          "output_whitespace_words": {
+            "max": 5,
+            "mean": 1.17578125,
+            "median": 1.0,
+            "n": 256,
+            "p95": 2
+          },
+          "reference_characters": {
+            "max": 70,
+            "mean": 6.08984375,
+            "median": 4.0,
+            "n": 256,
+            "p95": 18
+          },
+          "reference_phrase_contains_count": 181,
+          "reference_phrase_contains_fraction": 0.70703125,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 256,
+          "truncated_count": 0,
+          "valid": 256
+        },
+        {
+          "answer_type": "OPEN",
+          "generated_tokens": {
+            "max": 9,
+            "mean": 2.707792207792208,
+            "median": 2.0,
+            "n": 154,
+            "p95": 5
+          },
+          "lexical_exact_match": 0.6428571428571429,
+          "lexical_exact_matches": 99,
+          "lexical_token_f1": 0.7006802721088435,
+          "output_characters": {
+            "max": 36,
+            "mean": 6.279220779220779,
+            "median": 5.0,
+            "n": 154,
+            "p95": 16
+          },
+          "output_whitespace_words": {
+            "max": 5,
+            "mean": 1.2662337662337662,
+            "median": 1.0,
+            "n": 154,
+            "p95": 3
+          },
+          "reference_characters": {
+            "max": 70,
+            "mean": 8.227272727272727,
+            "median": 5.0,
+            "n": 154,
+            "p95": 27
+          },
+          "reference_phrase_contains_count": 101,
+          "reference_phrase_contains_fraction": 0.6558441558441559,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 154,
+          "truncated_count": 0,
+          "valid": 154
+        },
+        {
+          "answer_type": "CLOSED",
+          "generated_tokens": {
+            "max": 4,
+            "mean": 2.127450980392157,
+            "median": 2.0,
+            "n": 102,
+            "p95": 3
+          },
+          "lexical_exact_match": 0.7843137254901961,
+          "lexical_exact_matches": 80,
+          "lexical_token_f1": 0.7843137254901961,
+          "output_characters": {
+            "max": 12,
+            "mean": 3.088235294117647,
+            "median": 3.0,
+            "n": 102,
+            "p95": 6
+          },
+          "output_whitespace_words": {
+            "max": 2,
+            "mean": 1.0392156862745099,
+            "median": 1.0,
+            "n": 102,
+            "p95": 1
+          },
+          "reference_characters": {
+            "max": 12,
+            "mean": 2.8627450980392157,
+            "median": 2.5,
+            "n": 102,
+            "p95": 5
+          },
+          "reference_phrase_contains_count": 80,
+          "reference_phrase_contains_fraction": 0.7843137254901961,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 102,
+          "truncated_count": 0,
+          "valid": 102
+        }
+      ],
+      "model": "medgemma15_4b",
+      "source": "slake"
+    },
+    {
+      "condition": "base",
+      "groups": [
+        {
+          "answer_type": "ALL",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 10.90625,
+            "median": 5.5,
+            "n": 64,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.296875,
+          "lexical_exact_matches": 19,
+          "lexical_token_f1": 0.3544499177722862,
+          "output_characters": {
+            "max": 163,
+            "mean": 35.28125,
+            "median": 9.5,
+            "n": 64,
+            "p95": 134
+          },
+          "output_whitespace_words": {
+            "max": 27,
+            "mean": 5.8125,
+            "median": 1.0,
+            "n": 64,
+            "p95": 21
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 7.21875,
+            "median": 3.0,
+            "n": 64,
+            "p95": 25
+          },
+          "reference_phrase_contains_count": 32,
+          "reference_phrase_contains_fraction": 0.5,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 64,
+          "truncated_count": 5,
+          "valid": 64
+        },
+        {
+          "answer_type": "OPEN",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 15.454545454545455,
+            "median": 12.5,
+            "n": 22,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.14912519697208693,
+          "output_characters": {
+            "max": 163,
+            "mean": 59.5,
+            "median": 47.5,
+            "n": 22,
+            "p95": 138
+          },
+          "output_whitespace_words": {
+            "max": 27,
+            "mean": 9.227272727272727,
+            "median": 8.5,
+            "n": 22,
+            "p95": 22
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 15.272727272727273,
+            "median": 12.5,
+            "n": 22,
+            "p95": 30
+          },
+          "reference_phrase_contains_count": 3,
+          "reference_phrase_contains_fraction": 0.13636363636363635,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 22,
+          "truncated_count": 4,
+          "valid": 22
+        },
+        {
+          "answer_type": "CLOSED",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 8.523809523809524,
+            "median": 4.0,
+            "n": 42,
+            "p95": 17
+          },
+          "lexical_exact_match": 0.4523809523809524,
+          "lexical_exact_matches": 19,
+          "lexical_token_f1": 0.462000962000962,
+          "output_characters": {
+            "max": 130,
+            "mean": 22.595238095238095,
+            "median": 4.0,
+            "n": 42,
+            "p95": 66
+          },
+          "output_whitespace_words": {
+            "max": 21,
+            "mean": 4.023809523809524,
+            "median": 1.0,
+            "n": 42,
+            "p95": 11
+          },
+          "reference_characters": {
+            "max": 14,
+            "mean": 3,
+            "median": 3.0,
+            "n": 42,
+            "p95": 6
+          },
+          "reference_phrase_contains_count": 29,
+          "reference_phrase_contains_fraction": 0.6904761904761905,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 42,
+          "truncated_count": 1,
+          "valid": 42
+        }
+      ],
+      "model": "qwen35_2b",
+      "source": "vqa_rad"
+    },
+    {
+      "condition": "tuned",
+      "groups": [
+        {
+          "answer_type": "ALL",
+          "generated_tokens": {
+            "max": 8,
+            "mean": 4.53125,
+            "median": 4.0,
+            "n": 64,
+            "p95": 6
+          },
+          "lexical_exact_match": 0.484375,
+          "lexical_exact_matches": 31,
+          "lexical_token_f1": 0.5267113095238095,
+          "output_characters": {
+            "max": 19,
+            "mean": 6.28125,
+            "median": 4.0,
+            "n": 64,
+            "p95": 16
+          },
+          "output_whitespace_words": {
+            "max": 3,
+            "mean": 1.234375,
+            "median": 1.0,
+            "n": 64,
+            "p95": 3
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 7.21875,
+            "median": 3.0,
+            "n": 64,
+            "p95": 25
+          },
+          "reference_phrase_contains_count": 31,
+          "reference_phrase_contains_fraction": 0.484375,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 64,
+          "truncated_count": 0,
+          "valid": 64
+        },
+        {
+          "answer_type": "OPEN",
+          "generated_tokens": {
+            "max": 8,
+            "mean": 5.318181818181818,
+            "median": 5.0,
+            "n": 22,
+            "p95": 7
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.12316017316017316,
+          "output_characters": {
+            "max": 19,
+            "mean": 10.136363636363637,
+            "median": 10.0,
+            "n": 22,
+            "p95": 18
+          },
+          "output_whitespace_words": {
+            "max": 3,
+            "mean": 1.6818181818181819,
+            "median": 1.5,
+            "n": 22,
+            "p95": 3
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 15.272727272727273,
+            "median": 12.5,
+            "n": 22,
+            "p95": 30
+          },
+          "reference_phrase_contains_count": 0,
+          "reference_phrase_contains_fraction": 0.0,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 22,
+          "truncated_count": 0,
+          "valid": 22
+        },
+        {
+          "answer_type": "CLOSED",
+          "generated_tokens": {
+            "max": 7,
+            "mean": 4.119047619047619,
+            "median": 4.0,
+            "n": 42,
+            "p95": 4
+          },
+          "lexical_exact_match": 0.7380952380952381,
+          "lexical_exact_matches": 31,
+          "lexical_token_f1": 0.7380952380952381,
+          "output_characters": {
+            "max": 15,
+            "mean": 4.261904761904762,
+            "median": 4.0,
+            "n": 42,
+            "p95": 7
+          },
+          "output_whitespace_words": {
+            "max": 1,
+            "mean": 1,
+            "median": 1.0,
+            "n": 42,
+            "p95": 1
+          },
+          "reference_characters": {
+            "max": 14,
+            "mean": 3,
+            "median": 3.0,
+            "n": 42,
+            "p95": 6
+          },
+          "reference_phrase_contains_count": 31,
+          "reference_phrase_contains_fraction": 0.7380952380952381,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 42,
+          "truncated_count": 0,
+          "valid": 42
+        }
+      ],
+      "model": "qwen35_2b",
+      "source": "vqa_rad"
+    },
+    {
+      "condition": "base",
+      "groups": [
+        {
+          "answer_type": "ALL",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 23.015625,
+            "median": 22.0,
+            "n": 64,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.03224083771061358,
+          "output_characters": {
+            "max": 181,
+            "mean": 102.59375,
+            "median": 96.5,
+            "n": 64,
+            "p95": 169
+          },
+          "output_whitespace_words": {
+            "max": 29,
+            "mean": 17.4375,
+            "median": 16.0,
+            "n": 64,
+            "p95": 28
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 7.21875,
+            "median": 3.0,
+            "n": 64,
+            "p95": 25
+          },
+          "reference_phrase_contains_count": 24,
+          "reference_phrase_contains_fraction": 0.375,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 64,
+          "truncated_count": 19,
+          "valid": 64
+        },
+        {
+          "answer_type": "OPEN",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 21.227272727272727,
+            "median": 20.0,
+            "n": 22,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.07045363334063025,
+          "output_characters": {
+            "max": 169,
+            "mean": 90.86363636363636,
+            "median": 90.0,
+            "n": 22,
+            "p95": 155
+          },
+          "output_whitespace_words": {
+            "max": 26,
+            "mean": 15.181818181818182,
+            "median": 14.0,
+            "n": 22,
+            "p95": 24
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 15.272727272727273,
+            "median": 12.5,
+            "n": 22,
+            "p95": 30
+          },
+          "reference_phrase_contains_count": 5,
+          "reference_phrase_contains_fraction": 0.22727272727272727,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 22,
+          "truncated_count": 4,
+          "valid": 22
+        },
+        {
+          "answer_type": "CLOSED",
+          "generated_tokens": {
+            "max": 32,
+            "mean": 23.952380952380953,
+            "median": 23.5,
+            "n": 42,
+            "p95": 32
+          },
+          "lexical_exact_match": 0.0,
+          "lexical_exact_matches": 0,
+          "lexical_token_f1": 0.012224611428223908,
+          "output_characters": {
+            "max": 181,
+            "mean": 108.73809523809524,
+            "median": 106.0,
+            "n": 42,
+            "p95": 173
+          },
+          "output_whitespace_words": {
+            "max": 29,
+            "mean": 18.61904761904762,
+            "median": 18.5,
+            "n": 42,
+            "p95": 28
+          },
+          "reference_characters": {
+            "max": 14,
+            "mean": 3,
+            "median": 3.0,
+            "n": 42,
+            "p95": 6
+          },
+          "reference_phrase_contains_count": 19,
+          "reference_phrase_contains_fraction": 0.4523809523809524,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 42,
+          "truncated_count": 15,
+          "valid": 42
+        }
+      ],
+      "model": "medgemma15_4b",
+      "source": "vqa_rad"
+    },
+    {
+      "condition": "tuned",
+      "groups": [
+        {
+          "answer_type": "ALL",
+          "generated_tokens": {
+            "max": 6,
+            "mean": 2.59375,
+            "median": 2.0,
+            "n": 64,
+            "p95": 6
+          },
+          "lexical_exact_match": 0.46875,
+          "lexical_exact_matches": 30,
+          "lexical_token_f1": 0.5050719246031746,
+          "output_characters": {
+            "max": 28,
+            "mean": 5.765625,
+            "median": 3.0,
+            "n": 64,
+            "p95": 22
+          },
+          "output_whitespace_words": {
+            "max": 4,
+            "mean": 1.3125,
+            "median": 1.0,
+            "n": 64,
+            "p95": 3
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 7.21875,
+            "median": 3.0,
+            "n": 64,
+            "p95": 25
+          },
+          "reference_phrase_contains_count": 30,
+          "reference_phrase_contains_fraction": 0.46875,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 64,
+          "truncated_count": 0,
+          "valid": 64
+        },
+        {
+          "answer_type": "OPEN",
+          "generated_tokens": {
+            "max": 6,
+            "mean": 3.5454545454545454,
+            "median": 3.0,
+            "n": 22,
+            "p95": 6
+          },
+          "lexical_exact_match": 0.045454545454545456,
+          "lexical_exact_matches": 1,
+          "lexical_token_f1": 0.1511183261183261,
+          "output_characters": {
+            "max": 28,
+            "mean": 10.818181818181818,
+            "median": 10.0,
+            "n": 22,
+            "p95": 22
+          },
+          "output_whitespace_words": {
+            "max": 4,
+            "mean": 1.9090909090909092,
+            "median": 2.0,
+            "n": 22,
+            "p95": 4
+          },
+          "reference_characters": {
+            "max": 43,
+            "mean": 15.272727272727273,
+            "median": 12.5,
+            "n": 22,
+            "p95": 30
+          },
+          "reference_phrase_contains_count": 1,
+          "reference_phrase_contains_fraction": 0.045454545454545456,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 22,
+          "truncated_count": 0,
+          "valid": 22
+        },
+        {
+          "answer_type": "CLOSED",
+          "generated_tokens": {
+            "max": 6,
+            "mean": 2.0952380952380953,
+            "median": 2.0,
+            "n": 42,
+            "p95": 2
+          },
+          "lexical_exact_match": 0.6904761904761905,
+          "lexical_exact_matches": 29,
+          "lexical_token_f1": 0.6904761904761905,
+          "output_characters": {
+            "max": 14,
+            "mean": 3.119047619047619,
+            "median": 3.0,
+            "n": 42,
+            "p95": 6
+          },
+          "output_whitespace_words": {
+            "max": 1,
+            "mean": 1,
+            "median": 1.0,
+            "n": 42,
+            "p95": 1
+          },
+          "reference_characters": {
+            "max": 14,
+            "mean": 3,
+            "median": 3.0,
+            "n": 42,
+            "p95": 6
+          },
+          "reference_phrase_contains_count": 29,
+          "reference_phrase_contains_fraction": 0.6904761904761905,
+          "reference_phrase_is_accuracy": false,
+          "scheduled": 42,
+          "truncated_count": 0,
+          "valid": 42
+        }
+      ],
+      "model": "medgemma15_4b",
+      "source": "vqa_rad"
+    }
+  ]
+}

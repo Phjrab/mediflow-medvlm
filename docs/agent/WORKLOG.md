@@ -1,5 +1,7 @@
 # 작업 기록
 
+- 2026-10-26 22:00 KST 구현 체크포인트: AIHub71875 실제17,280 QA→17,210 canonical, Kor4068 전부 보호. 고정multilingual E5 .92/top5의3,396후보는확정중복이아니며train3010/dev198격리,test188flag. KO4000=1500/1300/1200, MIX8000=같은KO+EN4000, 공통dev1516 동결. 실제token243394/1137306, 250/500updates 선언; 새학습은아직GPU대기. 원래v1 보고서18개SHA불변. VQA validation8개완료후256-token프로토콜고정, Qwen3.5 SLAKE1061 Base556→Tuned748 lexical EM 및 no-image완료, MedGemma평가진행중. 전체입력4530개CPU native인코딩검사오버플로0. 실제실행·예측은Git밖에보존하며최종결과로과장하지않음.
+
 - 2026-10-23: 사용자 pack 전체 계약을 읽음. 현재 repository SHA는 snapshot과 일치. initial unit tests 8/8 (Python3.12). 새 branch 생성.
 - sandbox DNS 제한은 승인된 network escalation으로 해결, 저장소 clone 성공. 시스템 변경 없이 CUDA 직접 초기화 성공; NVML mismatch를 GPU 부재로 단정하지 않도록 조사 수정.
 - 실제 원본과 실행 artifact는 Git 외부 data root, feature branch에는 코드/설정/비식별 요약만 유지. 사용자 승인에 따라 독립 source와 CPU 구현 분업 시작.
@@ -22,3 +24,14 @@
 - 2026-10-23 22:42 KST: MedGemma SLAKE256건 base/tuned 완료, lexical EM0/256→179/256, F1 0.0375465→0.734003. 이미지 입력512건·native 파일·prompt token hash·선정 adapter를 확인했다. 기본 응답 중앙값14단어와 정답1단어의 불일치,72건 생성상한 도달이 있어 EM0을 임상 정확도로 해석하지 않는다. 사후 형식 진단은 공개 집계에만 기록했고 평가 설정/parser는 변경하지 않았다. no-image32건씩 완료(이미지 포함/제외 EM:base0/0,tuned25/12). VQA-RAD64건 base0→tuned30, 기술실패0.
 - 2026-10-23 22:45 KST: 수정된 VQA-RAD provenance로 Qwen3.5 외부 진단 재개 완료. 기존 학습·재로드·SLAKE 평가를 검증 후 재사용했으며 재학습하지 않았다. 외부64건 lexical EM19→31, F1 0.354450→0.526711, 기술실패0, delta18.75%p(관측53그룹 CI9.23~29.51%p). 첫 실패와 이전 freeze는 보존했다. 전체 네 모델의 주 paired4개 및 외부 paired2개, no-image 진단4개 완료. GPU 예산20,047.434초(5.5687h), active 예약과 campaign PID 없음.
 - 최종 읽기 전용 artifact 검증: 주/외부 예측 총4,560건의 파일SHA·protocol sample ID·pair별 input/prompt token·native base/precision/generation·선정adapter 연결 통과. MedGemma 형식 진단은 재계산해 일치 확인. 예비 모델4종은 CPU 준비 완료/FALLBACK_NOT_NEEDED, Jetson·AIHub·MedQA/MedMCQA는 별도 차단, 전문가 검토/추가seed는 미실행. 기존 f4462de commit의 remote push 및 CI39957026311 success 확인. 최종 전달 commit/push/CI는 별도 receipt에 기록한다.
+
+
+## 2026-10-26 후속 작업 — 진행 중
+
+- 사용자 후속 지시로 전체 24시간/모델별 6시간 및 run 6시간/campaign 36시간 제한을 해제하는 unlimited/null 정책을 도입했다. 사용량 원장과 model/run/phase/session·checkpoint floor는 보존한다. 이전 v1 config·checkpoint·freeze·실적을 소급 변경하지 않는다. 새 행렬은 유한한 corpus/seed/학습량으로 선언한다.
+- Jetson은 사용자 요청에 따라 `USER_DEFERRED`로 범위에서 제외했다. 과거 호스트키 미검증 차단은 역사 기록으로 남기며 현재 접속·확인·변환·장치 추론은 하지 않는다.
+- AI-Hub 71875의 실제 canonical 17,210개(train 15,297 / validation 956 / test 957)를 준비했다. 전달 경로는 사용자 제공 원본이며 API 키를 추가 선행 조건으로 요구하지 않는다. 71762 약 4.25GB 파일은 connector 파일당256MiB 제한과 브라우저 `ERR_BLOCKED_BY_CLIENT`에 막혔다. 경계를 우회하지 않았고 접근 가능한 로컬 원본 경로 문의가 대기 중이다.
+- MedMCQA 공식 팀 댓글의 데이터셋 MIT 적용과 고정 LICENSE/README/loader를 확인했다. 원저자 ZIP55,285,460bytes에서193,155행을 실제 확보·감사했다. optional train20,000/validation2,816/test0을 별도 저장했고 KO/MIX corpus에는 넣지 않았다. 공식 test는 정답이 없어 채점하지 않는다. MedQA QA/교재 분리 조사와 AI-Hub 조건·schema 근거는 `docs/research/v2/DATA_RIGHTS_RECHECK_KO.md`에 기록했다.
+- v1 예측10개 실행을 재사용해 파일SHA·동결protocol·모델/config/adapter identity를 검증하고 한국어 유효성 전환, MedGemma 길이/구절/잘림, VQA-RAD OPEN/CLOSED를 재분석했다. 두 텍스트 모델의 8,450→8,400은 MedQuAD50개 context overflow 제외이며 나머지는525updates로 모두 처리됨을 preflight/checkpoint/event로 대조했다. 재분석/MedMCQA focused5tests 통과; 새 학습·추론 없이 `reports/public_summary/v2/`에 별도 보고했다.
+- KO-v2 4,000개/MIX-v2 8,000개 한국어 텍스트 실험은 계획 단계이며 이 기록 시점 새 학습·재로드·평가는 미실행이다. Qwen3.5-2B/MedGemma의 기존 weight/선정adapter를 재사용하는 VQA v2 validation이 실행 중이다. 상태는 `$MEDVLM_DATA_ROOT/v2/vqa/state.json`, 진입점은 `scripts/run_vqa_v2.py --data-root ...` 및 `--validation-only`다.
+- 인계/현재 맥락 문서를 후속 범위로 갱신하고 원래 v1 문서를 역사 구간에 보존했다. `runtime/medvlm_state.json`은 v1 역사 상태이며 후속 전체 root 최종 상태·최종 실적은 아직 없다. `report_v1.py`는 향후 생성 시 과거24/6 제약과 `resolve_resource_policy()`의 현재 정책·기록 사용량을 구분하도록 변경했다. 기존 생성된 v1 보고서는 재생성하지 않았다. 최종 실행·검증·commit/push 실적은 후속 통합 단계에서 추가한다.

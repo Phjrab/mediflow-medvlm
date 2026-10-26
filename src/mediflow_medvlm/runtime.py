@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import socket
@@ -67,6 +69,82 @@ class BudgetExceeded(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class ResourcePolicy:
+    """Current execution limits, separate from immutable recipes and usage."""
+    budget_mode: str = "unlimited"
+    total_gpu_hours: float | None = None
+    per_model_gpu_hours: float | None = None
+    run_wall_seconds: float | None = None
+    job_timeout_seconds: float | None = None
+    campaign_wall_seconds: float | None = None
+
+    def __post_init__(self):
+        if self.budget_mode not in {"finite", "unlimited"}:
+            raise ValueError("budget_mode must be finite or unlimited")
+        limits = {name: value for name, value in asdict(self).items() if name != "budget_mode"}
+        for name, value in limits.items():
+            if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
+                                      or not math.isfinite(value) or value <= 0):
+                raise ValueError(name + " must be a positive finite number or null")
+        if self.budget_mode == "unlimited" and any(value is not None for value in limits.values()):
+            raise ValueError("unlimited resource limits must be explicit null values")
+        if self.budget_mode == "finite" and (self.total_gpu_hours is None or self.per_model_gpu_hours is None):
+            raise ValueError("finite policy requires positive total_gpu_hours and per_model_gpu_hours")
+
+    def as_dict(self):
+        return {"schema_version": "medvlm.resource-policy.v1", **asdict(self)}
+
+    def deadline(self, started, prior_seconds=0.0, *, scope="run"):
+        limit = {"run": self.run_wall_seconds, "job": self.job_timeout_seconds,
+                 "campaign": self.campaign_wall_seconds}[scope]
+        return None if limit is None else started + max(0.0, limit - prior_seconds)
+
+    def can_continue(self, elapsed_seconds, *, scope="run"):
+        limit = {"run": self.run_wall_seconds, "job": self.job_timeout_seconds,
+                 "campaign": self.campaign_wall_seconds}[scope]
+        return limit is None or elapsed_seconds < limit
+
+
+def resolve_resource_policy(config=None, *, policy=None, policy_path=None):
+    """Resolve one policy for trainer, reload, evaluator, diagnostics and jobs.
+
+    Explicit policy/path, environment override, a config's explicit policy, then
+    the repository current policy take precedence in that order. Legacy recipe
+    fields without budget_mode never override current execution policy. Reading
+    an old config or checkpoint does not mutate it or revive its old limits.
+    """
+    if isinstance(policy, ResourcePolicy):
+        return policy
+    config = config or {}
+    selected_path = policy_path or os.environ.get("MEDVLM_RESOURCE_POLICY") or config.get("resource_policy_path")
+    if policy is not None:
+        selected = policy
+    elif selected_path:
+        selected = json.loads(Path(selected_path).read_text())
+    elif "resource_policy" in config:
+        selected = config["resource_policy"]
+    elif "budget_mode" in config:
+        selected = config
+    else:
+        current = Path(__file__).resolve().parents[2] / "configs" / "resource_policy.json"
+        selected = json.loads(current.read_text()) if current.exists() else ResourcePolicy().as_dict()
+    if not isinstance(selected, dict):
+        raise ValueError("resource policy must be an object")
+    if selected.get("schema_version", "medvlm.resource-policy.v1") != "medvlm.resource-policy.v1":
+        # A run config has its own schema; only nested/standalone policy schemas
+        # must identify the policy format.
+        if selected is not config:
+            raise ValueError("unsupported resource policy schema")
+    if "budget_mode" not in selected:
+        raise ValueError("explicit resource policy requires budget_mode")
+    fields = {name: selected.get(name) for name in ResourcePolicy.__dataclass_fields__}
+    if selected is config and fields["budget_mode"] == "finite":
+        fields["run_wall_seconds"] = selected.get("run_wall_seconds", selected.get("wall_seconds"))
+        fields["job_timeout_seconds"] = selected.get("job_timeout_seconds", selected.get("timeout_seconds"))
+    return ResourcePolicy(**fields)
+
+
 class GPULease:
     """Advisory OS lock. Never kills processes; a crashed process releases its fd."""
     def __init__(self, path, run_id="unknown"):
@@ -101,10 +179,15 @@ class BudgetLedger:
     Caller holds the GPU lease for the whole session. An interrupted active
     reservation is charged until the next holder recovers it (conservative).
     """
-    def __init__(self, path, total_hours=24, per_model_hours=6):
+    def __init__(self, path, total_hours=None, per_model_hours=None, *, policy=None):
         self.path = Path(path)
-        self.total_seconds = min(float(total_hours), 24.0) * 3600
-        self.model_seconds = min(float(per_model_hours), 6.0) * 3600
+        if total_hours is not None or per_model_hours is not None:
+            if policy is not None:
+                raise ValueError("choose explicit finite limits or a resource policy")
+            policy = ResourcePolicy("finite", total_hours, per_model_hours)
+        self.policy = resolve_resource_policy(policy=policy)
+        self.total_seconds = None if self.policy.total_gpu_hours is None else self.policy.total_gpu_hours * 3600
+        self.model_seconds = None if self.policy.per_model_gpu_hours is None else self.policy.per_model_gpu_hours * 3600
         self.session_id = None
         self.session_seconds = 0.0
 
@@ -136,14 +219,22 @@ class BudgetLedger:
             raise ValueError("budget key must be the canonical full model repository ID")
         with self._locked() as data:
             self._close_active(data, time.time())
-            if self._remaining(data, model_id) <= 0:
+            remaining = self._remaining(data, model_id)
+            if remaining is not None and remaining <= 0:
                 raise BudgetExceeded("GPU budget exhausted")
+            current = self.policy.as_dict()
+            if data.get("current_policy") != current:
+                data.setdefault("policy_events", []).append({"at": utcnow(), "previous": data.get("current_policy"),
+                                                            "current": current, "usage_preserved": True})
+                data["current_policy"] = current
             self.session_id = uuid.uuid4().hex
             data["active"] = {"id": self.session_id, "model_id": model_id, "run_id": run_id,
-                              "phase": phase, "started_epoch": time.time()}
+                              "phase": phase, "started_epoch": time.time(), "resource_policy": current}
         return self
 
     def _remaining(self, data, model_id):
+        if self.policy.budget_mode == "unlimited":
+            return None
         used_model = data["models"].get(model_id, 0)
         used_total = sum(data["models"].values())
         active = data.get("active")
@@ -156,7 +247,14 @@ class BudgetLedger:
 
     def remaining(self, model_id):
         with self._locked() as data:
-            return max(0.0, self._remaining(data, model_id))
+            remaining = self._remaining(data, model_id)
+            return None if remaining is None else max(0.0, remaining)
+
+    def can_continue(self, model_id, reserve_seconds=0.0):
+        if not math.isfinite(reserve_seconds) or reserve_seconds < 0:
+            raise ValueError("reserve_seconds must be finite and nonnegative")
+        remaining = self.remaining(model_id)
+        return remaining is None or remaining > reserve_seconds
 
     def snapshot(self):
         """A monotonic lower bound for recovery, including current occupancy."""
@@ -172,6 +270,7 @@ class BudgetLedger:
             return {"schema_version": "medvlm.budget-snapshot.v1", "captured_at": utcnow(),
                     "models": models, "run_phases": run_phases,
                     "total_gpu_seconds": sum(models.values()),
+                    "resource_policy": self.policy.as_dict(),
                     "per_model_limit_seconds": self.model_seconds, "total_limit_seconds": self.total_seconds}
 
     def recover(self, snapshot):

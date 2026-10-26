@@ -16,8 +16,10 @@ import subprocess
 import sys
 import time
 
-from mediflow_medvlm.runtime import atomic_json, canonical_hash, directory_digest, file_hash, utcnow, BudgetLedger
+from mediflow_medvlm.runtime import atomic_json, canonical_hash, directory_digest, file_hash, utcnow, BudgetLedger, resolve_resource_policy
 from mediflow_medvlm.evaluation.runner import freeze_protocol
+
+_campaign_deadline = None
 
 
 def read(path):
@@ -44,10 +46,15 @@ def wait_owned_training(path):
 
 
 def invoke(argv, log):
+    resource_policy=resolve_resource_policy()
+    remaining=None if _campaign_deadline is None else max(0.0,_campaign_deadline-time.monotonic())
+    if remaining is not None and remaining <= 0:return 124
+    limits=[value for value in (resource_policy.job_timeout_seconds,remaining) if value is not None]
+    timeout=min(limits) if limits else None
     with Path(log).open("a") as stream:
         process=subprocess.Popen([sys.executable,*argv],stdout=stream,stderr=subprocess.STDOUT)
         print(json.dumps({"event":"started","pid":process.pid,"argv":argv,"at":utcnow()}),flush=True)
-        try:return process.wait(timeout=21600)
+        try:return process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             process.terminate()
             try:return process.wait(timeout=60)
@@ -202,9 +209,9 @@ def optional_diagnostics(config_path, root, key, test_protocol, results, selecti
         except Exception as error:outcomes['expert_review']={'status':'FAILED_REPRODUCIBLE','reason_code':type(error).__name__}
         return outcomes
     from mediflow_medvlm.evaluation.image_diagnostics import derive_no_image_protocol, compare_image_conditions
-    ledger=BudgetLedger(root/'runtime/gpu_budget.json')
+    ledger=BudgetLedger(root/'runtime/gpu_budget.json',policy=resolve_resource_policy(config))
     try:
-        if ledger.remaining(config['model_id'])<900:
+        if not ledger.can_continue(config['model_id'],900):
             outcomes['no_image']={'status':'SKIPPED_BUDGET'}
         else:
             protocol=root/'manifests/evaluation/slake-no-image-v1.json'
@@ -218,7 +225,7 @@ def optional_diagnostics(config_path, root, key, test_protocol, results, selecti
             outcomes['no_image']=conditions
     except Exception as error:outcomes['no_image']={'status':'FAILED_REPRODUCIBLE','reason_code':type(error).__name__}
     try:
-        if ledger.remaining(config['model_id'])<900:
+        if not ledger.can_continue(config['model_id'],900):
             outcomes['external_vqarad']={'status':'SKIPPED_BUDGET'}
         else:
             aggregate=read(root/'manifests/current_freeze.json')
@@ -254,6 +261,7 @@ def expand_general_fallbacks(keys):
 
 
 def main():
+    global _campaign_deadline
     parser=argparse.ArgumentParser();parser.add_argument('--data-root',required=True)
     parser.add_argument('--keys',nargs='+',default=['qwen3_17b','qwen3_4b','qwen35_2b','medgemma15_4b','gemma3_4b','smolvlm_500m'])
     parser.add_argument('--skip-download',action='store_true');args=parser.parse_args()
@@ -266,9 +274,15 @@ def main():
     policy=read('configs/evaluation_policy.json');state_path=Path('runtime/medvlm_state.json')
     state=read(state_path) if state_path.exists() else {'schema_version':'medvlm.state.v1','models':{},'stages':{}}
     state['data_root']=str(root);state['campaign_pid']=os.getpid();state['config_policy_hash']=canonical_hash(policy)
+    resource_policy=resolve_resource_policy();state['resource_policy']=resource_policy.as_dict()
+    started=time.monotonic();prior_elapsed=state.get('campaign_elapsed_seconds',0.0)
+    _campaign_deadline=resource_policy.deadline(started,prior_elapsed,scope='campaign')
     state['active_process']={'pid':os.getpid(),'role':'finite_campaign'}
     atomic_json(state_path,state)
     for key in expand_general_fallbacks(args.keys):
+        if _campaign_deadline is not None and time.monotonic() >= _campaign_deadline:
+            state.update(campaign_status='SKIPPED_BUDGET',reason_code='CAMPAIGN_WALL_LIMIT')
+            break
         if fallback_not_needed(state['models'],key):
             if key in state['models']:
                 state['models'][key]['campaign_disposition']='FALLBACK_NOT_NEEDED'
@@ -326,7 +340,9 @@ def main():
         finally:
             cell['finished_at']=utcnow();state['updated_at']=utcnow();atomic_json(state_path,state)
             print(json.dumps({'event':'model_terminal','key':key,**cell}),flush=True)
+    state['campaign_elapsed_seconds']=prior_elapsed+time.monotonic()-started
     state['active_process']=None;state['campaign_pid']=None;state['updated_at']=utcnow();atomic_json(state_path,state)
+    _campaign_deadline=None
 
 
 if __name__=='__main__':main()

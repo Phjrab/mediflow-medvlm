@@ -1,0 +1,116 @@
+{
+  "actual_lightweight_tests": "16 passed Python3.10, tests/test_data_aihub.py + tests/test_supplemental.py",
+  "aihub_71762": {
+    "input_blocker": "provided Drive file exceeds connector 256MiB download limit (413); normal browser download returned ERR_BLOCKED_BY_CLIENT",
+    "input_link_received": true,
+    "raw_original_acquired": false,
+    "acquisition_status": "BLOCKED_DELIVERY",
+    "actual_acquired_bytes": 0,
+    "pairing_status": "UNRESOLVED_PAIRING",
+    "reader_level": "SYNTHETIC_FIXTURE_ONLY"
+  },
+  "aihub_71875": {
+    "canonical_counts": {
+      "test": 957,
+      "train": 15297,
+      "validation": 956
+    },
+    "delivery_sha256": "530abb197345d03e92ebabecf7e4fd2e0a6a186c1b2043749478003e2bf8bc25",
+    "exclusions": {
+      "EXACT_INPUT_DUPLICATE": 1,
+      "MCQ_ANSWER_TEXT_MISMATCH": 48,
+      "MCQ_EMPTY_OR_DUPLICATE_OPTION": 3,
+      "MCQ_INVALID_ANSWER_NUMBER": 1,
+      "MCQ_OPTION_BLOCK_AMBIGUOUS": 13,
+      "QUESTION_GROUP_OVERLAP_WITH_OFFICIAL_HELDOUT": 4
+    },
+    "license": "AI-Hub custom terms; locally authorized research; attribution; no raw redistribution",
+    "non_qa_corpus_documents_not_converted": 52126,
+    "original_split_counts": {
+      "train": 15360,
+      "validation": 1920
+    },
+    "per_record_human_review": "unknown",
+    "raw_qa": 17280,
+    "received_bytes": 136478457
+  },
+  "as_of": "2026-10-26",
+  "corpora": {
+    "ko": {
+      "language_counts": {
+        "ko": 4000
+      },
+      "optimizer_steps_at_batch16": 250,
+      "source_counts": {
+        "aihub_71875": 4000
+      },
+      "supervised_tokens": 243394,
+      "task_counts": {
+        "medical_mcq": 1500,
+        "medical_qa": 2500
+      },
+      "train_count": 4000,
+      "validation_count": 1516
+    },
+    "mix": {
+      "language_counts": {
+        "en": 4000,
+        "ko": 4000
+      },
+      "optimizer_steps_at_batch16": 500,
+      "source_counts": {
+        "aihub_71875": 4000,
+        "medquad": 3550,
+        "pubmedqa_labeled": 450
+      },
+      "supervised_tokens": 1137306,
+      "task_counts": {
+        "context_qa": 450,
+        "medical_mcq": 1500,
+        "medical_qa": 6050
+      },
+      "train_count": 8000,
+      "validation_count": 1516
+    }
+  },
+  "data_status": "SUCCEEDED",
+  "evidence_level": "ACTUAL_SOURCE_FROZEN",
+  "holdout_qtype_counts": {
+    "test": {
+      "1": 777,
+      "2": 83,
+      "3": 97
+    },
+    "validation": {
+      "1": 770,
+      "2": 96,
+      "3": 90
+    }
+  },
+  "leakage": {
+    "gpu_used": false,
+    "lexical_confirmed": 0,
+    "lexical_near": 0,
+    "protected_dev": 1059,
+    "protected_kormed": 4068,
+    "protected_test": 3009,
+    "raw_data_transmitted": false,
+    "semantic_candidate_pairs": 8278,
+    "semantic_candidate_rows": 3396,
+    "semantic_candidate_rows_dev": 198,
+    "semantic_candidate_rows_test_preserved": 188,
+    "semantic_candidate_rows_train": 3010,
+    "semantic_candidates_are_confirmed_duplicates": false,
+    "semantic_model": "intfloat/multilingual-e5-small",
+    "semantic_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+    "semantic_threshold": 0.92,
+    "semantic_top_k": 5,
+    "semantic_translation_equivalence_verified": false
+  },
+  "private_manifest": "${MEDVLM_DATA_ROOT}/v2/manifests/text-corpora-v2.json",
+  "private_manifest_sha256": "f8fda0b1fec25f59ff0726ac44c9febe072c03f9e7f7b533d22464ae8acd92a3",
+  "same_validation_sha256": "871b03ebc3a8c1c8ecbf7013babfa31e1af69e53aa3bd7eb0348a86704bb06c1",
+  "training_completed_by_data_preparation": false,
+  "v1_core_unchanged": true,
+  "verification_status": "SUCCEEDED"
+}

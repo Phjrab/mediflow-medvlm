@@ -17,8 +17,8 @@ import time
 import uuid
 
 from ..runtime import (BudgetExceeded, BudgetLedger, GPULease, ResourceBusy, append_event,
-                       atomic_json, canonical_hash, directory_digest, file_hash, utcnow)
-from .config import assert_resume_identity, load_config, load_frozen_data, verified_checkpoint
+                       atomic_json, canonical_hash, directory_digest, file_hash, utcnow, resolve_resource_policy)
+from .config import assert_resume_identity, load_config, load_frozen_data, verified_checkpoint, training_limits
 from .models import VISION_MARKERS, load_model, versions
 from .rendering import ALLOWED_INPUT_FIELDS, RENDERER_VERSION, encode_sample
 
@@ -126,6 +126,7 @@ def _git_identity():
 
 def train(config_path, resume=None, *, legacy_source_snapshot=None):
     config = load_config(config_path)
+    resource_policy = resolve_resource_policy(config)
     output = Path(config["output_dir"])
     output.mkdir(parents=True, exist_ok=True)
     snapshot = output / "config.json"
@@ -153,7 +154,8 @@ def train(config_path, resume=None, *, legacy_source_snapshot=None):
              "latest_checkpoint": None, "resume_from": str(resume) if resume else None,
              "effective_batch": config.get("gradient_accumulation_steps", 16), "training_pid": os.getpid(),
              "energy_joules": None, "gpu_seconds": 0.0,
-             "attempt_id": attempt_id, "resume_identity_verified": False}
+             "attempt_id": attempt_id, "resume_identity_verified": False,
+             "resource_policy": resource_policy.as_dict()}
     atomic_json(attempt_path, state)
     if not resume or previous is None:
         atomic_json(manifest_path, state)
@@ -162,7 +164,7 @@ def train(config_path, resume=None, *, legacy_source_snapshot=None):
     prior_wall = prior_attempt_wall_seconds(output, attempt_id, previous)
     state["started_at"] = previous.get("started_at", state["started_at"]) if previous else state["started_at"]
     state["attempt_started_at"] = utcnow()
-    stop_control = {"requested": False, "deadline": started + max(0.0, min(float(config.get("wall_seconds", 21600)), 21600) - prior_wall)}
+    stop_control = {"requested": False, "deadline": resource_policy.deadline(started, prior_wall)}
     original_handlers = {sig: signal.signal(sig, lambda signum, frame: stop_control.update(requested=True))
                          for sig in (signal.SIGTERM, signal.SIGINT)}
     try:
@@ -176,7 +178,7 @@ def train(config_path, resume=None, *, legacy_source_snapshot=None):
                 if old_identity.get(key) != value:
                     raise ValueError("resume preflight identity mismatch: " + key)
             prior_wall = max(prior_wall, resume_info.get("timing_snapshot", {}).get("cumulative_wall_seconds", 0.0))
-            stop_control["deadline"] = started + max(0.0, min(float(config.get("wall_seconds", 21600)), 21600) - prior_wall)
+            stop_control["deadline"] = resource_policy.deadline(started, prior_wall)
         import torch
         if config.get("device", "cuda") == "cuda" and not torch.cuda.is_available():
             state.update(status="BLOCKED_HARDWARE", reason_code="GPU_NOT_AVAILABLE", evidence_level="CPU_TESTED")
@@ -197,7 +199,7 @@ def train(config_path, resume=None, *, legacy_source_snapshot=None):
             if is_gpu:
                 stack.enter_context(GPULease(runtime / "medvlm_gpu.lock", config["run_id"]))
             if is_gpu:
-                ledger = BudgetLedger(runtime / "gpu_budget.json", config.get("total_gpu_hours", 24), config.get("per_model_gpu_hours", 6))
+                ledger = BudgetLedger(runtime / "gpu_budget.json", policy=resource_policy)
                 if resume_info:
                     saved_budget = resume_info.get("budget_snapshot")
                     previous_budget = (previous or {}).get("budget_snapshot")
@@ -287,8 +289,9 @@ def _train_locked(config, output, state, rows, data_hashes, ledger, resume, *, s
     import torch
     from transformers import get_linear_schedule_with_warmup
     def should_stop():
-        return (stop_control["requested"] or time.monotonic() >= stop_control["deadline"] or
-                (ledger is not None and ledger.remaining(config["model_id"]) < config.get("checkpoint_reserve_seconds", 180)))
+        return (stop_control["requested"] or
+                (stop_control["deadline"] is not None and time.monotonic() >= stop_control["deadline"]) or
+                (ledger is not None and not ledger.can_continue(config["model_id"], config.get("checkpoint_reserve_seconds", 180))))
     def mark_checkpoint(train_state):
         train_state["timing_snapshot"] = {"cumulative_wall_seconds": prior_wall + time.monotonic() - attempt_started}
         if ledger:
@@ -306,11 +309,12 @@ def _train_locked(config, output, state, rows, data_hashes, ledger, resume, *, s
                 "target_modules": model_metadata["exact_target_modules"], "quantization": model_metadata["quantization"]}
     state["identity"] = identity
     accumulation = int(config.get("gradient_accumulation_steps", 16))
-    maximum = int(config.get("max_optimizer_steps", 1000))
+    limits = training_limits(config, len(rows["train"]), any(row["task_type"] == "medical_vqa" for row in rows["train"]))
+    maximum = limits["max_optimizer_steps"]
+    state["declared_training_limits"] = limits
     order = list(range(len(rows["train"])))
     random.Random(config.get("seed", 20261023)).shuffle(order)
-    task_cap = 5000 if any(row["task_type"] == "medical_vqa" for row in rows["train"]) else 20000
-    order = order[:min(config.get("train_samples_cap", task_cap), task_cap)]
+    order = order[:limits["train_samples_cap"]]
     usable, rejected = [], []
     offered = 0
     # Validate actual template boundaries before any optimizer update; overflows
@@ -329,7 +333,7 @@ def _train_locked(config, output, state, rows, data_hashes, ledger, resume, *, s
                 if str(exc) != "CONTEXT_OVERFLOW":
                     raise
                 rejected.append({"sample_id": rows["train"][index]["sample_id"], "reason": "CONTEXT_OVERFLOW"})
-            if ledger and ledger.remaining(config["model_id"]) < 120:
+            if ledger and not ledger.can_continue(config["model_id"], 120):
                 raise BudgetExceeded("insufficient GPU budget after preflight")
             if len(usable) >= maximum * accumulation:
                 break
@@ -522,6 +526,7 @@ def reload_checkpoint(config_path, checkpoint_path):
     """Invoke from a NEW process; load disk base+adapter+processor and generate."""
     import torch
     config = load_config(config_path)
+    resource_policy = resolve_resource_policy(config)
     output = Path(config["output_dir"])
     manifest = json.loads((output / "manifest.json").read_text())
     if canonical_hash(config) != manifest["config_hash"]:
@@ -535,7 +540,8 @@ def reload_checkpoint(config_path, checkpoint_path):
         if file_hash(Path(checkpoint_path) / relative) != digest:
             raise ValueError("checkpoint artifact hash mismatch")
     result = {"run_id": config["run_id"], "checkpoint": str(checkpoint_path), "pid": os.getpid(),
-              "status": "RUNNING", "started_at": utcnow(), "fresh_process_required": True}
+              "status": "RUNNING", "started_at": utcnow(), "fresh_process_required": True,
+              "resource_policy": resource_policy.as_dict()}
     runtime = Path(config["data_root"]) / "runtime"
     ledger = None
     is_gpu = config.get("device", "cuda") == "cuda"
@@ -544,7 +550,7 @@ def reload_checkpoint(config_path, checkpoint_path):
             if is_gpu:
                 stack.enter_context(GPULease(runtime / "medvlm_gpu.lock", config["run_id"] + "-reload"))
             if is_gpu:
-                ledger = BudgetLedger(runtime / "gpu_budget.json", config.get("total_gpu_hours", 24), config.get("per_model_gpu_hours", 6)).start(config["model_id"], config["run_id"], "reload")
+                ledger = BudgetLedger(runtime / "gpu_budget.json", policy=resource_policy).start(config["model_id"], config["run_id"], "reload")
                 stack.callback(ledger.finish)
             model, processor, metadata = load_model(config, adapter_path=checkpoint_path)
             expected_base = checkpoint["identity"].get("base_files_sha256") or manifest["model"]["native_files"]["sha256"]

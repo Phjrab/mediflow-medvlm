@@ -11,7 +11,7 @@ from pathlib import Path
 from collections import Counter
 from datetime import datetime, timezone
 
-from mediflow_medvlm.runtime import atomic_json, canonical_hash, file_hash
+from mediflow_medvlm.runtime import atomic_json, canonical_hash, file_hash, resolve_resource_policy
 
 KEYS = ('qwen3_17b','qwen3_4b','qwen35_2b','qwen3vl_2b','qwen25vl_3b','medgemma15_4b','gemma3_4b','smolvlm_500m')
 MODELS = {'qwen3_17b':'Qwen/Qwen3-1.7B','qwen3_4b':'Qwen/Qwen3-4B',
@@ -42,6 +42,18 @@ def points(value):
 def metric(row):
     classification = row['task_type'] in {'medical_mcq','context_qa'}
     return row.get('end_to_end_correct_fraction' if classification else 'end_to_end_lexical_exact_match')
+
+
+def resource_policy_description(summary):
+    """Distinguish historical v1 constraints from the currently resolved policy."""
+    policy=summary.get('current_resource_policy') or resolve_resource_policy().as_dict()
+    historical='v1 실행 당시 제약은 전체 24 GPU시간·기반모델별 6 GPU시간이었다. 과거 config와 사용량 기록은 보존했다.'
+    if policy['budget_mode']=='unlimited':
+        current='현재 정책은 누적 GPU 시간 상한 없음(unlimited)이며 total_gpu_hours/per_model_gpu_hours와 run/job/campaign 시간 상한은 null이다.'
+    else:
+        current=(f"현재 finite 정책은 전체 {policy['total_gpu_hours']:g} GPU시간·기반모델별 {policy['per_model_gpu_hours']:g} GPU시간이다. "
+                 'run/job/campaign 상한의 실제 값은 current_resource_policy에 기록했다.')
+    return historical+' '+current+' 시간 상한 변경으로 사용량 원장을 초기화하지 않는다.'
 
 
 def weight_inventory(config):
@@ -89,7 +101,10 @@ def collect(root, repo):
              'campaign':{k:campaign.get(k) for k in ('stages','current_model','updated_at','active_process')},
              'device':{k:v for k,v in read(root/'runs/device/jetson-inventory-20261023/summary.json',{}).items()
                                   if k in ('status','reason_code','evidence_level','device_outcome','wall_seconds','finished_at')},
-             'budget':read(root/'runtime/gpu_budget.json')}
+             'budget':read(root/'runtime/gpu_budget.json'),
+             'current_resource_policy':resolve_resource_policy().as_dict(),
+             'historical_v1_resource_limits':{'scope':'constraints_at_original_v1_execution',
+                                              'total_gpu_hours':24,'per_model_gpu_hours':6}}
     for key in KEYS:
         train=root/'runs'/f'{key}-v1-20261023'; smoke=root/'runs'/f'{key}-smoke-20261023'
         manifest=read(train/'manifest.json',{}); selection=read(train/'selection.json',{})
@@ -272,8 +287,9 @@ def report(summary, root, repo):
       '## 실행 비용·환경', '', 'RTX 3060 12GB에서 실제 CUDA 연산으로 학습 가능성을 확인했다. NVML kernel/userspace mismatch 때문에 nvidia-smi는 실패했지만 PyTorch forward/backward는 성공했다. 드라이버는 변경하지 않았다.', '',
       '| 기반 모델 | 누적 GPU 점유(시간) |', '|---|---:|']
     for model,seconds in (summary.get('budget') or {}).get('models',{}).items():lines.append(f'| {model} | {seconds/3600:.4f} |')
-    lines += ['', 'GPU 예산은 load/smoke/train/reload/evaluation을 포함한 단일 worker 점유 시간으로 계측한다. 상한은 전체24시간·기반모델별6시간이다. TTFT와 전력·에너지는 측정하지 않아 null이다. tokens/E2E는 전처리와 생성의 합산 처리량이며 순수 decode throughput이 아니다.', '',
-      '## 실제 수행·미실행·차단', '',
+    lines += ['', 'GPU 사용량은 load/smoke/train/reload/evaluation을 포함한 단일 worker 점유 시간으로 계측한다. 위 표는 현재 원장에 기록된 모델별 누적 사용량이며 후속 실행도 포함할 수 있다. 진행 중인 active session의 미정산 시간은 이 표에 추가하지 않는다. '+resource_policy_description(summary)+' TTFT와 전력·에너지는 측정하지 않아 null이다. tokens/E2E는 전처리와 생성의 합산 처리량이며 순수 decode throughput이 아니다.', '',
+      '## v1 실행 당시 수행·미실행·차단', '',
+      '다음 항목은 v1 종료 당시 기록이다. 2026-10-26 이후 데이터 접근·권리·실행 범위와 실제 후속 결과는 `docs/agent/HANDOFF.md` 및 `reports/public_summary/v2/`를 따른다.', '',
       '- 실제 수행: 공개 원본 확보, 정제·중복/누수 감사, immutable split freeze, CPU 계약 검사, 위 표에 명시된 GPU 학습·재로드·평가.',
       '- 접근 재확인: 사용자 새 계정과 추가 승인으로 MedGemma 1.5와 Gemma 3 접근 모두 성공. 과거401/403 시도는 이력으로 보존. 일반 VLM은 Qwen3.5→Qwen3-VL→Qwen2.5-VL, 의료 VLM은 MedGemma→Gemma3 순으로 대체한다. Smol은 아직 완료하지 못한 VLM 셀의 마지막 대안이며 두 셀로 중복 계산하지 않는다.',
       '- 접근 차단: AIHub 71875/71762 인증 및 허용 범위 미확보.',

@@ -1,0 +1,14 @@
+run_id,model,condition,phase,source_id,task_type,language,subject,scheduled,attempted,valid_answers,correct,exact_matches,coverage,answered_accuracy,end_to_end_correct_fraction,answered_lexical_exact_match,end_to_end_lexical_exact_match,lexical_token_f1,invalid_format_rate,technical_failure_rate,truncated_count
+qwen35_2b-validation128-base-v2-20261026,qwen35_2b,base,validation128,slake,medical_vqa,en,,32,32,32,,12,1.0,,,0.375,0.375,0.45416666666666666,0.0,0.0,0
+qwen35_2b-validation128-tuned-v2-20261026,qwen35_2b,tuned_v1,validation128,slake,medical_vqa,en,,32,32,32,,22,1.0,,,0.6875,0.6875,0.7333333333333333,0.0,0.0,0
+qwen35_2b-validation256-base-v2-20261026,qwen35_2b,base,validation256,slake,medical_vqa,en,,32,32,32,,12,1.0,,,0.375,0.375,0.45416666666666666,0.0,0.0,0
+qwen35_2b-validation256-tuned-v2-20261026,qwen35_2b,tuned_v1,validation256,slake,medical_vqa,en,,32,32,32,,22,1.0,,,0.6875,0.6875,0.7333333333333333,0.0,0.0,0
+qwen35_2b-slake-base-v2-20261026,qwen35_2b,base,slake,slake,medical_vqa,en,,1061,1061,1061,,556,1.0,,,0.5240339302544769,0.5240339302544769,0.5639782774561286,0.0,0.0,0
+qwen35_2b-slake-tuned-v2-20261026,qwen35_2b,tuned_v1,slake,slake,medical_vqa,en,,1061,1061,1061,,748,1.0,,,0.704995287464656,0.704995287464656,0.7384722409227592,0.0,0.0,0
+qwen35_2b-noimage-base-v2-20261026,qwen35_2b,base,noimage,slake,medical_vqa,en,,32,32,32,,8,1.0,,,0.25,0.25,0.2578125,0.0,0.0,0
+qwen35_2b-noimage-tuned-v2-20261026,qwen35_2b,tuned_v1,noimage,slake,medical_vqa,en,,32,32,32,,12,1.0,,,0.375,0.375,0.375,0.0,0.0,0
+medgemma15_4b-validation128-base-v2-20261026,medgemma15_4b,base,validation128,slake,medical_vqa,en,,32,32,32,,6,1.0,,,0.1875,0.1875,0.27621576792772445,0.0,0.0,4
+medgemma15_4b-validation128-tuned-v2-20261026,medgemma15_4b,tuned_v1,validation128,slake,medical_vqa,en,,32,32,32,,18,1.0,,,0.5625,0.5625,0.6125,0.0,0.0,0
+medgemma15_4b-validation256-base-v2-20261026,medgemma15_4b,base,validation256,slake,medical_vqa,en,,32,32,32,,6,1.0,,,0.1875,0.1875,0.27590333234743175,0.0,0.0,4
+medgemma15_4b-validation256-tuned-v2-20261026,medgemma15_4b,tuned_v1,validation256,slake,medical_vqa,en,,32,32,32,,18,1.0,,,0.5625,0.5625,0.6125,0.0,0.0,0
+medgemma15_4b-slake-base-v2-20261026,medgemma15_4b,base,slake,slake,medical_vqa,en,,1061,1061,1061,,386,1.0,,,0.36380772855796417,0.36380772855796417,0.4623234705925832,0.0,0.0,49

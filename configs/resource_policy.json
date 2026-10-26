@@ -1,0 +1,9 @@
+{
+  "schema_version": "medvlm.resource-policy.v1",
+  "budget_mode": "unlimited",
+  "total_gpu_hours": null,
+  "per_model_gpu_hours": null,
+  "run_wall_seconds": null,
+  "job_timeout_seconds": null,
+  "campaign_wall_seconds": null
+}

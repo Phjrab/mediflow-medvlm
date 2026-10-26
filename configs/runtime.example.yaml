@@ -2,7 +2,7 @@
 # Codex must implement/validate the corresponding loader and freeze a resolved copy.
 schema_version: medvlm.execution-plan.v1
 specification_status: PROPOSED_NOT_EXECUTED
-as_of: "2026-10-23"
+as_of: "2026-10-26"
 timezone: Asia/Seoul
 
 repository:
@@ -19,7 +19,6 @@ priorities:
   - canonical_data_and_frozen_splits
   - text_training_and_evaluation
   - vlm_training_and_evaluation
-  - jetson_inference
   - final_report
 
 execution:
@@ -72,16 +71,21 @@ network:
   external_tracking: false
 
 resource_budget:
-  # Research execution budget proposal, not a model memory requirement or ETA.
-  total_gpu_hours: 24
-  per_model_gpu_hours: 6
+  # Current policy is separate from immutable historical run recipes.
+  policy_file: configs/resource_policy.json
+  budget_mode: unlimited
+  total_gpu_hours: null
+  per_model_gpu_hours: null
+  run_wall_seconds: null
+  job_timeout_seconds: null
+  campaign_wall_seconds: null
   per_model_budget_key: canonical_full_model_repository_id
   per_model_scope: aggregate_all_revisions_tasks_adapters_probes_smokes_retries_training_evaluation_and_resumes
   new_revision_or_run_resets_budget: false
   count_smokes_and_probes: true
   include_evaluation_in_gpu_budget: true
-  execution_wall_hours_after_infrastructure_ready: 36
-  jetson_wall_hours: 2
+  execution_wall_hours_after_infrastructure_ready: null
+  jetson_execution: excluded_by_user_20261026
   diagnosed_corrections_per_failure_type: 2
   preserve_checkpoint_on_budget_exit: true
   offline_report_after_gpu_budget: true
@@ -110,6 +114,7 @@ training:
   actual_smoke_optimizer_steps: 20
   minimum_smoke_steps_with_measured_resource_reason: 10
   max_epochs: 1
+  # Historical v1 recipe; v2 explicitly declares corpus cap and ceil(cap / batch).
   max_optimizer_steps: 1000
   microbatch_start: 1
   target_effective_batch_start: 16

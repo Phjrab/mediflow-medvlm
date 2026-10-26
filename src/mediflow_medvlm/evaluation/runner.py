@@ -7,7 +7,7 @@ import platform
 import time
 
 from ..runtime import (atomic_json, canonical_hash, file_hash, utcnow,
-                       GPULease, BudgetLedger, append_event)
+                       GPULease, BudgetLedger, append_event, resolve_resource_policy)
 from .metrics import parse_answer, score_rows, aggregate, paired_compare, korean_summary, vqa_subgroups, subject_name
 
 PROTOCOL_VERSION = "medvlm.eval.v1"
@@ -152,6 +152,9 @@ def summarize(protocol_path, predictions_path, output):
     identity = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
     predictions = validated_predictions(predictions_path, protocol, identity)
     scores = score_rows(rows, predictions)
+    if protocol.get("normalization_policy") == "nfkc-casefold-whitespace-terminal-punctuation.v2":
+        from .v2 import normalize_vqa
+        scores = score_rows(rows, predictions, vqa_normalizer=normalize_vqa)
     result = {"protocol_hash": protocol["protocol_hash"], "scheduled": len(rows),
               "predictions": len(predictions), "cohorts": aggregate(scores),
               "human_review": "not_performed", "scores": scores}
@@ -175,6 +178,14 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
         encoder = encode_no_image_sample
     else:
         encoder = encode_sample
+    if protocol.get("protocol_version") == "medvlm.eval.v2":
+        from functools import partial
+        from .v2 import encode_evaluation_sample, V2_RENDERER
+        encoder = partial(encode_evaluation_sample, prompt_policy=protocol["prompt_policy"],
+                          image_condition="no_image" if no_image else "image")
+        active_renderer = V2_RENDERER
+    else:
+        active_renderer = DIAGNOSTIC_VERSION if no_image else RENDERER_VERSION
     root = Path(output_dir); root.mkdir(parents=True, exist_ok=True)
     os.chmod(root, 0o700)
     data_root = Path(config.get("data_root", os.environ.get("MEDVLM_DATA_ROOT", root.parent.parent)))
@@ -184,7 +195,7 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
                 "model_id": config["model_id"], "model_revision": config["revision"],
                 "adapter_path": str(Path(adapter_path).resolve()) if adapter_path else None,
                 "pair_id": pair_id or config.get("pair_id", run_id),
-                "renderer_version": DIAGNOSTIC_VERSION if no_image else RENDERER_VERSION,
+                "renderer_version": active_renderer,
                 "image_condition": "no_image" if no_image else "image"}
     if adapter_path:
         from ..runtime import directory_digest
@@ -206,7 +217,9 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
     predictions_path = root / "predictions.jsonl"
     completed = {r["sample_id"] for r in validated_predictions(predictions_path, protocol, manifest)}
     atomic_json(path, manifest)
-    ledger = BudgetLedger(runtime_root / "gpu_budget.json")
+    resource_policy = resolve_resource_policy(config)
+    manifest["resource_policy"] = resource_policy.as_dict()
+    ledger = BudgetLedger(runtime_root / "gpu_budget.json", policy=resource_policy)
     start = time.monotonic()
     try:
         if not torch.cuda.is_available():
@@ -243,7 +256,7 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
                 for original in samples:
                     if original["sample_id"] in completed:
                         continue
-                    if ledger.remaining(config["model_id"]) < 90:
+                    if not ledger.can_continue(config["model_id"], 90):
                         manifest.update(status="SKIPPED_BUDGET", reason_code="EVALUATION_BUDGET")
                         break
                     # This restricted object is the only data sent to the predictor.
@@ -273,6 +286,13 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
                         answer, status = parse_answer(text, sample["task_type"], sample["input"].get("options"))
                         elapsed = time.monotonic() - began
                         finish = "length" if len(tokens) >= pred["generation_settings"]["max_new_tokens"] else "stop"
+                        if protocol.get("protocol_version") == "medvlm.eval.v2":
+                            from .v2 import generation_finish
+                            eos_ids=model.generation_config.eos_token_id
+                            last_token=int(tokens[-1]) if len(tokens) else None
+                            finish=generation_finish(len(tokens),last_token,pred["generation_settings"]["max_new_tokens"],eos_ids)
+                            pred["generation_termination"]={"last_token_id":last_token,"eos_token_ids":eos_ids,
+                                                            "policy":"eos_before_length.v2"}
                         if elapsed >= 120 and finish != "length":
                             status, answer, finish = "timeout", None, "timeout"
                         pred.update(status=status, parsed_answer=answer, raw_output=text, finish_reason=finish,

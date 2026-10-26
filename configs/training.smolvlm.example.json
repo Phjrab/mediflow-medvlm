@@ -29,11 +29,17 @@
   "checkpoint_every_steps": 100,
   "validation_samples": 32,
   "checkpoint_reserve_seconds": 180,
-  "wall_seconds": 21600,
-  "total_gpu_hours": 24,
-  "per_model_gpu_hours": 6,
   "push_to_hub": false,
   "external_tracking": false,
   "image_root": "../medvlm-data",
-  "train_samples_cap": 5000
+  "train_samples_cap": 5000,
+  "resource_policy": {
+    "schema_version": "medvlm.resource-policy.v1",
+    "budget_mode": "unlimited",
+    "total_gpu_hours": null,
+    "per_model_gpu_hours": null,
+    "run_wall_seconds": null,
+    "job_timeout_seconds": null,
+    "campaign_wall_seconds": null
+  }
 }

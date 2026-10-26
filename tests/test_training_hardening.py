@@ -158,6 +158,26 @@ class NativeProbeRegressionTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get("MEDVLM_RUN_TRAINING_TESTS") == "1", "optional native training profile")
 class BaseIdentityTests(unittest.TestCase):
+    def test_v2_one_pass_1001_updates_survives_old_wall_limits_on_cpu(self):
+        import itertools
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config_path, config = make_native_fixture(root, updates=1001, accumulation=1)
+            config.update(training_schema_version="medvlm.training.v2", training_recipe="one_pass",
+                          train_samples_cap=1001, checkpoint_every_steps=1001,
+                          total_gpu_hours=24, per_model_gpu_hours=6, wall_seconds=21600)
+            atomic_json(config_path, config)
+            ticks = itertools.count(0, 37 * 3600)
+            with patch("mediflow_medvlm.training.runner.time.monotonic", side_effect=lambda: next(ticks)):
+                result = train(config_path)
+            self.assertEqual(result["status"], "SUCCEEDED", result.get("error"))
+            self.assertEqual(result["optimizer_steps"], 1001)
+            self.assertEqual(result["samples_processed"], 1001)
+            self.assertEqual(result["actual_epochs"], 1)
+            self.assertTrue(result["adapter_changed"])
+            self.assertEqual(result["resource_policy"]["budget_mode"], "unlimited")
+            self.assertIsNone(result["resource_policy"]["run_wall_seconds"])
+
     def test_explicit_legacy_native_resume_and_fresh_reload(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

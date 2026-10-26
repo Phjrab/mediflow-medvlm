@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 import time
-from .runtime import atomic_json, canonical_hash, file_hash, utcnow, GPULease
+from .runtime import atomic_json, canonical_hash, file_hash, utcnow, GPULease, resolve_resource_policy
 
 
 def doctor(output=None):
@@ -38,11 +38,17 @@ def doctor(output=None):
 def run_plan(plan_path, state_path="runtime/medvlm_state.json"):
     """Finite explicit argv jobs; immutable outputs and completed work are reused."""
     plan=json.loads(Path(plan_path).read_text());identity=canonical_hash(plan)
+    resource_policy=resolve_resource_policy(plan)
     state_file=Path(state_path)
     state=json.loads(state_file.read_text()) if state_file.exists() else {"schema_version":"medvlm.state.v1","jobs":{}}
     state.setdefault("jobs", {})
     if state.get("plan_hash") not in (None,identity):raise ValueError("plan changed: choose a new state path")
-    state.update(plan_hash=identity,plan_path=str(Path(plan_path).resolve()))
+    state.update(plan_hash=identity,plan_path=str(Path(plan_path).resolve()),resource_policy=resource_policy.as_dict())
+    started=time.monotonic();prior_elapsed=state.get("campaign_elapsed_seconds",0.0)
+    campaign_deadline=resource_policy.deadline(started,prior_elapsed,scope="campaign")
+    policy_snapshot=state_file.parent/("resource_policy-"+canonical_hash(resource_policy.as_dict())+".json")
+    atomic_json(policy_snapshot,resource_policy.as_dict())
+    child_env={**os.environ,"MEDVLM_RESOURCE_POLICY":str(policy_snapshot.resolve())}
     with GPULease(str(state_file)+".runner.lock","orchestrator"):
         for job in plan["jobs"]:
             key=job["id"];prior=state["jobs"].get(key,{})
@@ -54,27 +60,35 @@ def run_plan(plan_path, state_path="runtime/medvlm_state.json"):
             if blocked:
                 state["jobs"][key]={"status":"PREPARED_NOT_RUN","reason_code":"DEPENDENCY_NOT_SUCCEEDED","dependencies":blocked}
                 atomic_json(state_file,state);continue
+            remaining=None if campaign_deadline is None else max(0.0,campaign_deadline-time.monotonic())
+            if remaining is not None and remaining <= 0:
+                state["campaign_status"]="SKIPPED_BUDGET";state["reason_code"]="CAMPAIGN_WALL_LIMIT"
+                break
+            limits=[v for v in (resource_policy.job_timeout_seconds,remaining) if v is not None]
+            timeout=min(limits) if limits else None
             log=state_file.parent/"logs"/(key+".log");log.parent.mkdir(parents=True,exist_ok=True)
             argv=job["command"]
             if not isinstance(argv,list) or not argv or any(not isinstance(x,str) for x in argv):raise ValueError("commands must be explicit argv arrays")
             item={"status":"RUNNING","started_at":utcnow(),"command":argv,"log_path":str(log)}
             state["jobs"][key]=item;atomic_json(state_file,state)
             with log.open("a") as stream:
-                process=subprocess.Popen(argv,stdout=stream,stderr=subprocess.STDOUT,cwd=job.get("cwd"))
+                process=subprocess.Popen(argv,stdout=stream,stderr=subprocess.STDOUT,cwd=job.get("cwd"),env=child_env)
                 item["pid"]=process.pid;atomic_json(state_file,state)
-                try:code=process.wait(timeout=min(float(job.get("timeout_seconds",21600)),129600))
+                try:code=process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
                     # Own process only; give checkpoint-aware workers a graceful stop.
                     process.terminate()
                     try:process.wait(timeout=60)
                     except subprocess.TimeoutExpired:process.kill();process.wait()
                     code=124
+                    item["termination_reason_code"]="CAMPAIGN_WALL_LIMIT" if remaining is not None and timeout==remaining else "JOB_TIMEOUT"
             item.update(status="SUCCEEDED" if code==0 else "SKIPPED_BUDGET" if code==124 else "FAILED_REPRODUCIBLE",exit_code=code,finished_at=utcnow(),pid=None)
             manifest=job.get("result_manifest")
             if manifest and Path(manifest).exists():
                 result=json.loads(Path(manifest).read_text());item.update({k:result[k] for k in ("status","evidence_level","reason_code") if k in result})
             item["output_hashes"]={p:file_hash(p) for p in job.get("outputs",[]) if Path(p).is_file()}
             atomic_json(state_file,state)
+        state["campaign_elapsed_seconds"]=prior_elapsed+time.monotonic()-started
         state["active_process"]=None;state["updated_at"]=utcnow();atomic_json(state_file,state)
     return state
 

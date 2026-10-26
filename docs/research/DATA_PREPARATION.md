@@ -61,3 +61,5 @@ python -m mediflow_medvlm.data freeze --data-root "$MEDVLM_DATA_ROOT"
 ```bash
 python -m mediflow_medvlm.data.forge_export --data-root "$MEDVLM_DATA_ROOT" --freeze-manifest "$MEDVLM_DATA_ROOT/manifests/freeze-1bf58dbc8baca7a3f5865accf5a86e9fba0b84f8abe3c986ed34b67d6c3d87c5.json" --rows 4
 ```
+
+2026-10-26 한국어 후속 데이터는 v1과 분리된 `${MEDVLM_DATA_ROOT}/v2`에 있다. 실제 AI-Hub 확보량, 엄격 MCQ reader, 전체 KorMedMCQA 보호·다국어 유사도 후보 감사, KO/MIX freeze 및 `aihub-import` 재개 명령은 [DATA_AI_HUB_V2.md](DATA_AI_HUB_V2.md)를 따른다. 기존 v1 freeze를 후속 코퍼스로 덮어쓰지 않는다.

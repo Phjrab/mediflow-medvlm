@@ -50,7 +50,7 @@ def lexical_f1(prediction, gold):
     return 2 * overlap / (sum(pred.values()) + sum(ref.values()))
 
 
-def score_rows(samples, predictions):
+def score_rows(samples, predictions, *, vqa_normalizer=None):
     lookup = {}
     for pred in predictions:
         sid = pred["sample_id"]
@@ -65,7 +65,8 @@ def score_rows(samples, predictions):
         pred = lookup.get(sample["sample_id"], {"status": "not_attempted", "attempted": False})
         valid = pred["status"] == "answered" and pred.get("parsed_answer") is not None
         gold = sample["supervision"].get("option_id") if sample["task_type"] == "medical_mcq" else sample["supervision"]["answer"]
-        score = float(normalize(pred["parsed_answer"]) == normalize(gold)) if valid else 0.0
+        normalizer = vqa_normalizer if sample["task_type"] == "medical_vqa" and vqa_normalizer else normalize
+        score = float(normalizer(pred["parsed_answer"]) == normalizer(gold)) if valid else 0.0
         group = (sample.get("group_ids") or {}).get("duplicate_cluster") or (sample.get("group_ids") or {}).get("image") or (sample.get("group_ids") or {}).get("document") or sample["sample_id"]
         rows.append({"sample_id": sample["sample_id"], "source_id": sample["source_id"],
                      "task_type": sample["task_type"], "language": sample["language"],
@@ -74,7 +75,7 @@ def score_rows(samples, predictions):
                      "modality": sample.get("metadata", {}).get("modality"),
                      "status": pred["status"], "attempted": pred.get("attempted", True),
                      "valid": valid, "exact_match": score,
-                     "token_f1": lexical_f1(pred["parsed_answer"], gold) if valid else 0.0,
+                     "token_f1": lexical_f1(normalizer(pred["parsed_answer"]), normalizer(gold)) if valid else 0.0,
                      "reference_label": str(gold) if sample["task_type"] in {"medical_mcq", "context_qa"} else None,
                      "predicted_label": pred.get("parsed_answer") if sample["task_type"] in {"medical_mcq", "context_qa"} else None,
                      "finish_reason": pred.get("finish_reason"),

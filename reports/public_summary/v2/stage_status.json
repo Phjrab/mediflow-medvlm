@@ -1,0 +1,40 @@
+{
+  "aihub_71762": "BLOCKED_DELIVERY",
+  "generated_at": "2026-10-26T13:06:23.113944+00:00",
+  "human_review": "NOT_PERFORMED",
+  "jetson": "USER_DEFERRED",
+  "review_preparation": {
+    "human_review_count": 0,
+    "planned_packets": 4,
+    "prepared_review_pairs": 0,
+    "status": "INCOMPLETE_PREPARATION",
+    "verified_prepared_packets": 0
+  },
+  "schema_version": "medvlm.stage-status.v2",
+  "status": "IN_PROGRESS_OR_PARTIAL",
+  "text_evaluation": {
+    "planned": 9,
+    "statuses": {
+      "NOT_RUN": 9
+    },
+    "verified_succeeded": 0
+  },
+  "text_training_and_reload": {
+    "planned": 8,
+    "statuses": {
+      "NOT_RUN": 8
+    },
+    "verified_succeeded": 0
+  },
+  "verification_errors": 0,
+  "vqa_main": {
+    "planned": 12,
+    "statuses": {
+      "NOT_RUN": 6,
+      "RUNNING": 1,
+      "SUCCEEDED": 5
+    },
+    "verified_succeeded": 5
+  },
+  "vqa_validation": "SUCCEEDED"
+}

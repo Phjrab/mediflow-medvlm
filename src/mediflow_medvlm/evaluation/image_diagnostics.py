@@ -120,6 +120,10 @@ def _matching_runs(image_path, no_image_path, parent, diagnostic):
     for key in ("adapter_digest", "adapter_path"):
         if left.get(key) != right.get(key):
             raise ValueError("unmatched diagnostic adapter: " + key)
+    for key in ("native_files", "chat_template_sha256", "dtype"):
+        if (key not in left.get("model", {}) or key not in right.get("model", {})
+                or left["model"][key] != right["model"][key]):
+            raise ValueError("unmatched diagnostic loaded model: " + key)
     return left, right
 
 
@@ -148,8 +152,12 @@ def compare_image_conditions(parent_protocol_path, no_image_protocol_path, image
     for pred in no_image_predictions:
         if pred.get("image_condition") != "no_image" or pred.get("vision_ingested") is not False or pred.get("pixel_tensor_keys") != []:
             raise ValueError("no-image prediction lacks explicit no-pixel evidence")
-    left = score_rows(samples, image_predictions)
-    right = score_rows(samples, no_image_predictions)
+    normalizer = None
+    if parent.get("normalization_policy") == "nfkc-casefold-whitespace-terminal-punctuation.v2":
+        from .v2 import normalize_vqa
+        normalizer = normalize_vqa
+    left = score_rows(samples, image_predictions, vqa_normalizer=normalizer)
+    right = score_rows(samples, no_image_predictions, vqa_normalizer=normalizer)
     result = {"diagnostic_version": DIAGNOSTIC_VERSION, "diagnostic_only": True,
               "training_data_changed": False, "parent_protocol_hash": parent["protocol_hash"],
               "no_image_protocol_hash": diagnostic["protocol_hash"], "scheduled": len(samples),

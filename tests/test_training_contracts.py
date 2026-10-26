@@ -57,12 +57,12 @@ class TrainingContractTests(unittest.TestCase):
     def test_budget_is_model_scoped_not_revision_or_run_scoped(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ledger.json"
-            first = BudgetLedger(path).start("Qwen/Qwen3-1.7B", "r1", "probe")
+            first = BudgetLedger(path, 24, 6).start("Qwen/Qwen3-1.7B", "r1", "probe")
             first.finish()
             old = json.loads(path.read_text())
             old["models"]["Qwen/Qwen3-1.7B"] = 120
             atomic_json(path, old)
-            second = BudgetLedger(path).start("Qwen/Qwen3-1.7B", "new-revision-r2", "evaluation")
+            second = BudgetLedger(path, 24, 6).start("Qwen/Qwen3-1.7B", "new-revision-r2", "evaluation")
             self.assertLess(second.remaining("Qwen/Qwen3-1.7B"), 6 * 3600 - 119)
             second.finish()
             self.assertEqual(len(json.loads(path.read_text())["sessions"]), 2)
