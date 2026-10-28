@@ -1,5 +1,9 @@
 # 작업 기록
 
+## 2026-10-28 — 71762 로컬 원본 전체 감사
+
+사용자 로컬 ZIP으로 전달 차단 해소. 71762 원본4,248,340,940bytes, 내부5ZIP/7,028,863파일 CRC/SHA 검증, 라벨구성요소3,496,729개 정규화. 원천·라벨 실제 내용 동일, 별도 QA쌍으로 중복 계산하지 않음. 공식 설명서·활용가이드는 정상 브라우저에서 HWP 확보·본문 추출 완료. 카테고리·의도 join은 사용자 지시에서 제외되어 UNRESOLVED_PAIRING을 유지하며 새freeze/학습0. 사용자에게 다른 컴퓨터에서 공식 소스·전처리 코드 또는 실제 ID/parent 매핑 파일을 확인하도록 안내. 관련21검사·전체241passed/7skipped/23subtests, v1/v2공개38파일·실행소스14파일·GPU원장 보존 검증. 새결과 reports/public_summary/v3 및 outputs/v3.
+
 ## 2026-10-27 06:46 KST — v2 선언 행렬 최종 완료
 
 텍스트9조건·VQA20조건, KO/MIX smoke/full8개와 fresh-process reload, 검토표4개 준비를 모두 검증했다. 전체47,202개 예측을 완료했고 기술 실패는 최종 verification과 metrics로 확인했다. 보고서·그림을 최종 summary로 생성했고 v1공개18파일·실행소스14파일 보존을 확인했다. CPU234passed·7skipped·23subtests, native41passed·20subtests 근거를 보존했다. AIHub71762 BLOCKED_DELIVERY/UNRESOLVED_PAIRING, Jetson USER_DEFERRED, human_review not_performed0건, 추가seed NOT_SELECTED, MedMCQA 추가학습 PREPARED_NOT_RUN을 분리했다. 전달 위치는 작업공간 outputs/v2이며 commit/push/CI 결과는 같은 폴더 git_receipt.json에 기록한다.

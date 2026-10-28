@@ -1,0 +1,382 @@
+{
+  "actual_acquired_bytes": 4248340940,
+  "archive_receipts": [
+    {
+      "all_file_CRCs_verified": true,
+      "answer_nonempty_sections": {},
+      "archive": "Other.zip",
+      "bom_events": {},
+      "counts": {
+        "files": 35405
+      },
+      "field_types": {},
+      "invalid_components": {},
+      "reference_key_candidates": {},
+      "top_level_schemas": {}
+    },
+    {
+      "all_file_CRCs_verified": true,
+      "answer_nonempty_sections": {
+        "body": 1966902,
+        "conclusion": 1966902,
+        "intro": 1966902
+      },
+      "archive": "TL.zip",
+      "bom_events": {
+        "file_bom": 0,
+        "key_bom": 0
+      },
+      "counts": {
+        "answer": 1966902,
+        "files": 3110033,
+        "json": 3110033,
+        "question": 1143131
+      },
+      "field_types": {
+        "answer.body:str": 1966902,
+        "answer.conclusion:str": 1966902,
+        "answer.intro:str": 1966902,
+        "answer:dict": 1966902,
+        "department:list": 1966902,
+        "disease_category:str": 3110033,
+        "disease_name.eng:str": 3110033,
+        "disease_name.kor:str": 3110033,
+        "disease_name:dict": 3110033,
+        "entities:list": 1143131,
+        "fileName:str": 3110033,
+        "intention:str": 3110033,
+        "num_of_words:int": 3110033,
+        "participantsInfo.age:str": 1143131,
+        "participantsInfo.gender:str": 1143131,
+        "participantsInfo.history:bool": 1143131,
+        "participantsInfo.occupation:str": 1143131,
+        "participantsInfo.participantID:str": 1143131,
+        "participantsInfo.rPlace:str": 1143131,
+        "participantsInfo:dict": 1143131,
+        "question:str": 1143131
+      },
+      "invalid_components": {},
+      "reference_key_candidates": {},
+      "top_level_schemas": {
+        "[\"answer\", \"department\", \"disease_category\", \"disease_name\", \"fileName\", \"intention\", \"num_of_words\"]": 1966902,
+        "[\"disease_category\", \"disease_name\", \"entities\", \"fileName\", \"intention\", \"num_of_words\", \"participantsInfo\", \"question\"]": 1143131
+      }
+    },
+    {
+      "all_file_CRCs_verified": true,
+      "answer_nonempty_sections": {},
+      "archive": "TS.zip",
+      "bom_events": {},
+      "counts": {
+        "files": 3110033
+      },
+      "field_types": {},
+      "invalid_components": {},
+      "reference_key_candidates": {},
+      "top_level_schemas": {}
+    },
+    {
+      "all_file_CRCs_verified": true,
+      "answer_nonempty_sections": {
+        "body": 245404,
+        "conclusion": 245404,
+        "intro": 245404
+      },
+      "archive": "VL.zip",
+      "bom_events": {
+        "file_bom": 0,
+        "key_bom": 0
+      },
+      "counts": {
+        "answer": 245404,
+        "files": 386696,
+        "json": 386696,
+        "question": 141292
+      },
+      "field_types": {
+        "answer.body:str": 245404,
+        "answer.conclusion:str": 245404,
+        "answer.intro:str": 245404,
+        "answer:dict": 245404,
+        "department:list": 245404,
+        "disease_category:str": 386696,
+        "disease_name.eng:str": 386696,
+        "disease_name.kor:str": 386696,
+        "disease_name:dict": 386696,
+        "entities:list": 141292,
+        "fileName:str": 386696,
+        "intention:str": 386696,
+        "num_of_words:int": 386696,
+        "participantsInfo.age:str": 141292,
+        "participantsInfo.gender:str": 141292,
+        "participantsInfo.history:bool": 141292,
+        "participantsInfo.occupation:str": 141292,
+        "participantsInfo.participantID:str": 141292,
+        "participantsInfo.rPlace:str": 141292,
+        "participantsInfo:dict": 141292,
+        "question:str": 141292
+      },
+      "invalid_components": {},
+      "reference_key_candidates": {},
+      "top_level_schemas": {
+        "[\"answer\", \"department\", \"disease_category\", \"disease_name\", \"fileName\", \"intention\", \"num_of_words\"]": 245404,
+        "[\"disease_category\", \"disease_name\", \"entities\", \"fileName\", \"intention\", \"num_of_words\", \"participantsInfo\", \"question\"]": 141292
+      }
+    },
+    {
+      "all_file_CRCs_verified": true,
+      "answer_nonempty_sections": {},
+      "archive": "VS.zip",
+      "bom_events": {},
+      "counts": {
+        "files": 386696
+      },
+      "field_types": {},
+      "invalid_components": {},
+      "reference_key_candidates": {},
+      "top_level_schemas": {}
+    }
+  ],
+  "archives": [
+    {
+      "bytes": 56365921,
+      "entries": 35411,
+      "expanded_bytes": 103426809,
+      "name": "Other.zip",
+      "role": "reference_documents",
+      "sha256": "8c8072e6a2d1c84facb5acbe1dc509a60d6ece3e933587bfbcedf7ce5a522231",
+      "split": null
+    },
+    {
+      "bytes": 2603062232,
+      "entries": 3119570,
+      "expanded_bytes": 3439231677,
+      "name": "TS.zip",
+      "role": "source",
+      "sha256": "5e3c4334713ad6a9a168568368054dffca9bccb0209355a595b86b6d7b70cc38",
+      "split": "train"
+    },
+    {
+      "bytes": 2603062232,
+      "entries": 3119570,
+      "expanded_bytes": 3439231677,
+      "name": "TL.zip",
+      "role": "label",
+      "sha256": "84c14e76de94edb87bf911fb62dd1282be9d310383f00f420c5eb50327fbf9b3",
+      "split": "train"
+    },
+    {
+      "bytes": 325667356,
+      "entries": 396167,
+      "expanded_bytes": 427994931,
+      "name": "VS.zip",
+      "role": "source",
+      "sha256": "9c75e140b74287d823ff7a0c8c630b60afc1aad0d9e280927b3b695e82914cd4",
+      "split": "validation"
+    },
+    {
+      "bytes": 325667356,
+      "entries": 396167,
+      "expanded_bytes": 427994931,
+      "name": "VL.zip",
+      "role": "label",
+      "sha256": "d49bd6c6285622fc432699b176ef951e361dc15b005c8ff606fa4a0c28c53834",
+      "split": "validation"
+    }
+  ],
+  "audit_id": "ef07a830a830126d8f00669db250381f5355bfa3510c0e5ac9c9f2e39f8f00eb",
+  "audit_manifest_sha256": "29d25a03cc7b698c129a9696d72dd499049b1a3055b84841b5ac85995c0e3345",
+  "canonical_sft_records": 0,
+  "completed_at": "2026-10-28T09:43:02.763160+00:00",
+  "component_audit_status": "SUCCEEDED",
+  "component_normalization": "UNPAIRED_ONLY",
+  "component_split_counts": [
+    {
+      "count": 1966902,
+      "kind": "answer",
+      "split": "train"
+    },
+    {
+      "count": 1143131,
+      "kind": "question",
+      "split": "train"
+    },
+    {
+      "count": 245404,
+      "kind": "answer",
+      "split": "validation"
+    },
+    {
+      "count": 141292,
+      "kind": "question",
+      "split": "validation"
+    }
+  ],
+  "created_at": "2026-10-28T09:51:15.576438+00:00",
+  "current_status": "DELIVERY_RESOLVED_COMPONENT_AUDIT_COMPLETE_PAIRING_BLOCKED",
+  "database": {
+    "bytes": 6200840192,
+    "kept_private_outside_git": true,
+    "sha256": "59e8b3bc100e5254b3da0896b20da06e01d7dda52d0382a195c5e167c3a4a2f8"
+  },
+  "delivery_status": "SUCCEEDED",
+  "duplicate_component_ids": [
+    {
+      "excess_rows": 281241,
+      "groups": 281241,
+      "kind": "answer"
+    }
+  ],
+  "evidence_level": "ACTUAL_FULL_SOURCE_CRC_AND_LABEL_SCHEMA_AUDIT",
+  "exact_component_text_cross_split": [
+    {
+      "kind": "answer",
+      "rows": 10,
+      "text_groups": 5
+    },
+    {
+      "kind": "question",
+      "rows": 28930,
+      "text_groups": 10464
+    }
+  ],
+  "exact_component_text_duplicates": [
+    {
+      "excess_rows": 35,
+      "groups": 35,
+      "kind": "answer"
+    },
+    {
+      "excess_rows": 64137,
+      "groups": 44913,
+      "kind": "question"
+    }
+  ],
+  "guide_pairing_findings": {
+    "augmentation_parent_contract_established": false,
+    "category_only_join_excluded_by_user_request": true,
+    "explicit_question_answer_foreign_key_contract_established": false,
+    "filename_serial_rule_is_not_a_pair_mapping": true,
+    "general_category_intention_alignment_described": true,
+    "guide_download_failure_is_not_the_current_blocker": true,
+    "guides_obtained": true,
+    "one_to_one_training_set_statement_present": true,
+    "required_input": "Official preprocessing source or mapping table defining scoped Q-to-A identifiers and original/augmentation parent relationships"
+  },
+  "human_review": "not_performed",
+  "import_manifest_sha256": "a65106ad0289e51f700b065bfb25e962dd1eace2e11d6640b34786f38a981def",
+  "input_files": [
+    {
+      "bytes": 4248340940,
+      "dataset_id": "71762",
+      "name": "120.초거대AI 사전학습용 헬스케어 질의응답 데이터.zip",
+      "sha256": "89584900411ac869817bd85c190ad4842f5839e9e0dc1fb85140113a148e99e4"
+    },
+    {
+      "bytes": 136478457,
+      "dataset_id": "71875",
+      "matches_previous_verified_archive": true,
+      "name": "09.필수의료 의학지식 데이터.zip",
+      "reimport_or_retraining_performed": false,
+      "sha256": "530abb197345d03e92ebabecf7e4fd2e0a6a186c1b2043749478003e2bf8bc25"
+    }
+  ],
+  "new_freeze_created": false,
+  "new_gpu_run_started": false,
+  "normalized_components": 3496729,
+  "official_guides": [
+    {
+      "body_sections": 2,
+      "bytes": 4218368,
+      "extracted_characters": 21645,
+      "guide_content_available": true,
+      "method": "normal_official_browser_link_download",
+      "name": "23년 활용 가이드라인_v3.5_수정.hwp",
+      "original_hwp_preserved": true,
+      "paragraphs": 2110,
+      "sha256": "6808832c2c2544dbfc9da43bdc9c85ea6c859676b1fd8443c4835fd99751f5b7",
+      "source_url": "https://www.aihub.or.kr/file/down.do?fileSn=21554&cnstcPrcuseFileSn=21554&dataSetSn=71762",
+      "text_extraction": "HWP5 OLE BodyText PARA_TEXT records; control characters removed for reading only",
+      "text_sha256": "9b36de7037740b8e54d83ed86c3abbde05322faf9b0c5d1b83da8c5ef796c8cf"
+    },
+    {
+      "body_sections": 1,
+      "bytes": 325120,
+      "extracted_characters": 5150,
+      "guide_content_available": true,
+      "method": "normal_official_browser_link_download",
+      "name": "데이터설명서_v1.1.hwp",
+      "original_hwp_preserved": true,
+      "paragraphs": 542,
+      "sha256": "3db275f77cf7a19663de627e7809b9d6d9cbea1954cc06f5076307fb11993273",
+      "source_url": "https://www.aihub.or.kr/file/down.do?fileSn=21553&dataMnlFileSn=21553&dataSetSn=71762",
+      "text_extraction": "HWP5 OLE BodyText PARA_TEXT records; control characters removed for reading only",
+      "text_sha256": "554a387f894b371a94ae4c505534e4efdec7c1f817ad6a05bf37c0eb3c0c4f37"
+    }
+  ],
+  "official_test_supplied": false,
+  "original_splits_preserved": true,
+  "originals_preserved": true,
+  "pairing": {
+    "category_or_position_join_used": false,
+    "numeric_filename_suffix_join_used": false,
+    "participant_id_used_as_patient_or_parent": false,
+    "question_answer_pairs_created": 0,
+    "reason": "No evidenced question-to-answer foreign key and augmentation-parent contract supplied",
+    "verified": false
+  },
+  "per_record_generation_or_expert_review": "unknown; official source includes BART augmentation and mixed authorship",
+  "previous_v2_experiments": {
+    "rerun_in_this_followup": false,
+    "status": "SUCCEEDED_PRESERVED",
+    "verified_evaluations": 29,
+    "verified_training_reload": 8
+  },
+  "protected_kormed": {
+    "clinical_or_translation_equivalence_verified": false,
+    "count": 4068,
+    "exact_question_component_hits": 0,
+    "files": {
+      "test": {
+        "count": 3009,
+        "sha256": "5c4567bf8770dac8f1d111421baf47627a2ea1d696995dd4c878d76722bbc971"
+      },
+      "validation": {
+        "count": 1059,
+        "sha256": "514ce4a6b713402d83edd70a0a6625750fadaa45b4128109c4f31f6ff58379ba"
+      }
+    },
+    "heldout_modified": false,
+    "manifest_sha256": "af46823da1e4f4408480de16634460c20d2cc2b9c04b54583d20ebb1a875b934",
+    "near_semantic_status": "NOT_RUN_NO_PAIRED_TRAIN_CANDIDATES",
+    "status": "EXACT_QUESTION_ONLY_SCREEN"
+  },
+  "raw_redistribution": false,
+  "reference_key_candidates": {},
+  "schema_version": "medvlm.aihub71762.v3.1",
+  "source_code_sha256": "3d4c58f5df75c785b6a52778e075343072cca1435c108b3f9f9de0dd9ce570fb",
+  "source_documents_converted_to_qa": false,
+  "source_id": "aihub_71762",
+  "source_label_content_comparison": [
+    {
+      "label_archive": "TL.zip",
+      "label_files_without_source": 0,
+      "matching_path_different_bytes": 0,
+      "source_archive": "TS.zip",
+      "source_files_without_label": 0
+    },
+    {
+      "label_archive": "VL.zip",
+      "label_files_without_source": 0,
+      "matching_path_different_bytes": 0,
+      "source_archive": "VS.zip",
+      "source_files_without_label": 0
+    }
+  ],
+  "source_version": "1.1",
+  "source_zip_sha256": "89584900411ac869817bd85c190ad4842f5839e9e0dc1fb85140113a148e99e4",
+  "status": "UNRESOLVED_PAIRING",
+  "supervised_tokens": null,
+  "training_status": "NOT_RUN_UNRESOLVED_PAIRING",
+  "verified_asset_files": 7028863
+}

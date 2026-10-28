@@ -63,3 +63,7 @@ python -m mediflow_medvlm.data.forge_export --data-root "$MEDVLM_DATA_ROOT" --fr
 ```
 
 2026-10-26 한국어 후속 데이터는 v1과 분리된 `${MEDVLM_DATA_ROOT}/v2`에 있다. 실제 AI-Hub 확보량, 엄격 MCQ reader, 전체 KorMedMCQA 보호·다국어 유사도 후보 감사, KO/MIX freeze 및 `aihub-import` 재개 명령은 [DATA_AI_HUB_V2.md](DATA_AI_HUB_V2.md)를 따른다. 기존 v1 freeze를 후속 코퍼스로 덮어쓰지 않는다.
+
+## 2026-10-28 로컬 71762 후속
+
+71762 원본 전달 차단은 해소됐다. 전체 구성요소 감사와 실제 가이드 분석, 현재 pairing 차단·필요 입력·재개 명령은 [71762 로컬 원본 처리](DATA_AI_HUB_71762_KO.md)를 따른다. 위의 v1/v2 완료 결과는 당시 기록으로 보존한다.

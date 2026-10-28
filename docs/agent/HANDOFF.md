@@ -1,6 +1,20 @@
 # 실행 인계
 
-## 현재 후속 작업 — 2026-10-27 06:46 KST
+## 현재 후속 작업 — 2026-10-28 71762 로컬 원본
+
+사용자가 두 로컬 ZIP을 제공했다. `120.초거대AI 사전학습용 헬스케어 질의응답 데이터.zip`이 71762, `09.필수의료 의학지식 데이터.zip`은 기존 71875와 동일 SHA다. 71762의 이전 `BLOCKED_DELIVERY`는 해소됐다. 현재 차단은 `UNRESOLVED_PAIRING`이며 원본 다운로드 실패나 API 키 누락이 아니다.
+
+- 71762 4,248,340,940bytes, SHA `89584900411ac869817bd85c190ad4842f5839e9e0dc1fb85140113a148e99e4`. 내부 5 ZIP·7,028,863 파일 CRC/SHA 감사 완료. Training 질문1,143,131/답변1,966,902, Validation 질문141,292/답변245,404의 별도 구성요소3,496,729개를 정규화했다. TS/TL·VS/VL 내용은 같은 경로에서 전부 같고 중복 합산하지 않았다.
+- private SQLite에 출처와 question 또는 answer 구조를 보존했다. 원본·split을 유지했고 source 문서를 QA로 만들지 않았다. 답변 ID 반복281,241그룹과 공식 split 간 동일 질문10,464그룹/28,930행을 관측했다. 전역 ID 고유성·증강 parent를 추정하지 않는다.
+- 공식 HWP 설명서·가이드를 정상 브라우저 링크로 확보하고 본문을 읽었다. 가이드는 카테고리·의도 연결을 설명하나 사용자 지시는 이 방식의 join을 제외했다. 실제 Q→A foreign key·증강 parent 계약은 확인되지 않았다. QA쌍0, 새freeze·학습·평가는 미실행이다. 기존 v2 실험을 재실행하지 않았다.
+- KorMedMCQA4,068개와 질문 본문의 정확 일치0. near/semantic·번역 감사는 paired train 후보가 생긴 뒤 필요하며 이번에는 미실행이다. 구성요소 문법·필드 검사를 임상적 검증이나 학습 적격성 확인으로 해석하지 않는다.
+- 핵심 CPU 회귀241passed/7skipped/23subtests, 관련데이터21passed. v1/v2 공개 보고서38개·v2 실행소스14개·GPU원장 보존 검증 완료. 새 GPU 실행은 없고 unlimited 정책·Jetson USER_DEFERRED·human_review not_performed를 유지한다.
+
+현재 보고서는 `reports/public_summary/v3/RESULTS_KO.md`, 실제 입력·감사·SQLite는 global data root의 `v3/`다. 데이터 처리 및 재개 명령은 `docs/research/DATA_AI_HUB_71762_KO.md`와 전달 폴더 `outputs/v3/RESUME_KO.md`에 있다. 기존 v2 결과/전달물은 당시 상태로 보존한다. 새 감사의 종료코드0은 component audit 성공이며 paired SFT 준비 완료가 아니다. 동일 audit를 동시에 실행하지 않는다.
+
+사용자에게 필요한 입력은 71762 공식 소스·전처리 코드 또는 scoped 질문ID↔답변ID 및 증강원본parent 매핑 파일이다. 사용자가 다른 컴퓨터의 공식 페이지 ‘활용 AI 모델 및 코드’에서 파일을 확인할 수 있도록 안내했다. 이미 받은 ZIP·설명서·활용가이드·API 키·모델 가중치를 다시 요구하지 않는다. 자료가 생기면 실제 cardinality와 누수·token 검사를 거친 새 freeze로 이어가고 완료된 v2 corpus에 덧붙이지 않는다. 최종 commit/push/CI 근거는 `outputs/v3/git_receipt.json`에 별도 기록한다.
+
+## 보존된 v2 종료 기록 — 2026-10-27 06:46 KST
 
 실행 가능한 v2 선언 행렬은 완료했다. 전체 상태는 `COMPLETED_AVAILABLE_WORK_WITH_EXTERNAL_BLOCKER`이며 AI-Hub 71762는 `BLOCKED_DELIVERY`다. `reports/public_summary/v2/READOUT_KO.md`가 핵심 해석, `RESULTS_KO.md`가 전체 결과, `verification.json`이 실제 산출물 검증 근거다. `runtime/medvlm_state.json`은 변경하지 않은 v1 역사 상태이고, v2 인계는 `runtime/medvlm_state_v2.json`에 별도로 둔다.
 

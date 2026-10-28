@@ -1,0 +1,13 @@
+{
+  "71762_component_audit": "SUCCEEDED",
+  "71762_delivery": "SUCCEEDED",
+  "71762_pairing": "UNRESOLVED_PAIRING",
+  "71762_sft_freeze": "NOT_RUN_UNRESOLVED_PAIRING",
+  "71762_training_evaluation": "NOT_RUN_UNRESOLVED_PAIRING",
+  "71875": "SUCCEEDED_REUSED",
+  "generated_at": "2026-10-28T09:51:15.576438+00:00",
+  "human_review": "NOT_PERFORMED",
+  "jetson": "USER_DEFERRED",
+  "status": "DELIVERY_RESOLVED_COMPONENT_AUDIT_COMPLETE_PAIRING_BLOCKED",
+  "v2_text_vqa_experiments": "SUCCEEDED_PRESERVED"
+}

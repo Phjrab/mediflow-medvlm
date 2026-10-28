@@ -33,11 +33,20 @@ def main(argv=None):
         if delivery and len(args.input)==1 and args.input[0].is_file():
             from .io import sha256
             if delivery.get('sha256')!=sha256(args.input[0]) or delivery.get('bytes')!=args.input[0].stat().st_size:raise ValueError('DELIVERY_RECEIPT_MISMATCH')
-        result=import_aihub(args.input,args.data_root,args.dataset_id,version=args.version,delivery=delivery)
+        if args.dataset_id=='71762' and len(args.input)==1 and args.input[0].is_file() and args.input[0].suffix.lower()=='.zip':
+            from .aihub71762 import import_delivery
+            result=import_delivery(args.input[0],args.data_root,version=args.version,delivery=delivery)
+        else:
+            result=import_aihub(args.input,args.data_root,args.dataset_id,version=args.version,delivery=delivery)
         print(json.dumps({k:result[k] for k in ('status','evidence_level','import_id','dataset_id','version','manifest_path')}|{'archive_count':len(result['archives']),'member_count':len(result['members'])},ensure_ascii=False));return 0
     if args.command=='aihub-build':
         if not args.import_manifest or not args.protected_freeze or not args.license_evidence:parser.error('aihub-build requires --import-manifest, --protected-freeze and --license-evidence')
         from .aihub import build_71875
+        imported=json.loads(args.import_manifest.read_text())
+        if imported.get('dataset_id')=='71762':
+            from .aihub71762 import audit_delivery
+            result=audit_delivery(args.import_manifest,args.data_root,protected_freeze=args.protected_freeze,license_ref=args.license_evidence)
+            print(json.dumps({k:result[k] for k in ('status','delivery_status','component_audit_status','audit_id','component_split_counts','canonical_sft_records','manifest_path')},ensure_ascii=False));return 0
         result=build_71875(args.import_manifest,args.data_root,protected_freeze=args.protected_freeze,license_ref=args.license_evidence)
         print(json.dumps({k:result[k] for k in ('status','evidence_level','pool_id','canonical_counts','excluded_counts','canonical_files')},ensure_ascii=False));return 0
     if args.command=='aihub-corpora':

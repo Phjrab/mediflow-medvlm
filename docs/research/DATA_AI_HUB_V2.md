@@ -122,3 +122,7 @@ module.semantic_audit(candidates, protected, v2 / 'manifests/multilingual_embedd
 print(json.dumps({'output_dir': str(out), 'candidates': len(candidates), 'protected': len(protected)}))
 PY
 ```
+
+## 2026-10-28 로컬 71762 후속
+
+71762 원본 전달 차단은 해소됐다. 전체 구성요소 감사와 실제 가이드 분석, 현재 pairing 차단·필요 입력·재개 명령은 [71762 로컬 원본 처리](DATA_AI_HUB_71762_KO.md)를 따른다. 위의 v1/v2 완료 결과는 당시 기록으로 보존한다.
