@@ -12,6 +12,7 @@ from pathlib import Path
 
 from complete_v1 import verify_training_cache, verify_reload_cache
 from mediflow_medvlm.data.io import digest, read_jsonl
+from mediflow_medvlm.data.schema import normalized, validate_record
 from mediflow_medvlm.evaluation.metrics import score_rows, aggregate, korean_summary
 from mediflow_medvlm.evaluation.runner import load_protocol, validated_predictions, compare
 from mediflow_medvlm.runtime import atomic_json, canonical_hash, file_hash
@@ -125,6 +126,83 @@ def verify_evaluation(folder, protocol_path):
             'artifact_hashes': manifest['artifact_hashes'], 'manifest_sha256': file_hash(folder/'run_manifest.json')}
 
 
+def verify_corpus(root, corpus):
+    import hashlib
+    frozen=read(corpus['freeze_manifest'])
+    groups={}; counts={}; all_ids=set()
+    for key,entry in frozen['splits'].items():
+        split=key.rsplit('/',1)[1]
+        rows=read_jsonl(entry['snapshot_path'])
+        if len(rows)!=entry['count'] or file_hash(entry['snapshot_path'])!=entry['sha256']:
+            raise ValueError('FROZEN_SPLIT_INTEGRITY')
+        for row in rows:
+            meta=row['metadata'];q=meta['question_component'];a=meta['answer_component']
+            if validate_record(row) or row['sample_id'] in all_ids:
+                raise ValueError('INVALID_FROZEN_CANONICAL')
+            all_ids.add(row['sample_id'])
+            if q['category']!=a['category'] or q['split']!=split or a['split']!=split:
+                raise ValueError('PAIRED_CATEGORY_OR_SPLIT_MISMATCH')
+            if q['archive']!=a['archive'] or q['archive']!=('TL.zip' if split=='train' else 'VL.zip'):
+                raise ValueError('ORIGINAL_SOURCE_SPLIT_MISMATCH')
+            if row['input'].get('images') or set(row['input'])!={'question','images'}:
+                raise ValueError('NON_QUESTION_INPUT_OR_LABEL_LEAKAGE')
+            target='\n\n'.join(meta['answer_sections'].get(k) or '' for k in ('intro','body','conclusion'))
+            if row['supervision']['answer']!=target:
+                raise ValueError('ANSWER_SECTIONS_CHANGED')
+            for text,component in [(row['input']['question'],q),(target,a)]:
+                if hashlib.sha256(normalized(text).encode()).hexdigest()!=component['text_sha256']:
+                    raise ValueError('SOURCE_COMPONENT_TEXT_CHANGED')
+            if row['group_ids']['parent'] is not None or meta['true_qa_correspondence_verified'] is not False:
+                raise ValueError('UNSUPPORTED_TRUE_PAIR_OR_PARENT_CLAIM')
+            for kind,value in [('question',q['text_sha256']),('answer',a['text_sha256'])]:
+                groups.setdefault((kind,value),set()).add(split)
+        counts[split]=len(rows)
+    if any(len(values)>1 for values in groups.values()):
+        raise ValueError('EXACT_COMPONENT_CROSS_SPLIT')
+    train_ids={r['sample_id'] for r in read_jsonl(frozen['splits']['aihub71762_category_random_v4/train']['snapshot_path'])}
+    blocked=set()
+    for name in ('semantic/audit.json','internal_semantic_audit.json'):
+        blocked.update(r['sample_id'] for r in read(root/'v4'/name)['candidate_pairs'])
+    for audit in read(root/'v4/lexical_audit.json').values():
+        for name in ('confirmed_overlaps','near_candidates'):
+            blocked.update(r['sample_id'] for r in audit.get(name,[]))
+    if train_ids & blocked:
+        raise ValueError('QUARANTINED_CANDIDATE_ENTERED_TRAIN')
+    return {'status':'SUCCEEDED','counts':counts,'exact_component_cross_split':0,
+            'selected_train_quarantined_candidates':0,'all_source_texts_and_answer_sections_preserved':True,
+            'true_qa_or_parent_relationship_inferred':False}
+
+
+def gpu_accounting(root, plan, state):
+    ledger=read(root/'runtime/gpu_budget.json')
+    owned={run_id:read(entry['config'])['model_id'] for run_id,entry in plan['runs'].items()}
+    for run_id in state['evaluation']:
+        model=next(m for m in plan['models'] if run_id.startswith(m+'-'))
+        owned[run_id]=read(root/f'v2/text/configs/{model}-evaluation.json')['model_id']
+    if ledger.get('active') and ledger['active'].get('run_id') in owned:
+        raise ValueError('OWNED_GPU_STAGE_STILL_ACTIVE')
+    phases={run_id:ledger['run_phases'].get(run_id,{}) for run_id in owned}
+    for run_id,values in phases.items():
+        required={'train','reload'} if run_id in plan['runs'] else {'evaluation'}
+        if not required <= values.keys() or any(values[k]<=0 for k in required):
+            raise ValueError('OWNED_RUN_GPU_LEDGER_INCOMPLETE')
+    delta={}
+    for run_id,values in phases.items():
+        model=owned[run_id]
+        delta[model]=delta.get(model,0)+sum(values.values())
+    path=root/'v4/gpu_completion.json'
+    if path.exists():
+        completion=read(path)
+        if completion['owned_run_phases']!=phases:
+            raise ValueError('COMPLETED_RUN_GPU_ACCOUNTING_CHANGED')
+        if any(ledger['models'].get(m,0)<seconds for m,seconds in completion['cumulative_models_at_completion'].items()):
+            raise ValueError('CUMULATIVE_GPU_LEDGER_REWOUND')
+    else:
+        completion={'owned_run_phases':phases,'cumulative_models_at_completion':ledger['models']}
+        atomic_json(path,completion)
+    return ledger,delta,completion
+
+
 def report(root, output):
     out = root/'v4'
     state, plan, corpus = (read(out/name) for name in ('state.json','plan.json','corpus.json'))
@@ -137,6 +215,7 @@ def report(root, output):
     if file_hash(Path(__file__).with_name('prepare_71762_v4.py')) != corpus['identity']['preparation_code_sha256']:
         raise ValueError('PREPARATION_SOURCE_CHANGED')
     frozen = read(corpus['freeze_manifest'])
+    corpus_verification=verify_corpus(root,corpus)
     if file_hash(corpus['freeze_manifest']) != corpus['freeze_manifest_sha256']:
         raise ValueError('CORPUS_FREEZE_CHANGED')
     for entry in frozen['splits'].values():
@@ -189,10 +268,8 @@ def report(root, output):
         compare(outputs[('random','base')], outputs[('random','tuned')], out/f'{model}-random-base-vs-tuned.json')
         reviews[model] = review_packet(root, model, out/'random-heldout-test.json',
                                        outputs[('random','base')], outputs[('random','tuned')])
-    ledger = read(root/'runtime/gpu_budget.json')
-    if ledger.get('active') is not None:
-        raise ValueError('GPU_STAGE_STILL_ACTIVE')
-    delta = {key: value-historical['gpu_models_before'].get(key,0) for key,value in ledger['models'].items()}
+    ledger,delta,completion=gpu_accounting(root,plan,state)
+    gpu_receipt=out/'gpu_completion.json'
     counts = {}
     answer_reuse = {}
     for key, entry in frozen['splits'].items():
@@ -212,7 +289,9 @@ def report(root, output):
                'training':training,'evaluations':evaluations,'reused_base_controls':controls,'review_packets':reviews,
                'counts_by_source_task_language':counts,'selected_answer_reuse':answer_reuse,
                'gpu_seconds_delta_by_model':delta,'gpu_seconds_delta_total':sum(delta.values()),
-               'gpu_seconds_cumulative_total':sum(ledger['models'].values()),'resource_policy':ledger['current_policy'],
+               'gpu_seconds_cumulative_total':sum(completion['cumulative_models_at_completion'].values()),
+               'gpu_scope':'shared ledger occupancy for declared v4 train/reload/evaluation run IDs only',
+               'gpu_completion_sha256':file_hash(gpu_receipt),'resource_policy':ledger['current_policy'],
                'historical_files_verified_unchanged':len(historical['files_sha256']),
                'limitations':plan['limitations'], 'official_preprocessing_code_reviewed':False}
     output.mkdir(parents=True,exist_ok=True)
@@ -220,7 +299,8 @@ def report(root, output):
     atomic_json(output/'verification.json',{'status':'SUCCEEDED','training_and_reload':len(training),
                 'new_evaluations':len(evaluations),'reused_controls':len(controls),'review_packets':len(reviews),
                 'historical_files_unchanged':len(historical['files_sha256']),'errors':[],
-                'plan_sha256':file_hash(out/'plan.json'),'corpus_sha256':file_hash(out/'corpus.json')})
+                'plan_sha256':file_hash(out/'plan.json'),'corpus_sha256':file_hash(out/'corpus.json'),
+                'corpus_verification':corpus_verification})
     lines = ['# 71762 별도 무작위 연결 실험 — 2026-11-12', '',
              '현재 단계: 선언한 두 모델의 학습·새 process 재로드·평가를 완료했습니다.', '',
              '이번에 한 일: 사용자 예외 승인에 따라 제공처 방식의 별도 구현으로 학습4,000/검증105/파생평가256을 동결했습니다. 두 모델 각각20update smoke와250update 1pass 본학습 및 별도 재로드를 수행했습니다. 새 평가6개와 기존 Base 대조2개를 검증했습니다.', '',
@@ -237,8 +317,20 @@ def report(root, output):
     for model, entry in controls.items():
         korean = entry['korean_summary']
         lines.append(f"| {model} | KorMedMCQA | 기존 Base 재사용 | {korean['scheduled']} | {korean['correct']} | {korean['coverage']:.2%} | — |")
+    lines += ['', '외부 자료별 유지 성능:', '',
+              '| 모델 | 자료/문항 유형 | 문항수 | Base | 71762 Tuned | 지표 |',
+              '| --- | --- | ---: | ---: | ---: | --- |']
+    for model, base_entry in controls.items():
+        tuned_entry = evaluations[f'{model}-common-tuned-v4-20261112']
+        for source, task in [('pubmedqa_labeled','context_qa'),('aihub_71875','medical_mcq'),
+                             ('aihub_71875','medical_qa'),('medquad','medical_qa')]:
+            left = next(c for c in base_entry['cohorts'] if c['source_id']==source and c['task_type']==task)
+            right = next(c for c in tuned_entry['cohorts'] if c['source_id']==source and c['task_type']==task)
+            field = 'end_to_end_correct_fraction' if task in {'context_qa','medical_mcq'} else 'lexical_token_f1'
+            metric = '정답률(형식 실패 포함)' if field=='end_to_end_correct_fraction' else 'lexical F1'
+            lines.append(f"| {model} | {source}/{task} | {left['scheduled']} | {left[field]:.4f} | {right[field]:.4f} | {metric} |")
     lines += ['', '실행·미실행·한계:', '',
-              f"- 실제 수행: 학습·재로드4단계, 새 평가6개, 대조2개 검증. GPU 추가 {sum(delta.values())/3600:.3f}시간. 과거 파일{len(historical['files_sha256'])}개 hash 보존 확인.",
+              f"- 실제 수행: 학습4회·새 process 재로드4회, 새 평가6개, 대조2개 검증. GPU 추가 {sum(delta.values())/3600:.3f}시간. 과거 파일{len(historical['files_sha256'])}개 hash 보존 확인.",
               '- 미실행: 공식 make_train_data.py 다운로드·실행, 추가seed, 전체 원본 학습, 새로운 MedGemma/VLM 학습, 사람의 임상 검토. Jetson은 사용자 보류입니다.',
               '- 차단/한계: 증강 parent는 미제공이며 복구하지 않았습니다. 의미 유사도 후보 격리는 의학적/번역 동등성 검증이 아닙니다. 무작위 Q→A 대응의 개별 적합성, 답변 재서술 누수와 기반모델 과거 노출은 배제할 수 없습니다.',
               '- 두 모델은 원본 Base에서 독립 SFT했습니다. 이전 EN/KO/MIX와 학습 token 노출량이 달라 차이를 데이터 방식의 인과 효과로 해석하지 않습니다.',

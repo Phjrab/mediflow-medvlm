@@ -29,6 +29,28 @@ report = load_script('report_71762_v4')
 
 
 class V4CampaignTests(unittest.TestCase):
+    def test_gpu_report_excludes_other_runs_and_preserves_completion_floor(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            (root/'runtime').mkdir();(root/'v4').mkdir()
+            cfg=root/'config.json';cfg.write_text(json.dumps({'model_id':'M'}))
+            eval_cfg=root/'v2/text/configs/model-evaluation.json';eval_cfg.parent.mkdir(parents=True)
+            eval_cfg.write_text(cfg.read_text())
+            plan={'runs':{'train':{'config':str(cfg)}},'models':['model']}
+            state={'evaluation':{'model-eval':{}}}
+            ledger={'active':{'run_id':'unrelated'},'models':{'M':5015},
+                    'run_phases':{'train':{'train':10,'reload':2},'model-eval':{'evaluation':3},
+                                  'unrelated':{'evaluation':5000}}}
+            path=root/'runtime/gpu_budget.json';path.write_text(json.dumps(ledger))
+            _,delta,completion=report.gpu_accounting(root,plan,state)
+            self.assertEqual(delta,{'M':15})
+            ledger['models']['M']+=100;path.write_text(json.dumps(ledger))
+            _,delta,second=report.gpu_accounting(root,plan,state)
+            self.assertEqual(delta,{'M':15});self.assertEqual(completion,second)
+            ledger['models']['M']=1;path.write_text(json.dumps(ledger))
+            with self.assertRaisesRegex(ValueError,'REWOUND'):
+                report.gpu_accounting(root,plan,state)
+
     def test_metric_verification_only_tolerates_float_roundoff(self):
         self.assertTrue(report.equivalent({'n':4000,'f1':.24168677508061542}, {'n':4000,'f1':.2416867750806154}))
         self.assertFalse(report.equivalent({'n':4000}, {'n':4001}))
