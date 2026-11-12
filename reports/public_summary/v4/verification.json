@@ -1,0 +1,49 @@
+{
+  "corpus_sha256": "b6e2f08c2de81863dbeacbf6d8c98b8c91343ca35d374a95cdc0f43f32d0999f",
+  "corpus_verification": {
+    "all_source_texts_and_answer_sections_preserved": true,
+    "counts": {
+      "test": 256,
+      "train": 4000,
+      "validation": 105
+    },
+    "exact_component_cross_split": 0,
+    "selected_train_quarantined_candidates": 0,
+    "status": "SUCCEEDED",
+    "true_qa_or_parent_relationship_inferred": false
+  },
+  "errors": [],
+  "historical_files_unchanged": 77,
+  "new_evaluations": 6,
+  "paired_native_prompt_checks": {
+    "qwen3_17b": {
+      "common": {
+        "matched_native_prompt_hashes": 4530,
+        "scheduled": 4530,
+        "unverifiable_due_to_generation_failure": 0
+      },
+      "random": {
+        "matched_native_prompt_hashes": 256,
+        "scheduled": 256,
+        "unverifiable_due_to_generation_failure": 0
+      }
+    },
+    "qwen3_4b": {
+      "common": {
+        "matched_native_prompt_hashes": 4530,
+        "scheduled": 4530,
+        "unverifiable_due_to_generation_failure": 0
+      },
+      "random": {
+        "matched_native_prompt_hashes": 256,
+        "scheduled": 256,
+        "unverifiable_due_to_generation_failure": 0
+      }
+    }
+  },
+  "plan_sha256": "c35b0e5253c28f1a5e9df631623f842fe035fa26302e2c4aab2d0ff0ab0d8d85",
+  "reused_controls": 2,
+  "review_packets": 2,
+  "status": "SUCCEEDED",
+  "training_and_reload": 4
+}

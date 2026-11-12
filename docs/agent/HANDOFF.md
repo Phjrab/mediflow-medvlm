@@ -1,14 +1,27 @@
 # 실행 인계
 
-## 현재 후속 작업 — 2026-11-12 제공처 답변
+## 현재 후속 작업 — 2026-11-13 v4 완료
 
-사용자가 제공처의 회신을 대화에 전달했다. 별도 질문↔답변 매핑 자료와 증강 원본 식별자는 제공하지 않으며, 파일 일련번호에는 대응 관계가 없다고 설명한다. 제공처의 방식은 같은 카테고리·질환명·의도 안에서 답변을 무작위 선택하는 것이다. `1. 모델 소스코드/make_train_data.py`가 이 방식으로 JSONL을 생성한다고 안내했으나 해당 코드는 아직 확보·검토하지 않았다. 회신 원본 메일의 헤더·첨부를 검사한 것으로 표시하지 않는다.
+사용자가 2026-11-12 “71762는 제공처 방식으로 별도 실험 진행”을 명시했다. 이는 71762에 한해 카테고리·질환명·의도 안의 무작위 답변 연결 및 미제공 증강 lineage 한계를 허용한 예외다. 다른 source의 연결 기준은 바꾸지 않는다. 제공처 회신은 사용자 전달문이며 원본 메일 헤더를 인증한 것으로 표시하지 않는다. 공식 `make_train_data.py`는 미확보이며 제공처가 설명한 방식을 독립 구현했다. 정확한 고정 QA 매핑·parent 파일 확보를 현재 사용자 선행 작업으로 다시 요구하지 않는다.
 
-이는 더 이상 단순히 정확한 매핑 파일을 찾지 못한 문제가 아니다. 회신에 따르면 고정된 질문별 정답 연결과 증강 parent 정보가 제공되지 않는다. 기존 사용자 지시(2026-10-26 §71762)의 “파일 순서, 질환, 질문 의도만으로 연결하거나 Cartesian join하지 마라” 및 증강 parent 그룹 보존 조건과 충돌한다. 제공처 회신을 사용자 조건 변경으로 자동 해석하지 않는다.
+2026-11-13 01:55:56 KST에 선언한 유한 v4 실험이 `SUCCEEDED`로 끝났고 전체 산출물 검증도 통과했다. 실행 소유 session79763이 종료됐으며 GPU 원장 active는 null이다. 원본 Base에서 독립 학습한 Qwen3-1.7B/4B 각각20update smoke·250update/1pass 본학습과 각 새 process 재로드를 완료했다. 두 본학습 모두4,000표본/정답1,093,637token을 처리했고 validation으로step250을 선택했다. test 선택·기존 EN/KO/MIX adapter 연속학습은 하지 않았다.
 
-사용자가 2026-11-12 “71762는 제공처 방식으로 별도 실험 진행”을 명시했다. 71762의 별도 무작위 연결 실험과 미제공 증강 lineage 한계를 예외로 채택했다. 이 데이터에 한정하며 다른 source의 pairing 기준은 바꾸지 않는다. v1/v2 완료 실험과 v3 원본·구성요소 감사는 보존한다. 현재 `v4/authorization.json`, `v4/corpus.json`, `v4/plan.json`, `v4/state.json`이 새 실험 근거다. 학습4,000/검증105/파생평가256, 정답토큰1,093,637/모델, 1pass/250updates, 모델별20update smoke·별도재로드·본학습·재로드를 선언했다. Qwen3-1.7B/4B 원본 Base에서 독립 학습하며 첫 smoke 실행을 시작했다. 완료로 표시하지 않는다.
+- 데이터: 학습4,000/검증105/파생평가256, 19질환 분류. 공식 Validation에서 hash로 dev/test를 파생했으며 공식 Test라고 부르지 않는다. KorMedMCQA 전체4,068 포함 고유5,589개 보호자료와 lexical/E5 의미 유사도를 검사했고 후보2,982개를 보수적으로 격리했다. 확정 의학/번역 중복 판정이나 augmentation parent 복원은 아니다. 동결 표본 source text·답변 section·cross-split exact hash를 재검증했다.
+- 실행: 학습·재로드4단계, 새 평가6개/생성기록10,084건(조건별 반복 포함), 기존 공통 Base2개 검증. 새 공통 평가는 모델별4,530개, 무작위 참조는 Base/Tuned 각256개다. 모든 pair의 input/native prompt token hash와 생성 설정이 일치한다. 기술 실패0이며 기존 공개 보고서·선별 역사 파일77개 hash를 보존했다.
+- 결과: 무작위 참조 lexical F1은1.7B 0.0864→0.0914,4B 0.1039→0.1148이다. 임상 개선 근거가 아니다. 양 모델 공통 객관식·분류형4,286개가 모두 invalid_format이며 KorMedMCQA0/3009는 형식 실패를 포함한 엄격한 점수다. 의학적 능력0이라고 해석하거나 parser·상한·프롬프트를 사후 변경하지 않는다. 한국어 자유서술 전용 학습·문체·길이·token 노출 차이로 무작위 연결 방식의 인과 효과를 분리할 수 없다.
+- 검증: CPU251passed·7선택실행 제외·23subtests passed,6기존 Pillow 경고. 실제 GPU doctor의 forward/backward와4학습/fresh reload는 CPU 선택 검사와 별도의 근거다. GPU 추가7.644시간이며 unlimited/null 정책·누적 사용 원장·checkpoint floor는 보존했다.
+- 미실행/한계: 공식 코드 실행, 전체 원본 학습, 추가seed, 새 MedGemma/VLM 학습, 전문가 임상 검토는 하지 않았다. 검토표2개·32비교행은 같은16문항이며 사람 점수는 모두 빈칸이다. Jetson은 USER_DEFERRED다. 실행 차단은 없으나 원본 parent·정확 QA 대응이 없으므로 lineage 격리와 임상 정답성을 보장하지 않는다.
 
-상세 해석과 조건 변경 시 검증 범위는 `docs/research/DATA_AI_HUB_71762_KO.md`의 2026-11-12 항목을 따른다. 아래 2026-10-28 인계의 매핑·parent 파일 확보 요청은 당시 기록이며, 현재 사용자 할 일로 반복하지 않는다. 2026-10-29 새 ZIP은 내부 5개 ZIP SHA가 기존 원본과 모두 같았고 바깥 ZIP의 시간 메타데이터만 달랐다.
+공개 aggregate는 `reports/public_summary/v4/RESULTS_KO.md`, `run_summary.json`, `verification.json`, `figures/`다. 원본·모델·전체 예측·A/B 키는 private data root에 보존한다. 사용자 전달물은 workspace `outputs/v4/`이며 실제 checkpoint 경로는 `local_artifacts.json`, 재개 명령은 `RESUME_KO.md`, 최종 commit/push/CI 근거는 `git_receipt.json`에 기록한다. 아래 v1/v2/v3는 당시 기록으로 보존하며 현재 완료 상태를 대신하지 않는다.
+
+재개는 기존 성공 산출물의 identity·hash를 검증 후 재사용한다. 이전 freeze·결과에 덮어쓰거나 결과에 따른 재추첨·추가seed를 자동 실행하지 않는다.
+
+```bash
+export PYTHONPATH="$PWD/src"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 WANDB_DISABLED=true
+../.venv-medvlm/bin/python scripts/run_71762_v4.py --data-root ../medvlm-data --phase all
+../.venv-medvlm/bin/python scripts/report_71762_v4.py --data-root ../medvlm-data --output reports/public_summary/v4
+```
 
 ## 보존된 2026-10-28 인계 — 71762 로컬 원본
 

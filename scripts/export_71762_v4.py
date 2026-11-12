@@ -53,13 +53,29 @@ def export(root, reports, output):
                                    'augmentation_parent_ids':'provider states not provided; cannot guarantee lineage isolation'},
         'execution_blockers':[],'next_action_requires_user_input':False}
     atomic_json(output/'stage_status.json',state)
+    execution=json.loads((root/'v4/state.json').read_text())
+    if execution['status']!='SUCCEEDED' or execution['errors']:
+        raise ValueError('COMPLETED_EXECUTION_REQUIRED')
+    selected={}
+    for model in ('qwen3_17b','qwen3_4b'):
+        run_id=f'{model}-category-random-full-v4-20261112'
+        checkpoint=Path(execution['training'][run_id]['selected_checkpoint'])
+        if checkpoint.name!=summary['training'][run_id]['selected_checkpoint'] or not checkpoint.is_dir():
+            raise ValueError('SELECTED_CHECKPOINT_POINTER_MISMATCH')
+        selected[model]={'selected_adapter_directory':str(checkpoint),
+                         'training_directory':str(root/'v4/runs'/run_id)}
+    atomic_json(output/'local_artifacts.json',{'private_data_root':str(root),
+                'frozen_corpus_manifest':json.loads((root/'v4/corpus.json').read_text())['freeze_manifest'],
+                'campaign_state':str(root/'v4/state.json'),'models':selected,
+                'full_predictions_directory':str(root/'v4/evaluations'),
+                'contains_paths_only_no_weights_or_predictions':True})
     repo=Path(__file__).resolve().parents[1]
     commands=[f'cd {repo}', 'export PYTHONPATH="$PWD/src"',
               'export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 WANDB_DISABLED=true',
               f'{root.parent/".venv-medvlm/bin/python"} scripts/prepare_71762_v4.py --data-root {root}',
               f'{root.parent/".venv-medvlm/bin/python"} scripts/run_71762_v4.py --data-root {root} --phase all',
               f'{root.parent/".venv-medvlm/bin/python"} scripts/report_71762_v4.py --data-root {root} --output {reports}']
-    (output/'RESUME_KO.md').write_text('# 71762 v4 재개·검증\n\n현재 선언 실험은 완료했습니다. 아래 명령은 성공 산출물을 검증 후 재사용합니다. 이미 실행 중인 worker가 있으면 잠금으로 중복 실행을 거절합니다.\n\n```bash\n'+'\n'.join(commands)+'\n```\n\n과거 v1/v2/v3 보고서는 당시 상태로 보존합니다. 현재 GPU 누적량이 증가했으므로 옛 v3 보고서를 당시의 GPU 불변성 조건으로 재생성하지 마세요. 현재 실적 검증에는 v4 보고서를 사용합니다.\n\nreview/의 CSV 전달 사본만 편집하세요. private A/B 키는 이 전달물에 포함하지 않았으며 사람의 평가값을 자동으로 채우지 않았습니다.\n')
+    (output/'RESUME_KO.md').write_text('# 71762 v4 재개·검증\n\n현재 선언 실험은 완료했습니다. 아래 명령은 성공 산출물을 검증 후 재사용합니다. 이미 실행 중인 worker가 있으면 잠금으로 중복 실행을 거절합니다.\n\n```bash\n'+'\n'.join(commands)+'\n```\n\nlocal_artifacts.json에 선택 adapter·freeze·전체 예측의 실제 로컬 경로를 기록했습니다. 가중치나 전체 예측 파일을 전달 폴더에 복제하지 않았습니다.\n\n과거 v1/v2/v3 보고서는 당시 상태로 보존합니다. 현재 GPU 누적량이 증가했으므로 옛 v3 보고서를 당시의 GPU 불변성 조건으로 재생성하지 마세요. 현재 실적 검증에는 v4 보고서를 사용합니다.\n\nreview/의 CSV 전달 사본만 편집하세요. private A/B 키는 이 전달물에 포함하지 않았으며 사람의 평가값을 자동으로 채우지 않았습니다.\n')
     files={str(p.relative_to(output)):{'bytes':p.stat().st_size,'sha256':file_hash(p)}
            for p in output.rglob('*') if p.is_file() and p.name!='output_manifest.json'}
     atomic_json(output/'output_manifest.json',{'schema':'medvlm.aihub71762.delivery.v4','files':files,

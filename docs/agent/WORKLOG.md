@@ -1,5 +1,13 @@
 # 작업 기록
 
+## 2026-11-12 19:53 KST — 두 모델 학습·재로드 완료, 평가 시작
+
+Qwen3-1.7B/4B의 smoke20 및 본학습250update가 모두 성공했고 각단계의새process재로드도통과했다(학습4회/재로드4회). 각본학습4,000sample/1,093,637target tokens, 양쪽validation선정step250, adapter_changed=true, test_used=false. Qwen3-1.7B의무작위참조256문항Base평가를시작했다. 공통4,530문항을포함한새평가6개완료는아직아니며, 결과값으로새seed·재매핑·학습량을선택하지않는다.
+
+## 2026-11-12 18:54 KST — 첫 모델 완료·두 번째 모델 본학습
+
+Qwen3-1.7B의20update smoke 및250update/4,000sample/1,093,637target-token 본학습과 각각의새process재로드가 성공했다. validation이선택한checkpoint는step250이며test미사용·adapter변경을확인했다. Qwen3-4B의20update smoke/재로드도성공했고본학습250을진행중이다. 전체실험완료·평가성공으로표시하지않는다. 구현6c2dd28와검증/전달60bc0db를작업브랜치에push했고Python3.10/3.11/3.12 CI검사가모두성공했다. local CPU 회귀250passed/7skipped/6warnings.
+
 ## 2026-11-12 — 사용자 예외 승인·v4 별도 실험 시작
 
 사용자가 “71762는 제공처 방식으로 별도 실험 진행”을 명시했다. 별도 authorization과 과거 파일 hash baseline을 보존했다. read-only SQLite에서 label만 사용해 질환 분류/질환명/의도/split 일치 조건으로 seed 고정 질문당 답변 하나를 선택했다. 전체 source exact cross-split 질문28,930/답변10행 제외 및 추가 exact 중복 정리. 19개분류 train후보12,000/dev512/test512의 native token·Kor4068+기존평가고유5589 보호 lexical/semantic 검사를 완료했고, 고정E5 .92/top5 및 내부의미 후보2,982개 격리. train4000/dev105/test256, 정답토큰1,093,637/모델을 동결했다. Qwen두모델 원본Base 독립SFT, 모델당20update smoke·250update one-pass·새process재로드·파생256 및 공통4530 평가를 선언했다. GPU실제forward/backward성공, 첫1.7B smoke시작. 데이터focused26검사와 전체CPU회귀통과(7skip); 새 GPU 실험은 아직 진행 중이며 성공으로 과장하지 않는다.
@@ -81,3 +89,7 @@
 - v1 예측10개 실행을 재사용해 파일SHA·동결protocol·모델/config/adapter identity를 검증하고 한국어 유효성 전환, MedGemma 길이/구절/잘림, VQA-RAD OPEN/CLOSED를 재분석했다. 두 텍스트 모델의 8,450→8,400은 MedQuAD50개 context overflow 제외이며 나머지는525updates로 모두 처리됨을 preflight/checkpoint/event로 대조했다. 재분석/MedMCQA focused5tests 통과; 새 학습·추론 없이 `reports/public_summary/v2/`에 별도 보고했다.
 - KO-v2 4,000개/MIX-v2 8,000개 한국어 텍스트 실험은 계획 단계이며 이 기록 시점 새 학습·재로드·평가는 미실행이다. Qwen3.5-2B/MedGemma의 기존 weight/선정adapter를 재사용하는 VQA v2 validation이 실행 중이다. 상태는 `$MEDVLM_DATA_ROOT/v2/vqa/state.json`, 진입점은 `scripts/run_vqa_v2.py --data-root ...` 및 `--validation-only`다.
 - 인계/현재 맥락 문서를 후속 범위로 갱신하고 원래 v1 문서를 역사 구간에 보존했다. `runtime/medvlm_state.json`은 v1 역사 상태이며 후속 전체 root 최종 상태·최종 실적은 아직 없다. `report_v1.py`는 향후 생성 시 과거24/6 제약과 `resolve_resource_policy()`의 현재 정책·기록 사용량을 구분하도록 변경했다. 기존 생성된 v1 보고서는 재생성하지 않았다. 최종 실행·검증·commit/push 실적은 후속 통합 단계에서 추가한다.
+
+- 2026-11-12 22:29 KST: Qwen3-1.7B 별도 71762 실험의 새 평가3개가 성공했다. 무작위 참조256개씩 Base/Tuned lexical F1 0.0864213421→0.0913546973, EM은 양쪽0이다. 문항별 검증 정답이 아니므로 임상 개선 근거로 해석하지 않는다. 공통4,530개에서 자유서술244개는 유효응답, 객관식·분류형4,286개는 전부 invalid_format이었다. 기술실패0이며 KorMedMCQA 0/3009는 엄격한 형식 실패를 포함한 점수로 임상능력0을 뜻하지 않는다. 기존 Base와4,530개 input/native prompt token hash·generation 설정이 모두 일치하고 채점을 독립 재계산했다. 조건·parser·상한은 변경하지 않는다. Qwen3-4B의 세 평가를 계속하며 전체 완료로 표시하지 않는다. CPU 전체258수집 중251통과·7선택실행 제외(6 Pillow deprecation warning), 보고 focused5통과.
+
+- 2026-11-13 01:55 KST: 유한 v4 실험 종료. 실제 학습·새 process 재로드4단계/평가6개/새 생성기록10,084건, 기존 Base2개와 전체 native prompt 일치 검증, 기술실패0. 두 full 모두250update·4,000표본·정답1,093,637token과 validation-selected step250을 확인했다. 4B 무작위 참조 F1 0.1038782→0.1147997, 길이 종료225→32. 양 모델 공통 분류형4,286건은 전부 invalid_format으로서 엄격한 전체 점수0이며 임상 능력0이라고 주장하지 않는다. 데이터 방식·문체·과제·노출 차이의 인과 효과는 분리하지 않는다. 전문가 검토표2개32행(같은16문항) 작성, 사람 검토0. 전체 보고 검증 SUCCEEDED, 역사 파일77개 보존, GPU 추가7.644시간·active null. CPU251passed/7skipped/23subtests passed·6기존경고. aggregate 그림2종 PNG/SVG 작성·시각검수 후 전달·feature branch commit/push/CI를 마무리한다.

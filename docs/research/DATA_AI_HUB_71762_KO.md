@@ -98,3 +98,9 @@ export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 WANDB_DISABLED=true
 ```
 
 GPU 정책은 unlimited/null이고 사용 원장·checkpoint는 보존한다. 성공한 학습·재로드·평가는 검증 후 재사용한다. 원본 parent가 없으므로 누수 완전 배제나 독립 표본·임상 정답성을 보장하지 않는다.
+
+## v4 실제 종료 — 2026-11-13 01:55 KST
+
+선언한 두 모델의 smoke20/full250update·새 process 재로드4단계와 새 평가6개를 완료했고 전체 검증을 통과했다. 파생 평가256개씩의 lexical F1은1.7B 0.0864→0.0914,4B 0.1039→0.1148이다. 길이·문체·무작위 참조의 영향을 포함하므로 임상 정확도나 검증된 QA 적합성 지표가 아니다. 공통 객관식·분류형4,286개/모델은 모두 형식 미준수로 엄격한 점수0이며 임상능력0으로 해석하지 않는다. 조건·parser·문항·checkpoint를 결과에 맞춰 바꾸지 않았다.
+
+생성기록10,084건, 기술실패0, 기존 Base 대조2개와 native prompt 일치 검증, 역사 파일77개 hash 보존을 확인했다. 사람 검토0, 공식 코드 미확보·독립 구현, 미제공 parent와 기반모델 과거노출 미상 한계를 유지한다. 결과·그림·전달물은 v4에만 저장하고 이전 v1/v2/v3를 재생성하지 않는다. 자세한 결과와 재개 명령은 `reports/public_summary/v4/RESULTS_KO.md`에 있다.

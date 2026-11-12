@@ -15,7 +15,7 @@ def plot(summary_path, output):
         raise ValueError('Verified completed results required')
     output.mkdir(parents=True,exist_ok=True)
     models=[('qwen3_17b','Qwen3-1.7B'),('qwen3_4b','Qwen3-4B')]
-    fig, axes=plt.subplots(1,2,figsize=(10,4),sharey=True)
+    fig, axes=plt.subplots(1,2,figsize=(10,4.3),sharey=True)
     for axis,(model,title) in zip(axes,models):
         base=data['reused_base_controls'][model]
         tuned=data['evaluations'][f'{model}-common-tuned-v4-20261112']
@@ -38,8 +38,9 @@ def plot(summary_path, output):
     axes[0].set_ylabel('Correct / all scheduled (%)')
     axes[1].legend(frameon=False,fontsize=8,loc='upper left')
     fig.suptitle('Common benchmark retention after category-random SFT',fontsize=12)
+    fig.text(.5,.05,'All tuned classification outputs failed required answer format; zeros are not clinical accuracy.',ha='center',fontsize=8)
     fig.text(.5,.015,'Single seed; previously observed benchmarks. Training-token exposure differs from earlier SFT conditions.',ha='center',fontsize=8)
-    fig.tight_layout(rect=(0,.06,1,.94))
+    fig.tight_layout(rect=(0,.10,1,.94))
     for extension in ('png','svg'):
         fig.savefig(output/('benchmark_retention.'+extension),dpi=220)
     plt.close(fig)
@@ -59,6 +60,9 @@ def plot(summary_path, output):
     for extension in ('png','svg'):
         fig.savefig(output/('random_reference_agreement.'+extension),dpi=220)
     plt.close(fig)
+    for stem in ('benchmark_retention','random_reference_agreement'):
+        svg=output/(stem+'.svg')
+        svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
 
 
 if __name__=='__main__':

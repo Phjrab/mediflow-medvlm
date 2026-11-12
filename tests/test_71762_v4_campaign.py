@@ -29,6 +29,21 @@ report = load_script('report_71762_v4')
 
 
 class V4CampaignTests(unittest.TestCase):
+    def test_pair_verification_rejects_different_native_prompt_tokens(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            left=Path(temporary)/'base';right=Path(temporary)/'tuned'
+            left.mkdir();right.mkdir()
+            row={'sample_id':'q','status':'answered','input_hash':'same',
+                 'prompt_token_sha256':'native-A','generation_settings':{'max_new_tokens':512,'do_sample':False}}
+            write_jsonl(left/'predictions.jsonl',[row]);write_jsonl(right/'predictions.jsonl',[row])
+            self.assertEqual(report.verify_pair_prompts(left,right)['matched_native_prompt_hashes'],1)
+            row['prompt_token_sha256']='different';write_jsonl(right/'predictions.jsonl',[row])
+            with self.assertRaisesRegex(ValueError,'NATIVE_PROMPT_TOKENS'):
+                report.verify_pair_prompts(left,right)
+            row.update(status='model_error',prompt_token_sha256=None)
+            write_jsonl(right/'predictions.jsonl',[row])
+            self.assertEqual(report.verify_pair_prompts(left,right)['unverifiable_due_to_generation_failure'],1)
+
     def test_gpu_report_excludes_other_runs_and_preserves_completion_floor(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
