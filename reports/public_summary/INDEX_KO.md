@@ -8,9 +8,10 @@
 | v2 | 한국어 KO/MIX 학습·공통 텍스트 평가·VQA 확대 평가·기존 예측 재분석 | [핵심 해석](v2/READOUT_KO.md), [전체 결과](v2/RESULTS_KO.md) |
 | v3 | 전달된71762 원본·별도 질문/답변 구성요소 감사. 당시에는 QA 연결을 만들지 않음 | [감사 결과](v3/RESULTS_KO.md) |
 | v4 | 사용자 예외 승인에 따라 제공처 설명의 category-random 방식 독립 구현·두 텍스트 모델 학습·평가 | [결과](v4/RESULTS_KO.md), [검증](v4/verification.json), [그림](v4/figures) |
+| v5 | 24검증문항의384건 형식 진단. 두 모델 Base/Tuned·기존/한국어 지시·16/256token 비교 | [해석](v5/READOUT_KO.md), [전체 결과](v5/RESULTS_KO.md), [검증](v5/verification.json) |
 
 v4의 실행 성공은 성능 개선 입증을 뜻하지 않는다. 두 모델의 분류형 출력이 요구 형식을 지키지 못했고, 무작위 참조와의 문자열 일치는 임상 정확도가 아니다. 증강 parent와 고정된 문항별 QA 대응은 미제공이다. 자세한 조건과 남은 한계는 각 보고서에 기록했다.
 
 원본 데이터·모델 가중치·전체 예측·원본 전문가 검토표·비공개 A/B 키는 로컬 private data root에 있다. 사용자 전달 사본과 commit/CI 영수증도 로컬 workspace `outputs/`에 별도로 저장한다. GitHub만 복제하면 모델과 데이터까지 복구되는 완전 백업은 아니다. 원시 자료·비밀값·가중치의 공개 업로드는 승인 범위에 포함하지 않는다.
 
-v5는 [검증셋 전용 형식 진단 계획](../../docs/research/FORMAT_DIAGNOSTIC_V5_KO.md)에 따라 별도로 실행한다. 기존 v4 test 점수와 구분한다.
+v5는 [검증셋 전용 형식 진단 계획](../../docs/research/FORMAT_DIAGNOSTIC_V5_KO.md)에 따라 완료했다. 두 Tuned는 모든 조건에서 형식0/24였으며, 기존 v4 test 점수를 바꾸지 않았다. 추가학습·새 test 성능 개선을 수행하거나 입증한 결과가 아니다.

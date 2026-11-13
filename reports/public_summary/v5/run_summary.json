@@ -1,0 +1,4019 @@
+{
+  "budget_pair_prefix_checks": {
+    "qwen3_17b/base": {
+      "budget_pair_prefix_matches": 48,
+      "budget_pairs": 48
+    },
+    "qwen3_17b/tuned": {
+      "budget_pair_prefix_matches": 48,
+      "budget_pairs": 48
+    },
+    "qwen3_4b/base": {
+      "budget_pair_prefix_matches": 48,
+      "budget_pairs": 48
+    },
+    "qwen3_4b/tuned": {
+      "budget_pair_prefix_matches": 48,
+      "budget_pairs": 48
+    }
+  },
+  "cells": {
+    "qwen3_17b/base/ko/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.3262924609880429,
+            "median": 0.24396574350248557,
+            "min": 0.09310861999983899,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 3,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.3257588529959321,
+            "median": 0.20979894799529575,
+            "min": 0.0938390429946594,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.23328773499815725,
+            "median": 0.22739032900426537,
+            "min": 0.2214929230103735,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 0.5,
+          "e2e_latency_seconds": {
+            "max": 0.19368331698933616,
+            "median": 0.12669447148800828,
+            "min": 0.05970562598668039,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.5,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 1,
+            "invalid_format": 1
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 1
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.37963025298085995,
+            "median": 0.37159936799434945,
+            "min": 0.36356848300783895,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": 0.75,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 6,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.12128472002223134,
+            "median": 0.09922570548951626,
+            "min": 0.08049646200379357,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.75,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5252525252525252,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        }
+      ],
+      "condition": "base",
+      "language": "ko",
+      "maximum": 16,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 7,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 6,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 9,
+          "invalid_format": 15
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 9
+    },
+    "qwen3_17b/base/ko/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 2.0505785470013507,
+            "median": 0.24689216000842862,
+            "min": 0.0944350280042272,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 2.908964456000831,
+            "median": 1.5021853945072507,
+            "min": 0.09540633301367052,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.23783464499865659,
+            "median": 0.2322775585053023,
+            "min": 0.226720472011948,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 0.5,
+          "e2e_latency_seconds": {
+            "max": 0.19385296598193236,
+            "median": 0.12714792900078464,
+            "min": 0.06044289201963693,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.5,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 1,
+            "invalid_format": 1
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 1
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 1.1061088000133168,
+            "median": 0.82454913201218,
+            "min": 0.5429894640110433,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": 0.75,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 6,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.11834248999366537,
+            "median": 0.09792323449801188,
+            "min": 0.07957165199331939,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.75,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5252525252525252,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        }
+      ],
+      "condition": "base",
+      "language": "ko",
+      "maximum": 256,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 7,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 0,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 9,
+          "invalid_format": 15
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 9
+    },
+    "qwen3_17b/base/original/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": 0.42857142857142855,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 3,
+          "coverage": 0.875,
+          "e2e_latency_seconds": {
+            "max": 0.12891998700797558,
+            "median": 0.0779449065157678,
+            "min": 0.05598892300622538,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.375,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.125,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.26,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "answered": 7,
+            "invalid_format": 1
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 7
+        },
+        {
+          "answered_accuracy": 0.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.07803967301151715,
+            "median": 0.07062005350599065,
+            "min": 0.06320043400046416,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 0.5,
+          "e2e_latency_seconds": {
+            "max": 0.18762920598965138,
+            "median": 0.14355402698856778,
+            "min": 0.09947884798748419,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.5,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 1,
+            "invalid_format": 1
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 1
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.07691037401673384,
+            "median": 0.06945546001952607,
+            "min": 0.062000546022318304,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.3333333333333333,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.148576920008054,
+            "median": 0.1349894974991912,
+            "min": 0.1214020749903284,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.375,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 3,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.11924440099392086,
+            "median": 0.09838059499452356,
+            "min": 0.07980265701189637,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.375,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.2222222222222222,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        }
+      ],
+      "condition": "base",
+      "language": "original",
+      "maximum": 16,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 8,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 0,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 22,
+          "invalid_format": 2
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 22
+    },
+    "qwen3_17b/base/original/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": 0.42857142857142855,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 3,
+          "coverage": 0.875,
+          "e2e_latency_seconds": {
+            "max": 0.12874530800036155,
+            "median": 0.0768234669812955,
+            "min": 0.05523698098841123,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.375,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.125,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.26,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "answered": 7,
+            "invalid_format": 1
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 7
+        },
+        {
+          "answered_accuracy": 0.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.0785883600183297,
+            "median": 0.06997208850225434,
+            "min": 0.06135581698617898,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 0.5,
+          "e2e_latency_seconds": {
+            "max": 0.18662328002392314,
+            "median": 0.1429528790176846,
+            "min": 0.09928247801144607,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.5,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 1,
+            "invalid_format": 1
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 1
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.07532716399873607,
+            "median": 0.0679838294890942,
+            "min": 0.06064049497945234,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.3333333333333333,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.1392892750154715,
+            "median": 0.12951795200933702,
+            "min": 0.11974662900320254,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.375,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 3,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.11814882399630733,
+            "median": 0.09872995299519971,
+            "min": 0.0795327539963182,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.375,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.2222222222222222,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        }
+      ],
+      "condition": "base",
+      "language": "original",
+      "maximum": 256,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 8,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 0,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 22,
+          "invalid_format": 2
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 22
+    },
+    "qwen3_17b/tuned/ko/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6224719689926133,
+            "median": 0.6080409015121404,
+            "min": 0.5824642279767431,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.606818516011117,
+            "median": 0.5975516140024411,
+            "min": 0.5882847119937651,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6373038459860254,
+            "median": 0.6338482790015405,
+            "min": 0.6303927120170556,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.587666214996716,
+            "median": 0.5874403419875307,
+            "min": 0.5872144689783454,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6916145920113195,
+            "median": 0.6805414480040781,
+            "min": 0.6694683039968368,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6884881220175885,
+            "median": 0.6463174369855551,
+            "min": 0.631217560992809,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "ko",
+      "maximum": 16,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 24,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 0
+    },
+    "qwen3_17b/tuned/ko/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.261665961006656,
+            "median": 7.000058533492847,
+            "min": 5.369736584019847,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 3,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.113763500994537,
+            "median": 8.416151954996167,
+            "min": 7.7185404089977965,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.165249979007058,
+            "median": 9.017939801502507,
+            "min": 8.870629623997957,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 8.488321945013013,
+            "median": 8.119511483513634,
+            "min": 7.750701022014255,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.197156351001468,
+            "median": 9.006650828494458,
+            "min": 8.816145305987448,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.144033851014683,
+            "median": 9.039562732024933,
+            "min": 4.830782874021679,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 5,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "ko",
+      "maximum": 256,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 11,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 0
+    },
+    "qwen3_17b/tuned/original/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6175172950024717,
+            "median": 0.6066828100010753,
+            "min": 0.5783292120031547,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6094744539877865,
+            "median": 0.6012357514846371,
+            "min": 0.5929970489814878,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6430328280257527,
+            "median": 0.6279917325155111,
+            "min": 0.6129506370052695,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6117973499931395,
+            "median": 0.598903492995305,
+            "min": 0.5860096359974705,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.7045735039864667,
+            "median": 0.6874923470022622,
+            "min": 0.6704111900180578,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.6706673229928128,
+            "median": 0.634620269498555,
+            "min": 0.6076028129900806,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "original",
+      "maximum": 16,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 24,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 0
+    },
+    "qwen3_17b/tuned/original/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.155778390995692,
+            "median": 7.4419862704962725,
+            "min": 6.360392825998133,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 3,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.134230705996742,
+            "median": 8.7634313495073,
+            "min": 8.392631993017858,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.064158748020418,
+            "median": 7.338789340516087,
+            "min": 5.613419933011755,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.169901288987603,
+            "median": 9.167762642493472,
+            "min": 9.16562399599934,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.224924553011078,
+            "median": 9.155675259506097,
+            "min": 9.086425966001116,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.26868230002583,
+            "median": 8.294383319007466,
+            "min": 3.3521617439982947,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 3,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "original",
+      "maximum": 256,
+      "model": "qwen3_17b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 11,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 1
+      },
+      "valid": 0
+    },
+    "qwen3_4b/base/ko/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": 0.625,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 5,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.16541360499104485,
+            "median": 0.15150754200294614,
+            "min": 0.11139941800502129,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.625,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5933333333333334,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.1584681629901752,
+            "median": 0.13640501149347983,
+            "min": 0.11434185999678448,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.6666666666666666,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 2,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.22046307098935358,
+            "median": 0.21482150049996562,
+            "min": 0.20917993001057766,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 1.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 1.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.14409926597727463,
+            "median": 0.12978761648992077,
+            "min": 0.1154759670025669,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.30520422698464245,
+            "median": 0.2840294074994745,
+            "min": 0.2628545880143065,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.75,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 6,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.2619784019771032,
+            "median": 0.21583711399580352,
+            "min": 0.16354920098092407,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.75,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.6,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        }
+      ],
+      "condition": "base",
+      "language": "ko",
+      "maximum": 16,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 15,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 0,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 24
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 24
+    },
+    "qwen3_4b/base/ko/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": 0.625,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 5,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.16570694101392291,
+            "median": 0.15222589249606244,
+            "min": 0.11152902100002393,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.625,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5933333333333334,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.1586558970157057,
+            "median": 0.13683381301234476,
+            "min": 0.11501172900898382,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.6666666666666666,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 2,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.22216044197557494,
+            "median": 0.21380889698048122,
+            "min": 0.2054573519853875,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 1.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 1.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.14786231599282473,
+            "median": 0.13203795299341436,
+            "min": 0.116213589994004,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.30757685800199397,
+            "median": 0.28481920750346035,
+            "min": 0.2620615570049267,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.75,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 6,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.26156675099628046,
+            "median": 0.21478291448147502,
+            "min": 0.16417045798152685,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.75,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.6,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 8
+        }
+      ],
+      "condition": "base",
+      "language": "ko",
+      "maximum": 256,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 15,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 0,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 24
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 24
+    },
+    "qwen3_4b/base/original/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": 0.5714285714285714,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 4,
+          "coverage": 0.875,
+          "e2e_latency_seconds": {
+            "max": 0.49961659201653674,
+            "median": 0.15030997300345916,
+            "min": 0.10886426400975324,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.125,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.45999999999999996,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "answered": 7,
+            "invalid_format": 1
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 7
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.1542074320022948,
+            "median": 0.1386433284933446,
+            "min": 0.12307922498439439,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.6666666666666666,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 2,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.21922016399912536,
+            "median": 0.19239685049979016,
+            "min": 0.16557353700045496,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 1.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 1.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 0.5,
+          "e2e_latency_seconds": {
+            "max": 0.2778534190147184,
+            "median": 0.1958389210049063,
+            "min": 0.11382442299509421,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.5,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 1,
+            "invalid_format": 1
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 1
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.3119515290018171,
+            "median": 0.2864186744991457,
+            "min": 0.2608858199964743,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.5714285714285714,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 4,
+          "coverage": 0.875,
+          "e2e_latency_seconds": {
+            "max": 0.5035999590181746,
+            "median": 0.24765004598884843,
+            "min": 0.205863709008554,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.125,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.3833333333333333,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 7,
+            "invalid_format": 1
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 7
+        }
+      ],
+      "condition": "base",
+      "language": "original",
+      "maximum": 16,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 13,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 2,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 21,
+          "invalid_format": 3
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 21
+    },
+    "qwen3_4b/base/original/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": 0.5714285714285714,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 4,
+          "coverage": 0.875,
+          "e2e_latency_seconds": {
+            "max": 0.901679378002882,
+            "median": 0.1512002145027509,
+            "min": 0.10937667998950928,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.125,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.45999999999999996,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "answered": 7,
+            "invalid_format": 1
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 7
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.15575223101768643,
+            "median": 0.13417940001818351,
+            "min": 0.1126065690186806,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.6666666666666666,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 2,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.2206766459858045,
+            "median": 0.19370004600204993,
+            "min": 0.16672344601829536,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 1.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 1.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 1.0,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 0.5,
+          "e2e_latency_seconds": {
+            "max": 0.2778764510003384,
+            "median": 0.1959849455015501,
+            "min": 0.11409344000276178,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.5,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 1,
+            "invalid_format": 1
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 1
+        },
+        {
+          "answered_accuracy": 0.5,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 1,
+          "coverage": 1.0,
+          "e2e_latency_seconds": {
+            "max": 0.30605246699997224,
+            "median": 0.2841031470015878,
+            "min": 0.26215382700320333,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.5,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "answered": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 2
+        },
+        {
+          "answered_accuracy": 0.5714285714285714,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 4,
+          "coverage": 0.875,
+          "e2e_latency_seconds": {
+            "max": 1.7786516020132694,
+            "median": 0.2494286444998579,
+            "min": 0.20567435497650877,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.5,
+          "human_review": "not_performed",
+          "invalid_format_rate": 0.125,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.3833333333333333,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "answered": 7,
+            "invalid_format": 1
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 7
+        }
+      ],
+      "condition": "base",
+      "language": "original",
+      "maximum": 256,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 13,
+      "style": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 0,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 21,
+          "invalid_format": 3
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 21
+    },
+    "qwen3_4b/tuned/ko/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.8402572039922234,
+            "median": 0.8139374214952113,
+            "min": 0.7712754489912186,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.8301825920061674,
+            "median": 0.7981967759988038,
+            "min": 0.7662109599914402,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.9105525269987993,
+            "median": 0.896078691992443,
+            "min": 0.8816048569860868,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.8116156789765228,
+            "median": 0.7928585709887557,
+            "min": 0.7741014630009886,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 1.0323573760106228,
+            "median": 1.0027784630074166,
+            "min": 0.9731995500042103,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.9741727139917202,
+            "median": 0.901800382998772,
+            "min": 0.8335041729733348,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "ko",
+      "maximum": 16,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 1,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 24,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 3
+      },
+      "valid": 0
+    },
+    "qwen3_4b/tuned/ko/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.39246090798406,
+            "median": 9.730423270986648,
+            "min": 8.676936325995484,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.336067430005642,
+            "median": 11.288828456003102,
+            "min": 11.241589482000563,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.500060223974288,
+            "median": 9.039365765478578,
+            "min": 8.57867130698287,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.295144953008275,
+            "median": 10.300625292002223,
+            "min": 9.306105630996171,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.603966866998235,
+            "median": 10.44103546749102,
+            "min": 9.278104067983804,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.595731564011658,
+            "median": 9.0934054334939,
+            "min": 5.581631694978569,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "ko",
+      "maximum": 256,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 1,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 6,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 0
+      },
+      "valid": 0
+    },
+    "qwen3_4b/tuned/original/16": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.8448395080049522,
+            "median": 0.8137227119877934,
+            "min": 0.767893643991556,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.8258932440076023,
+            "median": 0.7969490205141483,
+            "min": 0.7680047970206942,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.9096462139859796,
+            "median": 0.8758639654988656,
+            "min": 0.8420817170117516,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.822766480006976,
+            "median": 0.7974147804925451,
+            "min": 0.7720630809781142,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 1.0351149649941362,
+            "median": 1.0074249025055906,
+            "min": 0.9797348400170449,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 2,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 0.9720348579867277,
+            "median": 0.9044910384982359,
+            "min": 0.8400484449812211,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 8,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "original",
+      "maximum": 16,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 1,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 4,
+        "length_terminated": 24,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 1
+      },
+      "valid": 0
+    },
+    "qwen3_4b/tuned/original/256": {
+      "cohorts": [
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.47641455300618,
+            "median": 10.493809414998395,
+            "min": 7.290971551992698,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 3,
+            "B": 2,
+            "C": 1,
+            "D": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "aihub_71875",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 3,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.281545139994705,
+            "median": 10.11148855900683,
+            "min": 8.941431978018954,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "D": 2
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "dentist",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.420474944985472,
+            "median": 9.999207264991128,
+            "min": 8.577939584996784,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "C": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "doctor",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.350361118005821,
+            "median": 9.585799458494876,
+            "min": 7.82123779898393,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "C": 1,
+            "E": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "nurse",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 2,
+          "clinical_accuracy": null,
+          "completed": 2,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 9.18190970600699,
+            "median": 9.049377017494407,
+            "min": 8.916844328981824,
+            "n": 2,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "A": 1,
+            "B": 1
+          },
+          "language": "ko",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 2,
+          "source_id": "kormedmcqa",
+          "statuses": {
+            "invalid_format": 2
+          },
+          "subject": "pharm",
+          "task_type": "medical_mcq",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 0,
+          "valid_answers": 0
+        },
+        {
+          "answered_accuracy": null,
+          "attempted": 8,
+          "clinical_accuracy": null,
+          "completed": 8,
+          "correct": 0,
+          "coverage": 0.0,
+          "e2e_latency_seconds": {
+            "max": 11.432956061005825,
+            "median": 5.619483444999787,
+            "min": 4.0214991309912875,
+            "n": 8,
+            "scope": "includes_input_preprocess_and_generation_including_failed_attempts_when_measured"
+          },
+          "end_to_end_correct_fraction": 0.0,
+          "human_review": "not_performed",
+          "invalid_format_rate": 1.0,
+          "label_support": {
+            "maybe": 1,
+            "no": 2,
+            "yes": 5
+          },
+          "language": "en",
+          "lexical_token_f1": null,
+          "macro_f1": 0.0,
+          "not_attempted_count": 0,
+          "scheduled": 8,
+          "source_id": "pubmedqa_labeled",
+          "statuses": {
+            "invalid_format": 8
+          },
+          "subject": null,
+          "task_type": "context_qa",
+          "technical_failure_rate": 0.0,
+          "truncated_count": 1,
+          "valid_answers": 0
+        }
+      ],
+      "condition": "tuned",
+      "language": "original",
+      "maximum": 256,
+      "model": "qwen3_4b",
+      "n": 24,
+      "strict_correct": 0,
+      "style": {
+        "answer_declaration_prose": 1,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 4,
+        "length_terminated": 7,
+        "n": 24,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 24
+        },
+        "unicode_replacement_outputs": 2
+      },
+      "valid": 0
+    }
+  },
+  "clinical_accuracy": null,
+  "gpu_seconds_by_run": {
+    "qwen3_17b-base-format-validation-v5-20261113": 26.604429960250854,
+    "qwen3_17b-tuned-format-validation-v5-20261113": 419.9255361557007,
+    "qwen3_4b-base-format-validation-v5-20261113": 34.57942986488342,
+    "qwen3_4b-tuned-format-validation-v5-20261113": 499.5618953704834
+  },
+  "gpu_seconds_total": 980.6712913513184,
+  "historical_files_verified_unchanged": 208,
+  "historical_posthoc": {
+    "qwen3_17b": {
+      "base": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 664,
+        "n": 4286,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 2563,
+          "invalid_format": 1723
+        },
+        "unicode_replacement_outputs": 30
+      },
+      "format_transitions": {
+        "invalid->invalid": 1723,
+        "valid->invalid": 2563
+      },
+      "tuned": {
+        "answer_declaration_prose": 4,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 0,
+        "length_terminated": 4286,
+        "n": 4286,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 4286
+        },
+        "unicode_replacement_outputs": 265
+      }
+    },
+    "qwen3_4b": {
+      "base": {
+        "answer_declaration_prose": 0,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 3,
+        "length_terminated": 145,
+        "n": 4286,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "answered": 3565,
+          "invalid_format": 721
+        },
+        "unicode_replacement_outputs": 8
+      },
+      "format_transitions": {
+        "invalid->invalid": 721,
+        "valid->invalid": 3565
+      },
+      "tuned": {
+        "answer_declaration_prose": 27,
+        "clinical_accuracy": null,
+        "empty_outputs": 0,
+        "leading_yes_no_maybe_with_extra_text": 138,
+        "length_terminated": 4285,
+        "n": 4286,
+        "rescored_with_relaxed_parser": false,
+        "statuses": {
+          "invalid_format": 4286
+        },
+        "unicode_replacement_outputs": 296
+      }
+    }
+  },
+  "historical_test_scores_changed": false,
+  "human_review": "not_performed",
+  "limitations": [
+    "Small previously available validation subset; not a blind test or clinical validation.",
+    "Korean translation changes instruction tokens; not an isolated medical reasoning measurement.",
+    "Different training tasks and token exposures confound attribution to random QA alignment."
+  ],
+  "new_test_inference": false,
+  "new_training": false,
+  "plan_sha256": "100e4393ddba41a57b14b5219fd8674d92064ddccae27508fd11fe33f6200ebb",
+  "scheduled_records": 384,
+  "schema": "medvlm.format-diagnostic.results.v5",
+  "status": "SUCCEEDED",
+  "validation_only": true
+}

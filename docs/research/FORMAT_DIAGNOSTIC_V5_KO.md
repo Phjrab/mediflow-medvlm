@@ -17,3 +17,7 @@ export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 WANDB_DISABLED=true
 ```
 
 공개 요약은 완료 후 `reports/public_summary/v5/`에 저장한다. 원본·전체 예측·가중치·비공개 A/B 키는 Git에 올리지 않는다. 사람의 임상 검토는 미실행, Jetson은 사용자 보류다.
+
+## 실제 완료
+
+384기록·4worker를 완료하고 strict 재채점·입력/prompt·source/adapter·greedy prefix 및 기존208개 파일 보존을 검증했다. GPU0.272409시간,기술실패0이다. 양 Tuned는 네 조건 모두0/24형식 준수로,토큰 상한 확대와 한국어 번역만으로 해결되지 않았다. 작은 validation 진단이며 기존 test score·임상 정확도·random pairing의 단독 효과를 재정의하지 않는다. 해석과 모든 결과는 `reports/public_summary/v5/`에 있고 이번 진단 이후 학습·test inference를 자동 확장하지 않았다.

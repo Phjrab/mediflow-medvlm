@@ -1,0 +1,67 @@
+{
+  "at": "2026-11-13T05:03:00.005023+00:00",
+  "clinical_accuracy": null,
+  "code_sha256": {
+    "scripts/run_format_diagnostic_v5.py": "23702eacd1b3a2421efddeb0fa377d1486910344f493efd2d93e028ef846640c",
+    "src/mediflow_medvlm/data/io.py": "0fc32a020bc5aca4eaa5e1602adbe49943b08fb7daa6355d365c4ac3f44df7bf",
+    "src/mediflow_medvlm/evaluation/format_diagnostics.py": "e26e5b5d4271bdb93474d374811b7627716f4344dfd38c4db87d422783245069",
+    "src/mediflow_medvlm/evaluation/metrics.py": "8bd2247cac0b427da0a1cd5f9fe057f9c5537385ec73a7b92251ed2cbbc0c3e5",
+    "src/mediflow_medvlm/evaluation/runner.py": "c0e06b4fe25a642ac5bf2b3dbcc33e8e8b13adce075a620325a083b60051f7fa",
+    "src/mediflow_medvlm/evaluation/v2.py": "687138336b99903d5aefd75c3e56338ee8cb80f9317cf659b457b54b0caafd61",
+    "src/mediflow_medvlm/runtime.py": "d93a7eff77985620ef11d70df22c52d9a995aa9289eb0daafe6a338f19aaca06",
+    "src/mediflow_medvlm/training/models.py": "9cbcdf936722e95a90d53599aa31656205e0d1117176e2face1a2eea725eb68f",
+    "src/mediflow_medvlm/training/rendering.py": "bfedc5c8bb76aefac162c8e7a225e225130861eeecf2242574dfc6e4caa53364"
+  },
+  "cohort_counts": {
+    "aihub_71875": 8,
+    "kormedmcqa": 8,
+    "pubmedqa_labeled": 8
+  },
+  "gpu_ledger_not_rewound": true,
+  "historical_files_verified_unchanged": 208,
+  "historical_scores_changed": false,
+  "local_cpu": {
+    "junit_sha256": "b1991e84f3808a5a5ad7085366382a49cfc4068e5dedd7fb2d598f554b26518d",
+    "log_sha256": "f1de64b689a679800284000d3cce4bf830d127e02f93fe62fb221784edffbbb3",
+    "passed": 255,
+    "skipped": 7,
+    "subtests_passed": 23,
+    "warnings": 6
+  },
+  "metrics_recalculated": true,
+  "new_training": false,
+  "plan_sha256": "100e4393ddba41a57b14b5219fd8674d92064ddccae27508fd11fe33f6200ebb",
+  "records_verified": 384,
+  "source_commit": "3ea0fe8b8d3e916fb44464201f4edd6832326383",
+  "status": "SUCCEEDED",
+  "technical_failures": 0,
+  "test_inference": false,
+  "validation_only": true,
+  "validation_sha256": "6bbc20e298c63e374473c3248d9a9d64a28a6aba23ab279e216970a1684a68a8",
+  "worker_receipts": {
+    "qwen3_17b/base": {
+      "budget_pair_prefix_matches": 48,
+      "manifest_sha256": "7b55f58f14b1ff33b70241def01b1b3a8b438c88d3ee853c77e56ae48ef13a2a",
+      "predictions": 96,
+      "predictions_sha256": "a2f3b700bc05ba990f0dc3ff8ce04bd1af62495aa827bae5cccacaa0be62d028"
+    },
+    "qwen3_17b/tuned": {
+      "budget_pair_prefix_matches": 48,
+      "manifest_sha256": "df04de69d70c90f0c5ab863b39c5aa0f9b325cf05706e4db642b042d654ce3b2",
+      "predictions": 96,
+      "predictions_sha256": "e3553686965c75387145cf055ddcf8a349bda6a7654ed7db0e14faf65da78af8"
+    },
+    "qwen3_4b/base": {
+      "budget_pair_prefix_matches": 48,
+      "manifest_sha256": "61e05495db0ef7326d6ea3dd7af0bca2bb1cbfc25d2b504d2cca3cd3c7172081",
+      "predictions": 96,
+      "predictions_sha256": "e711e2c41bb65390d34d192ffba4a824a36f993cb250237ddbbb0c1557e92ac9"
+    },
+    "qwen3_4b/tuned": {
+      "budget_pair_prefix_matches": 48,
+      "manifest_sha256": "3b20dc20bc93bc865755d52eaf4ced4ac229764bb1ab9601bd3bdc1fbe3348b0",
+      "predictions": 96,
+      "predictions_sha256": "bcaf351d06d18681e287de6e6fbbe0efca27a6d42824436e6f4f54d47fbcedae"
+    }
+  }
+}

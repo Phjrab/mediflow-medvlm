@@ -1,5 +1,15 @@
 # 현재 작업 맥락
 
+## 현재 v5 후속 진단 — 2026-11-13 완료
+
+사용자의 다음 단계 진행 요청으로 고정한 검증 전용384기록을 실제 GPU에서 모두 실행했다. 두 모델 Base/v4 Tuned ×기존/한국어 번역 형식 지시 ×16/256token ×24검증문항(세 source 각8개, KorMed 직군별2개)이다. test ID·정확 입력 제외, 최대입력562token, v4 train 정확 input 겹침0을 사전 확인했다. 새 학습·test 추론·기존 parser/점수 보정은 하지 않았다.
+
+모든 worker가 성공했고 session9573은 종료, 전역 GPU active는 null이다. 기술실패0·기존 파일208개 hash 보존·전체 재채점·Base/Tuned native 가중치/template/dtype/prompt·greedy prefix192/192쌍을 검증했다. GPU 추가0.272409시간이다. source는commit3ea0fe8의9개 구현 파일과 byte hash가 일치한다. CPU255passed/7skipped/23subtests·6기존경고,focused4passed다.
+
+두 Tuned는 네 지시/상한 조건 모두 유효 형식0/24였다. Base 기존지시 조건은1.7B22/24,4B21/24였다. 상한256 확대는 길이 종료를 줄였지만 형식 준수를 회복시키지 못했고, 한국어 번역의 효과도 모델마다 달랐다. 이는 작은 기존 validation의 진단이며 임상 능력·새 test 성능·무작위 QA 연결의 단독 인과 효과를 측정한 결과가 아니다. 기존 v4는 약한 참조 실험으로 유지하며 test에 맞춰 parser·prompt·seed·checkpoint를 조정하지 않는다. 성능에 따라 추가 epoch나 sweep을 자동 실행하지 않는다.
+
+공개 결과는 `reports/public_summary/v5/READOUT_KO.md`, `RESULTS_KO.md`, `run_summary.json`, `verification.json`이다. 전체 v1~v5 공개 결과는 `reports/public_summary/INDEX_KO.md`로 연결된다. 코드·집계·그림은 전용 작업 브랜치에 commit/push하며 main merge·배포는 하지 않았다. 원본·가중치·전체 예측·A/B 키는 로컬 private data root에 있으며 GitHub만 복제하면 이 자료까지 복구되지 않는다. 사용자 전달 사본과 재개 명령·최종 CI 영수증은 workspace `outputs/v5/`에 기록한다. 전문의 검토는0건이며 기존 빈 검토표는 `outputs/v4/review/`다.
+
 ## 현재 후속 작업 — 2026-11-13 v4 완료
 
 사용자가 2026-11-12 “71762는 제공처 방식으로 별도 실험 진행”을 명시했다. 이는 71762에 한해 카테고리·질환명·의도 안의 무작위 답변 연결 및 미제공 증강 lineage 한계를 허용한 예외다. 다른 source의 연결 기준은 바꾸지 않는다. 제공처 회신은 사용자 전달문이며 원본 메일 헤더를 인증한 것으로 표시하지 않는다. 공식 `make_train_data.py`는 미확보이며 제공처가 설명한 방식을 독립 구현했다. 정확한 고정 QA 매핑·parent 파일 확보를 현재 사용자 선행 작업으로 다시 요구하지 않는다.

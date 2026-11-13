@@ -1,8 +1,14 @@
 import copy
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from mediflow_medvlm.evaluation.format_diagnostics import diagnostic_text,select_validation,descriptive_style
 from mediflow_medvlm.training.rendering import user_text
+from mediflow_medvlm.data.io import write_jsonl
+from mediflow_medvlm.runtime import canonical_hash,file_hash
 
 
 def fixture(source,index,subject=None):
@@ -14,6 +20,36 @@ def fixture(source,index,subject=None):
 
 
 class FormatDiagnosticTests(unittest.TestCase):
+    def test_saved_diagnostic_rejects_parser_changes_and_counts_prefix_differences(self):
+        path=Path(__file__).resolve().parents[1]/'scripts/run_format_diagnostic_v5.py'
+        spec=importlib.util.spec_from_file_location('format_diagnostic_test',path)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);folder=root/'runs/model-base';folder.mkdir(parents=True)
+            rows=[fixture('aihub_71875',i) for i in range(24)]
+            write_jsonl(root/'validation.jsonl',rows)
+            plan={'instruction_languages':['original','ko']};predictions=[]
+            for language in plan['instruction_languages']:
+                for maximum in [16,256]:
+                    for row in rows:
+                        predictions.append({'sample_id':row['sample_id'],'instruction_language':language,
+                            'maximum':maximum,'input_hash':canonical_hash(row['input']),
+                            'instruction_text_sha256':canonical_hash(diagnostic_text(row,language)),
+                            'prompt_token_sha256':language,'generated_token_ids':[1],'output_tokens':1,
+                            'raw_output':'A','status':'answered','parsed_answer':'A'})
+            def save():
+                write_jsonl(folder/'predictions.jsonl',predictions)
+                (folder/'manifest.json').write_text(json.dumps({'plan_sha256':canonical_hash(plan),
+                    'status':'SUCCEEDED','predictions_sha256':file_hash(folder/'predictions.jsonl')}))
+            save();receipt,_=module.verify_worker(root,plan,'model','base')
+            self.assertEqual(receipt['budget_pair_prefix_matches'],48)
+            predictions[0]['generated_token_ids']=[9];save()
+            receipt,_=module.verify_worker(root,plan,'model','base')
+            self.assertEqual(receipt['budget_pair_prefix_matches'],47)
+            predictions[0]['raw_output']='A with explanation';save()
+            with self.assertRaisesRegex(ValueError,'STRICT_PARSER_CHANGED'):
+                module.verify_worker(root,plan,'model','base')
+
     def test_only_terminal_instruction_translated_no_supervision_or_metadata(self):
         for source in ['aihub_71875','pubmedqa_labeled']:
             r=fixture(source,1);before=copy.deepcopy(r)
