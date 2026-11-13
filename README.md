@@ -4,6 +4,11 @@
 수행하는 연구용 파이프라인이다. 기존 VQA·보고서 초안·시계열 영상 비교 계약에
 이미지 없는 TEXT_QA를 추가했다.
 
+실제 수행 결과는 [v1–v5 결과 색인](reports/public_summary/INDEX_KO.md)에 있다.
+사용자가 추가 승인한 **LoRA 22체크포인트와 전체 보존 평가 기록 62,998건**은
+[GitHub Release](https://github.com/Phjrab/mediflow-medvlm/releases/tag/medvlm-results-20261113)에서 받는다.
+[배포 범위·검증·재로드 안내](reports/public_summary/RELEASE_20261113_KO.md)를 함께 확인한다.
+
 ## 현재 범위
 
 - 비식별화된 study ID와 검증된 영상 참조를 사용하는 공통 데이터 계약
@@ -71,7 +76,8 @@ worker를 확인하며 동일 GPU의 두 번째 학습을 만들지 않는다. �
 그 셀에 기록하고 다른 셀을 계속한다. 일반적인 명시적 argv 작업 목록은
 `medvlm run --plan <PLAN_JSON>` 및 같은 인자의 `medvlm resume`로 관리한다.
 
-평가에는 원문을 포함하는 제한된 로컬 예측을 보존하고 Git에는 집계만 남긴다.
+평가의 원본 자료는 제한된 로컬 저장소에 보존한다. Git에는 코드·집계·검증 명세를,
+추가 승인된 Release에는 원본 질문/자유서술 정답을 제외한 생성 출력·문항별 점수와 LoRA를 보관한다.
 자동 lexical score나 loss 감소는 임상 정확도가 아니다. 데이터별 사전학습 노출 가능성과
 환자 독립성 미확인, 전문가 미검토 상태를 결과에 함께 기록한다.
 

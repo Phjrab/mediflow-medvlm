@@ -1,0 +1,38 @@
+{
+  "additional_evidence": {
+    "masking_audit_records": 54758,
+    "structured_audit_comparison_files": 34
+  },
+  "archive_members_verified": 619,
+  "credential_local_path_scan": "passed",
+  "generated_outputs_with_redaction": 0,
+  "new_training_or_inference": false,
+  "original_checkpoint_hashes_verified": 22,
+  "original_records_compared": 62998,
+  "original_source_receipts_unchanged": 477,
+  "prediction_records_by_stage": {
+    "v1": 5328,
+    "v2": 47202,
+    "v4": 10084,
+    "v5": 384
+  },
+  "python_tests": {
+    "existing_pillow_warnings": 6,
+    "passed": 259,
+    "skipped": 7,
+    "subtests_passed": 23
+  },
+  "remote_upload": "verified separately after upload",
+  "schema": "medvlm.public-release.verification.v1",
+  "source_content_subtrees_excluded": "passed",
+  "status": "SUCCEEDED",
+  "totals": {
+    "adapter_bytes": 1059378696,
+    "existing_public_report_files": 54,
+    "prediction_files": 63,
+    "prediction_records": 62998,
+    "retained_lora_checkpoints": 22,
+    "training_events": 3566,
+    "training_runs": 20
+  }
+}
