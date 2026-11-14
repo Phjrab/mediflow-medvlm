@@ -12,6 +12,7 @@ from unittest.mock import patch
 from mediflow_medvlm.runtime import canonical_hash, file_hash
 from mediflow_medvlm.training.v6_gpu import (
     ALPHA, DROPOUT, RANK, _cuda_guard, _pinned_files, _saved_processor, adapter_digest,
+    _install_smolvlm_inputs_merger,
     assert_frozen_base, audit_lora_coverage, load_v6_gpu_bundle,
     parameter_storage_report, projection_adapter_digests, projection_gradient_report,
 )
@@ -53,6 +54,112 @@ class RuntimeGuardTests(unittest.TestCase):
 
 
 _HAS_NATIVE = all(importlib.util.find_spec(name) for name in ("torch", "transformers", "peft"))
+
+
+@unittest.skipUnless(_HAS_NATIVE, "optional native CPU/PEFT profile")
+class NativeSmolVlmMergerTests(unittest.TestCase):
+    @staticmethod
+    def native():
+        from transformers import SmolVLMConfig, SmolVLMForConditionalGeneration
+        config = SmolVLMConfig(text_config=dict(model_type="llama", vocab_size=32,
+            hidden_size=16, intermediate_size=32, num_hidden_layers=2,
+            num_attention_heads=4, num_key_value_heads=2, max_position_embeddings=256,
+            pad_token_id=0, bos_token_id=1, eos_token_id=2),
+            vision_config=dict(hidden_size=8, intermediate_size=16, num_hidden_layers=1,
+                num_attention_heads=2, image_size=6, patch_size=2),
+            scale_factor=1, image_token_id=3)
+        config.architectures = ["SmolVLMForConditionalGeneration"]
+        return SmolVLMForConditionalGeneration(config)
+
+    def test_native_17_crop_forward_backward_and_cached_generation(self):
+        import torch
+        from peft import LoraConfig, get_peft_model
+        torch.manual_seed(23)
+        model = self.native()
+        native = model.model
+        ids = torch.tensor([[1] + [3] * (17 * native.image_seq_len) + [5, 2]])
+        pixels = torch.rand(1, 17, 3, 6, 6)
+        mask = torch.ones_like(ids)
+        # Reproduce the installed native merger's raw-patch reshape failure.
+        with self.assertRaisesRegex(RuntimeError, "shape"):
+            model(input_ids=ids, pixel_values=pixels, attention_mask=mask, use_cache=False)
+        config_before = deepcopy(model.config.to_dict())
+        parameters_before = {name: (id(p), p.requires_grad) for name, p in model.named_parameters()}
+        class_method = type(native).inputs_merger
+        compatibility = _install_smolvlm_inputs_merger(model)
+        self.assertEqual(compatibility["projected_tokens_per_crop"], 9)
+        self.assertEqual(model.config.to_dict(), config_before)
+        self.assertEqual(parameters_before,
+            {name: (id(p), p.requires_grad) for name, p in model.named_parameters()})
+        self.assertIs(type(native).inputs_merger, class_method)
+        audit = audit_native_architecture(model.config, "V4")
+        model = get_peft_model(model, LoraConfig(r=RANK, lora_alpha=ALPHA,
+            lora_dropout=DROPOUT, target_modules=audit["exact_target_modules"],
+            task_type="CAUSAL_LM", bias="none"))
+        labels = ids.clone()
+        labels[:, :-2] = -100
+        before_ids, before_pixels, before_mask = ids.clone(), pixels.clone(), mask.clone()
+        output = model(input_ids=ids, pixel_values=pixels, attention_mask=mask,
+                       labels=labels, use_cache=False)
+        self.assertTrue(torch.isfinite(output.loss))
+        output.loss.backward()
+        gradients = projection_gradient_report(model, audit)
+        self.assertTrue(any(row["tensors"]["B"]["nonzero"] for row in gradients["projections"]))
+        audit_lora_coverage(model, audit, require_quantized=False)
+        torch.testing.assert_close(ids, before_ids)
+        torch.testing.assert_close(pixels, before_pixels)
+        torch.testing.assert_close(mask, before_mask)
+        model.eval()
+        with torch.no_grad():
+            generated = model.generate(input_ids=ids, pixel_values=pixels,
+                attention_mask=mask, use_cache=True, min_new_tokens=2, max_new_tokens=2,
+                do_sample=False, bad_words_ids=[[3]])
+        self.assertEqual(generated.shape[-1], ids.shape[-1] + 2)
+        torch.testing.assert_close(generated[:, :ids.shape[-1]], ids)
+
+    def test_merger_preserves_token_feature_order_and_full_embedding_mask(self):
+        import torch
+        model = self.native()
+        _install_smolvlm_inputs_merger(model)
+        native = model.model
+        ids = torch.tensor([[1] + [3] * 9 + [4] + [3] * 9 + [2]])
+        embeddings = native.get_input_embeddings()(ids).detach()
+        # A non-image embedding sharing its first coordinate must stay textual.
+        embeddings[0, 0, 0] = embeddings[0, 1, 0]
+        features = torch.arange(18 * 16, dtype=embeddings.dtype).reshape(2, 9, 16)
+        original = embeddings.clone()
+        expected = embeddings.clone()
+        expected[ids == 3] = features.reshape(-1, 16)
+        for input_ids in (ids, None):
+            merged = native.inputs_merger(input_ids, embeddings, features)
+            torch.testing.assert_close(merged, expected)
+        torch.testing.assert_close(embeddings, original)
+
+    def test_merger_rejects_malformed_features_masks_and_multisample_batches(self):
+        import torch
+        model = self.native()
+        _install_smolvlm_inputs_merger(model)
+        native = model.model
+        ids = torch.tensor([[1] + [3] * 9 + [2]])
+        embeddings = native.get_input_embeddings()(ids)
+        features = torch.ones(9, 16)
+        malformed = (
+            (ids, embeddings, torch.ones(9, 15), "FEATURE_SHAPE"),
+            (ids, embeddings, torch.ones(1, 8, 16), "FEATURE_SHAPE"),
+            (ids, embeddings, torch.ones(8, 16), "CROP_LENGTH"),
+            (ids, embeddings, torch.ones(18, 16), "MASK_COUNT"),
+            (ids[:, :-1], embeddings, features, "MASK_SHAPE"),
+            (ids.repeat(2, 1), embeddings.repeat(2, 1, 1), features, "SINGLE_SAMPLE"),
+            (ids.masked_fill(ids == 3, 4), embeddings, features, "MASK_COUNT"),
+        )
+        for input_ids, embeds, image_features, error in malformed:
+            with self.subTest(error=error), self.assertRaisesRegex(ValueError, error):
+                native.inputs_merger(input_ids, embeds, image_features)
+        self.assertIsNone(_install_smolvlm_inputs_merger(SimpleNamespace(
+            config=SimpleNamespace(model_type="qwen3"))))
+        with self.assertRaisesRegex(ValueError, "NATIVE_MODEL_REQUIRED"):
+            _install_smolvlm_inputs_merger(SimpleNamespace(
+                config=SimpleNamespace(model_type="smolvlm")))
 
 
 @unittest.skipUnless(_HAS_NATIVE, "optional native CPU/PEFT profile")

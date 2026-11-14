@@ -8,7 +8,6 @@ retry starts deterministically from base and preserves the previous attempt.
 from __future__ import annotations
 
 import argparse
-import gc
 import importlib.metadata
 import json
 import math
@@ -250,19 +249,147 @@ def _encode(row, record, bundle, config):
     return batch, metadata
 
 
+# Implementation memory bound, independent of the frozen scientific recipe.
+_GEMMA_TARGET_CHUNK = 64
+
+
+def _gemma_target_loss(native, moved, supervised):
+    """Run the native multimodal backbone once and checkpoint each target CE sum.
+
+    Gemma3ForConditionalGeneration.forward applies lm_head directly to its native
+    model output (unlike Gemma3ForCausalLM, which can softcap logits). Calling that
+    same backbone preserves image merging, masks, LoRA dropout and decoder
+    checkpointing. Only the frozen output projection and FP32 CE are recomputed.
+    Chunk sums / all target tokens retain the mean-example objective; floating
+    point summation order can differ from a dense reduction.
+    """
+    import torch
+    from torch.utils.checkpoint import checkpoint
+    from transformers import Gemma3ForConditionalGeneration
+
+    if type(native) is not Gemma3ForConditionalGeneration:
+        raise SmokeError("GEMMA_NATIVE_CONDITIONAL_MODEL_REQUIRED")
+    head = native.lm_head
+    if (type(head) is not torch.nn.Linear or any(p.requires_grad for p in head.parameters())
+            or head._forward_hooks or head._forward_pre_hooks or head._backward_hooks):
+        raise SmokeError("GEMMA_FROZEN_ORDINARY_OUTPUT_HEAD_REQUIRED")
+    if moved["labels"].ndim != 2 or moved["labels"].shape[0] != 1:
+        raise SmokeError("GEMMA_SINGLE_EXAMPLE_LOSS_REQUIRED")
+    inputs = {k: v for k, v in moved.items() if k != "labels"}
+    output = native.model(**inputs, use_cache=False, return_dict=True)
+    hidden = output.last_hidden_state[:, :-1, :][supervised]
+    targets = moved["labels"][:, 1:][supervised]
+
+    def chunk_sum(features, labels):
+        return torch.nn.functional.cross_entropy(head(features).float(), labels, reduction="sum")
+
+    total = torch.zeros((), device=hidden.device, dtype=torch.float32)
+    for start in range(0, targets.numel(), _GEMMA_TARGET_CHUNK):
+        features = hidden[start:start + _GEMMA_TARGET_CHUNK]
+        labels = targets[start:start + _GEMMA_TARGET_CHUNK]
+        if torch.is_grad_enabled() and features.requires_grad:
+            value = checkpoint(chunk_sum, features, labels, use_reentrant=False)
+        else:
+            value = chunk_sum(features, labels)
+        total = total + value
+    return total / targets.numel()
+
+
 def _target_loss(model, batch):
     import torch
-    labels = batch["labels"]
     moved = {k: v.to(model.device) if hasattr(v, "to") else v for k, v in batch.items()}
-    with torch.autocast(device_type=model.device.type, dtype=torch.bfloat16, enabled=model.device.type == "cuda"):
-        output = model(**{k: v for k, v in moved.items() if k != "labels"})
     shifted = moved["labels"][:, 1:]
     supervised = shifted != -100
-    logits = output.logits[:, :-1, :][supervised].float()
-    loss = torch.nn.functional.cross_entropy(logits, shifted[supervised], reduction="mean")
+    count = int(supervised.sum())
+    if count < 1:
+        raise SmokeError("NO_SUPERVISED_TARGET_TOKENS")
+    native = model.get_base_model() if hasattr(model, "peft_config") else model
+    gemma = getattr(getattr(native, "config", None), "model_type", None) == "gemma3"
+    with torch.autocast(device_type=model.device.type, dtype=torch.bfloat16, enabled=model.device.type == "cuda"):
+        if gemma:
+            loss = _gemma_target_loss(native, moved, supervised)
+        else:
+            output = model(**{k: v for k, v in moved.items() if k != "labels"})
+    if not gemma:
+        logits = output.logits[:, :-1, :][supervised].float()
+        loss = torch.nn.functional.cross_entropy(logits, shifted[supervised], reduction="mean")
     if not bool(torch.isfinite(loss)):
         raise SmokeError("NONFINITE_TRAIN_LOSS")
-    return loss, int((labels[:, 1:] != -100).sum())
+    return loss, count
+
+
+def _require_parent_without_cuda():
+    # The supervisor-owned stage coordinator never imports/initializes CUDA.
+    # Looking up an already imported torch also keeps CPU planning dependency-free.
+    torch = sys.modules.get("torch")
+    if torch is not None and torch.cuda.is_initialized():
+        raise SmokeError("STAGE_COORDINATOR_CUDA_CONTEXT_FORBIDDEN")
+
+
+def train_checkpoint(config_path, directory, receipt_path):
+    """Internal synchronous child: one original-base train, no queue or ledger."""
+    config_path, directory, receipt_path = _absolute(config_path), _absolute(directory), _absolute(receipt_path)
+    config = _read(config_path)
+    _inherited_supervisor_fds(config)
+    rows = _validate(config)
+    attempt = _read(directory / "attempt.json")
+    if (_read(directory / "config.json") != config or attempt.get("status") != "STARTED"
+            or any(attempt.get(k) != config[k] for k in IDENTITY_KEYS)
+            or any((directory / name).exists() for name in ("adapter", "metrics.json", "train.metrics.json"))
+            or receipt_path.exists()):
+        raise SmokeError("FRESH_TRAIN_STAGE_IDENTITY_REQUIRED")
+    metrics = _train(config, rows, directory)
+    if (metrics.get("training_pid") != os.getpid() or metrics.get("optimizer_steps") != 20
+            or metrics.get("samples_processed") != 320 or metrics.get("excluded_count") != 0
+            or metrics.get("adapter_changed") is not True):
+        raise SmokeError("INCOMPLETE_SMOKE_TRAINING")
+    # Keep child bytes immutable when the parent later appends budget accounting
+    # to metrics.json. The receipt binds precisely what the child produced.
+    atomic_json(directory / "train.metrics.json", metrics)
+    value = {"status": "SUCCEEDED", "scope": "NATIVE_GPU_SMOKE_TRAIN_ONLY",
+        **{k: config[k] for k in IDENTITY_KEYS}, "training_pid": os.getpid(),
+        "optimizer_steps": 20, "samples_processed": 320, "retry_start": "original_base",
+        "metrics_sha256": file_hash(directory / "train.metrics.json"), "finished_at": utcnow()}
+    atomic_json(receipt_path, value)
+    return value
+
+
+def _train_process(config_path, staging, config, invoke=None):
+    """Wait for training process exit before permitting a separate reload child.
+
+    Both children inherit the same supervisor lease FDs. Context teardown follows
+    process exit even if the native runtime keeps references beyond Python GC.
+    """
+    _require_parent_without_cuda()
+    path = staging / "train.json"
+    args = [sys.executable, "-m", "mediflow_medvlm.campaign_gpu_smoke", "--config", str(config_path),
+            "--train-checkpoint", str(staging), "--receipt", str(path)]
+    result = (invoke or subprocess.run)(args, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        pass_fds=_inherited_supervisor_fds(config))
+    for name in ("stdout", "stderr"):
+        captured = getattr(result, name, b"") or b""
+        if isinstance(captured, str):
+            captured = captured.encode("utf-8")
+        (staging / ("train." + name + ".private.log")).write_bytes(captured)
+    if result.returncode != 0 or not path.is_file() or not (staging / "train.metrics.json").is_file():
+        raise SmokeError("TRAIN_PROCESS_FAILED")
+    value = _read(path)
+    metrics = _read(staging / "train.metrics.json")
+    if (value.get("status") != "SUCCEEDED" or value.get("scope") != "NATIVE_GPU_SMOKE_TRAIN_ONLY"
+            or any(value.get(k) != config[k] for k in IDENTITY_KEYS)
+            or type(value.get("training_pid")) is not int or value["training_pid"] <= 0
+            or value["training_pid"] == os.getpid() or metrics.get("training_pid") != value["training_pid"]
+            or value.get("metrics_sha256") != file_hash(staging / "train.metrics.json")
+            or value.get("optimizer_steps") != 20 or value.get("samples_processed") != 320
+            or value.get("retry_start") != "original_base"
+            or metrics.get("optimizer_steps") != 20 or metrics.get("samples_processed") != 320
+            or metrics.get("excluded_count") != 0 or metrics.get("adapter_changed") is not True):
+        raise SmokeError("TRAIN_PROCESS_PROOF_INVALID")
+    _require_parent_without_cuda()
+    metrics["process_isolation"] = {"coordinator_pid": os.getpid(), "training_pid": value["training_pid"],
+        "training_child_exit_code": result.returncode, "training_child_exit_verified": True,
+        "coordinator_cuda_initialized": False, "training_exited_before_reload": True}
+    return metrics
 
 
 def _progress(config, step, stage):
@@ -356,9 +483,6 @@ def _train(config, rows, staging):
             "peak_allocated_bytes": torch.cuda.max_memory_allocated(), "peak_reserved_bytes": torch.cuda.max_memory_reserved(),
             "runtime_versions": runtime_versions(), "energy_joules": None}, "finished_at": utcnow()}
     atomic_json(staging / "metrics.json", metrics)
-    del loss, batch, optimizer, scheduler, model, bundle
-    gc.collect()
-    torch.cuda.empty_cache()
     return metrics
 
 
@@ -420,7 +544,7 @@ def reload_checkpoint(config_path, directory, receipt_path):
                                 adapter_path=directory / "adapter", processor_path=directory / "processor", training=False)
     _verify_native_contract(config, bundle.contract)
     training_contract = _read(directory / "metrics.json")["native_contract"]
-    for key in ("loader", "revision", "quantization", "snapshot_path", "processor_class"):
+    for key in ("loader", "revision", "quantization", "snapshot_path", "processor_class", "native_runtime_compatibility"):
         if bundle.contract.get(key) != training_contract.get(key):
             raise SmokeError("RELOAD_NATIVE_RUNTIME_CONTRACT_CHANGED")
     signature = bundle.contract["parameter_storage"]["base_dtype_signature"]
@@ -466,6 +590,7 @@ def reload_checkpoint(config_path, directory, receipt_path):
 
 
 def _reload(config_path, staging, config, metrics, invoke=None):
+    _require_parent_without_cuda()
     path = staging / "reload.json"
     args = [sys.executable, "-m", "mediflow_medvlm.campaign_gpu_smoke", "--config", str(config_path),
             "--reload-checkpoint", str(staging), "--receipt", str(path)]
@@ -543,7 +668,7 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
             ledger = BudgetLedger(config["gpu_ledger_path"], policy=ResourcePolicy())
             ledger.start(config["model_id"], config["run_id"], "native_smoke_train")
             try:
-                metrics = _train(config, rows, staging)
+                metrics = _train_process(config_path, staging, config, invoke)
             finally:
                 ledger.finish()
             metrics["gpu_accounting"] = {"train_seconds": ledger.session_seconds,
@@ -617,10 +742,14 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True)
     parser.add_argument("--receipt", required=True)
-    parser.add_argument("--reload-checkpoint")
+    stages = parser.add_mutually_exclusive_group()
+    stages.add_argument("--reload-checkpoint")
+    stages.add_argument("--train-checkpoint")
     args = parser.parse_args(argv)
     try:
-        if args.reload_checkpoint:
+        if args.train_checkpoint:
+            result = train_checkpoint(_absolute(args.config), _absolute(args.train_checkpoint), _absolute(args.receipt))
+        elif args.reload_checkpoint:
             result = reload_checkpoint(_absolute(args.config), _absolute(args.reload_checkpoint), _absolute(args.receipt))
         else:
             result = run_smoke(args.config, args.receipt)
@@ -628,8 +757,10 @@ def main(argv=None):
         failure = {"status": "FAILED", "scope": SCOPE, "exception_type": type(exc).__name__, "finished_at": utcnow()}
         if isinstance(exc, SmokeError):
             failure["reason_code"] = str(exc)
-        if args.reload_checkpoint:
-            atomic_json(Path(args.reload_checkpoint) / "reload.failure.private.json",
+        stage = args.train_checkpoint or args.reload_checkpoint
+        if stage:
+            name = "train" if args.train_checkpoint else "reload"
+            atomic_json(Path(stage) / (name + ".failure.private.json"),
                 {"exception_type": type(exc).__name__, "exception_message": str(exc), "traceback": traceback.format_exc()})
         print(json.dumps(failure), file=sys.stderr)
         return 1

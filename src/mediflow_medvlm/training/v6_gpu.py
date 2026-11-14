@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+from types import MethodType
 
 from ..runtime import canonical_hash, file_hash
 from .v6_native import audit_native_architecture, freeze_native_template, verify_native_no_thinking
@@ -54,6 +55,56 @@ def _pinned_files(config):
 
 def _native_model(model):
     return model.get_base_model() if hasattr(model, "peft_config") else model
+
+
+def _smolvlm_inputs_merger(self, input_ids, inputs_embeds, image_hidden_states):
+    """Merge native projected crop features for the declared single-sample batch.
+
+    Transformers 5.20.2 groups projected vectors by the raw vision patch size.
+    Native ``image_seq_len`` instead describes each crop after pixel shuffle.
+    The native encoder flattens crops in sample/image/token order before here.
+    """
+    import torch
+    if (not isinstance(inputs_embeds, torch.Tensor) or inputs_embeds.ndim != 3
+            or inputs_embeds.shape[0] != 1):
+        raise ValueError("GPU_SMOLVLM_SINGLE_SAMPLE_EMBEDDINGS_REQUIRED")
+    width = inputs_embeds.shape[-1]
+    crop_length = self.image_seq_len
+    if (type(crop_length) is not int or crop_length < 1
+            or width != self.config.text_config.hidden_size
+            or not isinstance(image_hidden_states, torch.Tensor)
+            or image_hidden_states.ndim not in (2, 3)
+            or image_hidden_states.shape[-1] != width
+            or (image_hidden_states.ndim == 3 and image_hidden_states.shape[1] != crop_length)):
+        raise ValueError("GPU_SMOLVLM_PROJECTED_FEATURE_SHAPE_MISMATCH")
+    features = image_hidden_states.reshape(-1, width)
+    if not features.shape[0] or features.shape[0] % crop_length:
+        raise ValueError("GPU_SMOLVLM_PROJECTED_CROP_LENGTH_MISMATCH")
+    if input_ids is None:
+        image_embedding = self.get_input_embeddings()(torch.tensor(
+            self.config.image_token_id, dtype=torch.long, device=inputs_embeds.device))
+        image_mask = (inputs_embeds == image_embedding).all(dim=-1)
+    else:
+        if not isinstance(input_ids, torch.Tensor) or input_ids.shape != inputs_embeds.shape[:2]:
+            raise ValueError("GPU_SMOLVLM_IMAGE_MASK_SHAPE_MISMATCH")
+        image_mask = input_ids == self.config.image_token_id
+    slots = int(image_mask.sum().item())
+    if slots % crop_length or slots != features.shape[0]:
+        raise ValueError("GPU_SMOLVLM_IMAGE_FEATURE_MASK_COUNT_MISMATCH")
+    return inputs_embeds.masked_scatter(image_mask.unsqueeze(-1), features.to(inputs_embeds))
+
+
+def _install_smolvlm_inputs_merger(model):
+    """Bind the compatibility method only to this exact native SmolVLM instance."""
+    if getattr(model.config, "model_type", None) != "smolvlm":
+        return None
+    from transformers import SmolVLMForConditionalGeneration
+    from transformers.models.smolvlm.modeling_smolvlm import SmolVLMModel
+    if type(model) is not SmolVLMForConditionalGeneration or type(model.model) is not SmolVLMModel:
+        raise ValueError("GPU_SMOLVLM_NATIVE_MODEL_REQUIRED")
+    model.model.inputs_merger = MethodType(_smolvlm_inputs_merger, model.model)
+    return {"id": "smolvlm-projected-crop-merger-v1", "scope": "native_model_instance",
+            "projected_tokens_per_crop": model.model.image_seq_len, "microbatch_size": 1}
 
 
 def _adapter_layers(model, audit):
@@ -326,6 +377,7 @@ def load_v6_gpu_bundle(model_config, cell_id, *, fixed_template_date="2026-11-14
         device_map={"": 0}, attn_implementation="sdpa", quantization_config=quantization)
     if type(model).__name__ != audit["architecture"] or not getattr(model, "is_loaded_in_4bit", False):
         raise ValueError("GPU_NATIVE_QUANTIZED_MODEL_REQUIRED")
+    compatibility = _install_smolvlm_inputs_merger(model)
     model.requires_grad_(False)
     # Apply the identical FP32 nonquantized-base policy during fresh reload too.
     # PEFT upcasts frozen embeddings/head/vision/projector as well as norms; this
@@ -365,4 +417,6 @@ def load_v6_gpu_bundle(model_config, cell_id, *, fixed_template_date="2026-11-14
         "gradient_checkpointing": bool(training), "use_reentrant": False, "attention_backend": "sdpa",
         "cuda_residency_verified": True, "weights_loaded": True,
         "gradient_verified": False, "optimizer_verified": False, "reload_verified": False}
+    if compatibility is not None:
+        contract["native_runtime_compatibility"] = compatibility
     return NativeGpuBundle(model, processor, architecture, contract)
