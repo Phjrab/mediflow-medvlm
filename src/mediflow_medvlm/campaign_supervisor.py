@@ -177,19 +177,21 @@ def verify_source(job):
             raise ValueError(f"source snapshot changed: {name}")
 
 
-def native_gpu_config(job):
-    """Read a frozen native-smoke config and bind it to its executable job."""
+def native_gpu_config(job, *, validate_inputs=True):
+    """Read a frozen native smoke/main config and bind it to its executable job."""
     from .campaign_v6 import cell_spec
 
     cell_id = job.get("cell_id")
+    main = job.get("phase") == "native_main_train"
     if (not re.fullmatch(r"(?:T[1-6]|V[1-4])", str(cell_id))
-            or job.get("job_id") != "v6-native-smoke-" + cell_id
-            or job.get("run_id") != job["job_id"] or job.get("phase") != "native_smoke"
+            or job.get("job_id") != ("v6-first-seed-" if main else "v6-native-smoke-") + cell_id
+            or job.get("run_id") != job["job_id"] or job.get("phase") not in {"native_smoke", "native_main_train"}
             or job.get("uses_gpu") is not True or job.get("requires_gpu") is not True
             or job.get("implementation_pending") is not False):
-        raise ValueError("source/config rebind requires an exact native GPU smoke job")
+        raise ValueError("source/config rebind requires an exact native GPU smoke/main job")
     argv = job["argv"]
-    if argv[1:3] != ["-m", "mediflow_medvlm.campaign_gpu_smoke"] or argv.count("--config") != 1:
+    module = "mediflow_medvlm.campaign_main_train" if main else "mediflow_medvlm.campaign_gpu_smoke"
+    if argv[1:3] != ["-m", module] or argv.count("--config") != 1:
         raise ValueError("native GPU smoke requires one --config argument")
     index = argv.index("--config") + 1
     if index >= len(argv) or not Path(argv[index]).is_absolute() or ".." in Path(argv[index]).parts:
@@ -198,8 +200,8 @@ def native_gpu_config(job):
     config = read_json(path)
     if not isinstance(config, dict):
         raise ValueError("native GPU config must be an existing JSON object")
-    if (config.get("schema_version") != "medvlm.v6.native-gpu-smoke-config.v1"
-            or config.get("scope") != "NATIVE_GPU_SMOKE_ONLY"
+    if (config.get("schema_version") != ("medvlm.v6.main-train-config.v1" if main else "medvlm.v6.native-gpu-smoke-config.v1")
+            or config.get("scope") != ("NATIVE_FIRST_SEED_ONE_PASS_FINAL_ONLY" if main else "NATIVE_GPU_SMOKE_ONLY")
             or config.get("config_hash") != canonical_hash({k: v for k, v in config.items() if k != "config_hash"})):
         raise ValueError("native GPU config schema or canonical hash mismatch")
     for key in ("job_id", "run_id", "source_files", *HASH_FIELDS):
@@ -208,10 +210,13 @@ def native_gpu_config(job):
     for key, value in cell_spec(cell_id).items():
         if job.get(key) != value or config.get(key) != value:
             raise ValueError("native GPU config cell identity mismatch")
+    if main:
+        from .campaign_main_train import validate_config, validate_config_identity
+        (validate_config if validate_inputs else validate_config_identity)(config, repo=job["cwd"])
     return path, config, index
 
 
-def verify_gpu_source_rebind(before, after):
+def verify_gpu_source_rebind(before, after, *, validate_inputs=True):
     """Permit only a new snapshot and config whose only change is source identity.
 
     This function reads both configs; it never writes or replaces either one.
@@ -223,8 +228,8 @@ def verify_gpu_source_rebind(before, after):
         raise ValueError("GPU source revision cannot change scientific job identity")
     if set(before["source_files"]) != set(after["source_files"]):
         raise ValueError("GPU source revision must preserve the complete captured source file set")
-    old_path, old_config, old_index = native_gpu_config(before)
-    new_path, new_config, new_index = native_gpu_config(after)
+    old_path, old_config, old_index = native_gpu_config(before, validate_inputs=validate_inputs)
+    new_path, new_config, new_index = native_gpu_config(after, validate_inputs=validate_inputs)
     if old_index != new_index or before["argv"][:old_index] + before["argv"][old_index + 1:] != after["argv"][:new_index] + after["argv"][new_index + 1:]:
         raise ValueError("GPU source revision cannot change non-config argv")
     if old_path.resolve() == new_path.resolve():
@@ -527,6 +532,72 @@ class Supervisor:
             if leases.enter_context(try_lock(path)) is None:
                 raise ValueError("worker/GPU lease held; refuse GPU source revision")
 
+    def refine_first_seed(self, revised):
+        """Register ten independent main runs and their CPU gate without a tick."""
+        from . import campaign_first_seed as first
+
+        validate_manifest(revised)
+        with contextlib.ExitStack() as leases, try_lock(self.root / "supervisor.lock") as lock:
+            if lock is None:
+                return {"status": "SUPERVISOR_BUSY"}
+            current, state = self.load()
+            if state["queue_owner"] != "supervisor":
+                raise ValueError("first-seed refinement requires supervisor ownership")
+            digest = canonical_hash(revised)
+            repeated = digest == state["manifest_hash"]
+            if not repeated and set(state["jobs"]) != {j["job_id"] for j in current["jobs"]}:
+                raise ValueError("first-seed registration requires exact existing state/job keys")
+            audit = next((event for event in state["manifest_revisions"]
+                if event.get("kind") == "V6_FIRST_SEED_REFINEMENT" and event.get("manifest_hash") == digest), None)
+            original = read_json(audit["previous_manifest_path"]) if repeated and audit else current
+            if repeated and (not audit or canonical_hash(original) != audit["previous_hash"]):
+                raise ValueError("matching immutable first-seed refinement audit required")
+            bindings = first.validate_refinement(original, revised, state, validate_inputs=not repeated)
+            for job in revised["jobs"]:
+                if job.get("source_files"):
+                    verify_source(job)
+            if repeated:
+                if canonical_hash(bindings) != canonical_hash(audit["bindings"]):
+                    raise ValueError("first-seed registration config bytes changed")
+                return self.status()
+            # A stale running label is not reconciled by registration.
+            if any(r["status"] in {"STARTING", "RUNNING"} for r in state["jobs"].values()):
+                raise ValueError("worker active; first-seed refinement is registration only")
+            self._guard_gpu_source_revision(state, leases)
+            descendants = {first.JOB_ID}
+            while True:
+                expanded = descendants | {j["job_id"] for j in current["jobs"]
+                    if descendants.intersection(j.get("dependencies", []))}
+                if descendants == expanded:
+                    break
+                descendants = expanded
+            for job_id in descendants:
+                record = state["jobs"][job_id]
+                if (record["status"] not in {"PENDING", "IMPLEMENTATION_PENDING"}
+                        or any(type(record.get(k)) is not int or record[k] != 0 for k in
+                               ("attempts", "failure_count", "recovery_attempts"))
+                        or record.get("history") or any(record.get(k) is not None for k in
+                            ("attempt_dir", "launch_token", "worker_identity", "verification",
+                             "recovery_authorization_hash", "recovery_authorization"))):
+                    raise ValueError("first-seed gate or descendant has already started")
+            version = self.root / "manifests" / (digest + ".json")
+            if version.exists():
+                if canonical_hash(read_json(version)) != digest:
+                    raise ValueError("immutable first-seed manifest version changed")
+            else:
+                atomic_json(version, revised)
+            state["manifest_revisions"].append({"kind": "V6_FIRST_SEED_REFINEMENT", "gate_id": first.JOB_ID,
+                "previous_hash": state["manifest_hash"], "previous_manifest_path": state["manifest_path"],
+                "manifest_hash": digest, "manifest_path": str(version), "added_jobs": first.CHILD_IDS,
+                "bindings": bindings, "at": now()})
+            for job_id in first.CHILD_IDS:
+                state["jobs"][job_id] = {"status": "PENDING", "attempts": 0,
+                    "failure_count": 0, "recovery_attempts": 0, "history": []}
+            state["jobs"][first.JOB_ID]["status"] = "PENDING"
+            state.update(manifest_hash=digest, manifest_path=str(version), updated_at=now())
+            atomic_json(self.state_path, state)
+            return self.status()
+
     def revise_gpu_source(self, revised, receipt_path):
         """Register an Astra-audited fix for exactly named, never-started GPU jobs.
 
@@ -710,7 +781,7 @@ class Supervisor:
                     if before["job_id"] != job_id:
                         if canonical_hash(before) != canonical_hash(after):
                             raise ValueError("recovery cannot change other jobs")
-                    elif before.get("phase") == "native_smoke":
+                    elif before.get("phase") in {"native_smoke", "native_main_train"}:
                         config_binding = verify_gpu_source_rebind(before, after)
                         replacement = after
                     elif canonical_hash({k: v for k, v in before.items() if k not in allowed}) != canonical_hash({k: v for k, v in after.items() if k not in allowed}):
@@ -983,6 +1054,8 @@ def main(argv=None):
     activate.add_argument("--manifest", type=Path, required=True)
     refine = sub.add_parser("refine-preflight")
     refine.add_argument("--manifest", type=Path, required=True)
+    first = sub.add_parser("refine-first-seed")
+    first.add_argument("--manifest", type=Path, required=True)
     revise_gpu = sub.add_parser("revise-gpu-source")
     revise_gpu.add_argument("--manifest", type=Path, required=True)
     revise_gpu.add_argument("--analysis-receipt", type=Path, required=True)
@@ -1019,6 +1092,8 @@ def main(argv=None):
         result = supervisor.activate(read_json(args.manifest))
     elif args.command == "refine-preflight":
         result = supervisor.refine_preflight(read_json(args.manifest))
+    elif args.command == "refine-first-seed":
+        result = supervisor.refine_first_seed(read_json(args.manifest))
     elif args.command == "finalize":
         result = supervisor.finalize(args.receipt)
     else:
