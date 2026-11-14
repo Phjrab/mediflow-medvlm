@@ -1,0 +1,7 @@
+{
+  "adopted_at": "2026-11-14",
+  "source_name": "MEDVLM_V6_V7_CODEX_20261114_R2.txt",
+  "sha256": "ffa62df63e11a516d82354796cc3683047f29dca610f1cf20cb1143efa26998a",
+  "scope": "User explicitly adopted entire R2 for unstarted V6/V7 work; preserve all frozen/running identities.",
+  "latest_addendum": "User authorizes task-specific subagent model and effort selection; main model unchanged; actual invocation recorded."
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": "medvlm.orchestration-log.v1",
+  "date": "2026-11-14",
+  "main_model_changed": false,
+  "main_model_note": "No main-chat switching API used; native heartbeat model/effort fields are not exposed.",
+  "periodic_status_collector": "local Python supervisor, no model inference",
+  "entries": [
+    {
+      "task": "supervisor implementation and concurrency/recovery tests",
+      "agent": "/root/v67_supervisor",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Durable detached execution, single queue ownership, persistent bounded recovery",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "Implemented and focused CPU tests passed"
+    },
+    {
+      "task": "finite plan and native model preparation worker; preliminary engineering smoke wrapper",
+      "agent": "/root/v6_preparation",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Training pipeline implementation and immutable receipts",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "Implemented and focused CPU tests passed"
+    },
+    {
+      "task": "native architecture, masking, selection and Jetson plan audit",
+      "agent": "/root/v6_architecture_audit",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Multiple architecture hazards and scientific validity",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "Initial architecture audit completed; three supervisor findings reviewed"
+    },
+    {
+      "task": "critical supervisor review",
+      "agent": "/root/v6_architecture_audit",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Independent validation of concurrency, terminal barriers and completion claims",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "findings": [
+        "all-model success barrier",
+        "attempted pending dead-end",
+        "stale finalization receipt"
+      ],
+      "disposition": "terminal barriers corrected; pending exit handling and finalization binding hardened before launch"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "status": "CPU_VERIFIED_GPU_WORKER_LAUNCH_PENDING",
+  "python": "3.10",
+  "tests_passed": 298,
+  "tests_skipped": 7,
+  "subtests_passed": 23,
+  "warnings": 6,
+  "warning_scope": "existing Pillow Image.getdata deprecation",
+  "cuda_probe": "actual RTX3060 tensor operation succeeded; not training completion",
+  "independent_worker_fixture_verified": true,
+  "finalization_bound_to_manifest_and_outcomes": true,
+  "native_heartbeat_minutes_requested_and_accepted": 20,
+  "main_training_completed": false,
+  "evaluation_completed": false
+}
