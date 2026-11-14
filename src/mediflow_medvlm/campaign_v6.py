@@ -197,7 +197,7 @@ def preparation_files(names):
     small.update(n for n in names if n.startswith("chat_templates/") and n.endswith(".jinja"))
     # Avoid optional duplicated original/pytorch/onnx/quantized checkpoint formats.
     if "model.safetensors.index.json" in names:
-        weights = {n for n in names if re.fullmatch(r"model-\d+-of-\d+\.safetensors", n)}
+        weights = {n for n in names if re.fullmatch(r"model(?:\.safetensors)?-\d+-of-\d+\.safetensors", n)}
     elif "model.safetensors" in names:
         weights = {"model.safetensors"}
     else:
@@ -304,6 +304,7 @@ def prepare_model(cell_id, data_root, campaign_root, receipt):
                           "gated": info.gated, "checked_at": utcnow(),
                           "credential_source": "normal_local_huggingface_credentials_not_recorded"}
             atomic_json(directory / "provenance.json", provenance)
+            progress.update(stage="validate_file_layout", last_progress_at=utcnow())
             siblings = {s.rfilename: s for s in info.siblings}
             small, weights = preparation_files(siblings)
             def cached(name):
@@ -320,6 +321,7 @@ def prepare_model(cell_id, data_root, campaign_root, receipt):
                         total += size
                 return total
             # Check full missing footprint BEFORE any base weights are downloaded.
+            progress.update(stage="validate_disk", last_progress_at=utcnow())
             missing = required_bytes(small + weights)
             free = shutil.disk_usage(cache).free
             reserve = max(1024**3, math.ceil(missing * 0.05))
@@ -344,6 +346,7 @@ def prepare_model(cell_id, data_root, campaign_root, receipt):
             if not template:
                 raise ValueError("NATIVE_CHAT_TEMPLATE_MISSING")
             index = snapshot / "model.safetensors.index.json"
+            progress.update(stage="validate_weight_index", last_progress_at=utcnow())
             if index.exists():
                 indexed = {_safe_name(n) for n in json.loads(index.read_text())["weight_map"].values()}
                 if not indexed or not indexed.issubset(set(weights)):

@@ -1,6 +1,6 @@
 """Durable, single-owner V6/V7 queue; CPU-only supervisor and detached workers.
 
-Only ``tick`` changes queue/recovery state. Workers own their attempt heartbeat,
+Supervisor operations serialize queue/recovery state. Workers own their attempt heartbeat,
 stdout/stderr and exit receipt. Neither elapsed time nor stale heartbeat kills a
 process. The immutable manifest binds commands to a verified source snapshot.
 """
@@ -333,8 +333,14 @@ class Supervisor:
         record["history"].append({"attempt": record["attempts"], "status": "FAILED", "reason": reason,
                                   "exit_code": exit_code, "at": now()})
 
-    def authorize_recovery(self, job_id, receipt_path):
-        """After two failures, require recorded stronger-model analysis before retry 3."""
+    def authorize_recovery(self, job_id, receipt_path, revised=None):
+        """Authorize retry 3, optionally registering an audited source-only fix.
+
+        The revision is restricted to the held job's snapshot identity. The argv
+        and every scientific/configuration field remain identical. A durable
+        immutable manifest is installed before the atomic state-pointer update;
+        attempts and prior manifests are never reset or replaced.
+        """
         with try_lock(self.root / "supervisor.lock") as lock:
             if lock is None:
                 return {"status": "SUPERVISOR_BUSY"}
@@ -345,9 +351,27 @@ class Supervisor:
             record = state["jobs"][job_id]
             receipt = read_json(receipt_path, {})
             digest = file_hash(receipt_path)
+            evidence = receipt.get("model_execution_receipt", {})
+
+            def verify_execution_evidence():
+                if not Path(evidence.get("path", "")).is_absolute() or file_hash(evidence["path"]) != evidence.get("sha256"):
+                    raise ValueError("actual model execution evidence is missing or changed")
+
             if record.get("recovery_authorization_hash") == digest:
+                authorization = record.get("recovery_authorization", {})
+                expected_job = authorization.get("job_hash", receipt.get("replacement_job_hash", receipt.get("job_hash")))
+                if canonical_hash(job) != expected_job:
+                    raise ValueError("recovery receipt does not match the active authorized job")
+                if authorization.get("manifest_revised") and state["manifest_hash"] != authorization["manifest_hash"]:
+                    raise ValueError("active recovery manifest differs from the authorized revision")
+                if revised is not None:
+                    validate_manifest(revised)
+                    if canonical_hash(revised) != state["manifest_hash"]:
+                        raise ValueError("repeated recovery receipt supplied a conflicting revised manifest")
+                verify_source(job)
+                verify_execution_evidence()
                 return self.status()
-            if record["status"] != "ANALYSIS_REQUIRED" or record["failure_count"] != 2:
+            if record["status"] != "ANALYSIS_REQUIRED" or record["failure_count"] != 2 or record["attempts"] != 2:
                 raise ValueError("recovery authorization requires the second-failure analysis hold")
             expected = {"job_id": job_id, "run_id": job["run_id"], "job_hash": canonical_hash(job),
                         "failure_count": 2, "error_signature": record["error_signature"]}
@@ -360,16 +384,66 @@ class Supervisor:
                 raise ValueError("record original model/effort and escalation reason")
             if receipt.get("retry_authorized") is not True or not str(receipt.get("analysis_summary", "")).strip():
                 raise ValueError("analysis must explain and explicitly authorize the remaining recovery")
-            evidence = receipt.get("model_execution_receipt", {})
-            if not Path(evidence.get("path", "")).is_absolute() or file_hash(evidence["path"]) != evidence.get("sha256"):
-                raise ValueError("actual model execution evidence is missing or changed")
-            record.update(status="PENDING", recovery_authorization_hash=digest,
-                          recovery_authorization_receipt=str(Path(receipt_path).resolve()))
-            record["history"].append({"status": "RECOVERY_AUTHORIZED", "at": now(),
-                "analysis_receipt_hash": digest, "actual_model": receipt["actual_model"],
-                "reasoning_effort": receipt["reasoning_effort"], "original_model": receipt["original_model"],
+            replacement = job
+            previous_manifest_hash = state["manifest_hash"]
+            manifest_hash = previous_manifest_hash
+            if revised is not None:
+                validate_manifest(revised)
+                if canonical_hash({k: v for k, v in revised.items() if k != "jobs"}) != canonical_hash({k: v for k, v in manifest.items() if k != "jobs"}):
+                    raise ValueError("recovery cannot change campaign metadata")
+                if [j["job_id"] for j in revised["jobs"]] != [j["job_id"] for j in manifest["jobs"]]:
+                    raise ValueError("recovery cannot add, remove, or reorder jobs")
+                allowed = {"cwd", "source_files", "source_hash"}
+                for before, after in zip(manifest["jobs"], revised["jobs"]):
+                    if before["job_id"] != job_id:
+                        if canonical_hash(before) != canonical_hash(after):
+                            raise ValueError("recovery cannot change other jobs")
+                    elif canonical_hash({k: v for k, v in before.items() if k not in allowed}) != canonical_hash({k: v for k, v in after.items() if k not in allowed}):
+                        raise ValueError("recovery can change only cwd, source_files, and source_hash; argv and scientific identity are immutable")
+                    else:
+                        replacement = after
+                if Path(replacement["cwd"]).resolve() == Path(job["cwd"]).resolve():
+                    raise ValueError("source recovery requires a different snapshot cwd; preserve the failed snapshot")
+                if replacement["source_hash"] == job["source_hash"]:
+                    raise ValueError("source recovery requires changed source bytes")
+                if (receipt.get("replacement_job_hash") != canonical_hash(replacement)
+                        or receipt.get("replacement_source_hash") != replacement["source_hash"]):
+                    raise ValueError("analysis receipt does not bind the replacement job and source")
+                if not isinstance(receipt.get("code_fix_explanation"), str) or not receipt["code_fix_explanation"].strip():
+                    raise ValueError("source recovery requires a nonempty code_fix_explanation")
+                verify_source(job)
+                verify_source(replacement)
+                manifest_hash = canonical_hash(revised)
+            elif "replacement_job_hash" in receipt or "replacement_source_hash" in receipt:
+                raise ValueError("replacement analysis receipt requires a revised manifest")
+            verify_execution_evidence()
+            audit = {"analysis_receipt_hash": digest,
+                "analysis_receipt": str(Path(receipt_path).resolve()),
+                "actual_model": receipt["actual_model"], "reasoning_effort": receipt["reasoning_effort"],
+                "original_model": receipt["original_model"],
                 "original_reasoning_effort": receipt["original_reasoning_effort"],
-                "escalation_reason": receipt["escalation_reason"], "failure_count": record["failure_count"]})
+                "escalation_reason": receipt["escalation_reason"], "model_execution_receipt": evidence,
+                "original_job_hash": canonical_hash(job), "replacement_job_hash": canonical_hash(replacement),
+                "original_source_hash": job["source_hash"], "replacement_source_hash": replacement["source_hash"],
+                "previous_manifest_hash": previous_manifest_hash, "manifest_hash": manifest_hash,
+                "failure_count": record["failure_count"], "at": now()}
+            if revised is not None:
+                audit["code_fix_explanation"] = receipt["code_fix_explanation"]
+                version = self.root / "manifests" / (manifest_hash + ".json")
+                if version.exists():
+                    if canonical_hash(read_json(version)) != manifest_hash:
+                        raise ValueError("immutable recovery manifest version changed")
+                else:
+                    atomic_json(version, revised)
+                state["manifest_revisions"].append({"kind": "RECOVERY_SOURCE_REVISION", "job_id": job_id,
+                    "previous_hash": previous_manifest_hash, **audit})
+                state.update(manifest_hash=manifest_hash, manifest_path=str(version))
+            record.update(status="PENDING", recovery_authorization_hash=digest,
+                recovery_authorization_receipt=str(Path(receipt_path).resolve()),
+                recovery_authorization={"job_hash": canonical_hash(replacement),
+                    "original_job_hash": canonical_hash(job), "manifest_hash": manifest_hash,
+                    "manifest_revised": revised is not None})
+            record["history"].append({"status": "RECOVERY_AUTHORIZED", **audit})
             state["updated_at"] = now()
             atomic_json(self.state_path, state)
             return self.status()
@@ -589,6 +663,7 @@ def main(argv=None):
     authorize = sub.add_parser("authorize-recovery")
     authorize.add_argument("--job-id", required=True)
     authorize.add_argument("--analysis-receipt", type=Path, required=True)
+    authorize.add_argument("--manifest", type=Path, help="optional source-only recovery manifest")
     final = sub.add_parser("finalize")
     final.add_argument("--receipt", type=Path, required=True)
     worker = sub.add_parser("_worker")
@@ -602,7 +677,10 @@ def main(argv=None):
     if args.command == "init":
         result = supervisor.initialize(read_json(args.manifest), read_json(args.legacy_observer) if args.legacy_observer else None)
     elif args.command == "authorize-recovery":
-        result = supervisor.authorize_recovery(args.job_id, args.analysis_receipt)
+        revised = read_json(args.manifest) if args.manifest else None
+        if args.manifest and not isinstance(revised, dict):
+            raise ValueError("recovery --manifest must contain a manifest object")
+        result = supervisor.authorize_recovery(args.job_id, args.analysis_receipt, revised)
     elif args.command == "activate":
         result = supervisor.activate(read_json(args.manifest))
     elif args.command == "finalize":

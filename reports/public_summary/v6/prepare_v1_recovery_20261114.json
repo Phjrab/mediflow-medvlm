@@ -1,0 +1,57 @@
+{
+  "schema_version": "medvlm.v6.preparation-recovery-report.v1",
+  "job_id": "prepare-V1",
+  "model_id": "Qwen/Qwen3.5-2B",
+  "pinned_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "scope": "MODEL_PREPARATION_ONLY",
+  "actual_failed_worker_attempts": 2,
+  "supervisor_failure_count_at_0719_heartbeat": 1,
+  "second_exit_pending_ingestion": true,
+  "root_cause": "Upstream native shard uses model.safetensors-00001-of-00001.safetensors, rejected by legacy model-N-of-N allowlist. Pin and Hub access succeeded.",
+  "upstream_index_entries": 632,
+  "index_sha256": "aca8afed9da75b0f050b408d270766fd77627f1af401e240f61c3b47d0db02f9",
+  "fix": "Narrow optional .safetensors infix; existing path, index membership, file-count, size and LFS checks retained. Accurate layout/disk/index progress stages.",
+  "completed_model_preparations_preserved": 6,
+  "local_native_preflight": {
+    "status": "SUCCEEDED",
+    "architecture": "Qwen3_5ForConditionalGeneration",
+    "tokenizer": "Qwen3_5Tokenizer",
+    "processor": "Qwen3VLProcessor",
+    "downloaded": false,
+    "full_model_loaded": false,
+    "gpu_work": false
+  },
+  "recovery_registration": "PREPARED_NOT_REGISTERED",
+  "third_attempt_started": false,
+  "recovery_policy": "Supervisor-only source revision after actual Astra analysis and second-failure hold; retain original attempts and counts; one remaining recovery.",
+  "scientific_identity_preserved": [
+    "revision",
+    "argv",
+    "run_id",
+    "cell_id",
+    "config_hash",
+    "data_hash",
+    "model_hash",
+    "dependencies",
+    "other_jobs"
+  ],
+  "campaign_terminal": false,
+  "main_training_started": false,
+  "validation": {
+    "focused_preparation_passed": 35,
+    "focused_supervisor_passed": 67,
+    "noneditable_full_suite_passed": 373,
+    "skipped": 7,
+    "subtests_passed": 23,
+    "existing_pillow_deprecation_warnings": 6,
+    "cached_native_assets": "SUCCEEDED",
+    "preservation_files_checked": 101,
+    "preservation_files_changed": 0
+  },
+  "initial_validation_issue": "CPU fixture copied stale bytecode; cache-free copying corrected fixture. Actual deployment requires git archive with explicit bytecode absence check.",
+  "astra_final_review_sha256": "27f612e492f2279d4569431a56ce674dabaea445e39e2de2985abed78a3bc1f6",
+  "source_sha256": {
+    "campaign_supervisor.py": "90bbfe16d2b8e4398ffe74429c84edb230afa6a5c3a138f9d27b0ed78e771914",
+    "campaign_v6.py": "a5bb241c9f0d11ff2dfa5ce2d4cfc683285d4762d9f61125f3254a224717c336"
+  }
+}

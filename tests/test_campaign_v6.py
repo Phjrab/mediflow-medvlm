@@ -94,20 +94,44 @@ def test_existing_cache_revision_verified_upstream_before_reuse(tmp_path):
     assert api.model_info.call_args.kwargs['revision'] == 'c' * 40
 
 
-def test_weight_allowlist_excludes_duplicate_formats_and_remote_code():
+@pytest.mark.parametrize('shard', ['model-00001-of-00001.safetensors',
+                                   'model.safetensors-00001-of-00001.safetensors'])
+def test_weight_allowlist_excludes_duplicate_formats_and_remote_code(shard):
     names = ['config.json', 'README.md', 'LICENSE', 'tokenizer.json', 'custom.py',
              'pytorch_model.bin', 'original/model.safetensors', 'model.safetensors',
-             'model.safetensors.index.json', 'model-00001-of-00001.safetensors',
+             'model.safetensors.index.json', shard,
              'onnx/model.onnx', 'training_args.json']
     small, weights = preparation_files(names)
-    assert weights == ['model-00001-of-00001.safetensors']
+    assert weights == [shard]
     assert small == ['LICENSE', 'README.md', 'config.json', 'model.safetensors.index.json', 'tokenizer.json']
     with pytest.raises(ValueError, match='unsafe'):
         preparation_files(names + ['../escape'])
 
 
+@pytest.mark.parametrize('shard', ['model.safetensors', 'model.safetensors-1-of-1.safetensors.bak',
+                                  'model.safetensors-x-of-1.safetensors',
+                                  'model.safetensors-1-of-x.safetensors',
+                                  'model.safetensors.safetensors-1-of-1.safetensors',
+                                  'original/model-1-of-1.safetensors',
+                                  '../model-1-of-1.safetensors',
+                                  '/model-1-of-1.safetensors',
+                                  'original\\model-1-of-1.safetensors'])
+def test_indexed_layout_rejects_unsupported_or_unsafe_shards(shard):
+    with pytest.raises(ValueError):
+        preparation_files(['config.json', 'model.safetensors.index.json', shard])
+
+
+def test_indexed_layout_requires_config_and_bounded_file_count():
+    shard = 'model.safetensors-00001-of-00001.safetensors'
+    with pytest.raises(ValueError, match='unsupported or unbounded'):
+        preparation_files(['model.safetensors.index.json', shard])
+    with pytest.raises(ValueError, match='unsupported or unbounded'):
+        preparation_files(['config.json', 'model.safetensors.index.json', shard] +
+                          [f'asset-{i}.json' for i in range(4096)])
+
+
 @pytest.fixture
-def fake_hub(monkeypatch, tmp_path):
+def fake_hub(monkeypatch, tmp_path, request):
     """No network, GPU, real model imports or weight transfer in these fixtures."""
     import hashlib
     import sys
@@ -115,6 +139,13 @@ def fake_hub(monkeypatch, tmp_path):
     payloads = {'config.json': b'{}', 'tokenizer_config.json': b'{}',
                 'README.md': b'official model card fixture', 'LICENSE': b'fixture license',
                 'model.safetensors': b'fixture weights'}
+    options = getattr(request, 'param', {})
+    if 'shard' in options:
+        payloads[options['shard']] = payloads.pop('model.safetensors')
+        indexed = options.get('indexed', [options['shard']])
+        payloads['model.safetensors.index.json'] = json.dumps({
+            'weight_map': {f'parameter-{i}': name for i, name in enumerate(indexed)}
+        }).encode()
     snapshot = tmp_path / 'snapshot'
     snapshot.mkdir()
     calls = []
@@ -122,7 +153,10 @@ def fake_hub(monkeypatch, tmp_path):
         assert revision == 'a' * 40
         calls.append(list(allow_patterns))
         for name in allow_patterns:
-            (snapshot / name).write_bytes(payloads[name])
+            content = payloads[name]
+            if name.endswith('.safetensors') and options.get('corrupt'):
+                content = b'x' * len(content) if options['corrupt'] == 'digest' else content + b'x'
+            (snapshot / name).write_bytes(content)
         return str(snapshot)
     info = SimpleNamespace(sha='a' * 40, gated=False, card_data={'license': 'apache-2.0'},
                            siblings=[SimpleNamespace(rfilename=n, size=len(p),
@@ -163,6 +197,64 @@ def test_preparation_receipt_binds_supervisor_and_hashes_verified_artifacts(fake
     assert json.loads(receipt.with_suffix('.progress.json').read_text())['optimizer_step'] == 0
 
 
+@pytest.mark.parametrize('fake_hub', [
+    {'shard': 'model-00001-of-00001.safetensors'},
+    {'shard': 'model.safetensors-00001-of-00001.safetensors'},
+], indirect=True)
+def test_indexed_preparation_verifies_native_shards(fake_hub, tmp_path):
+    from mediflow_medvlm.campaign_v6 import prepare_model
+    result = prepare_model('V1', tmp_path / 'data', tmp_path / 'v6', tmp_path / 'receipt.json')
+    assert result['status'] == 'SUCCEEDED'
+    assert len(fake_hub[0][-1]) == 1
+    shard = fake_hub[0][-1][0]
+    provenance_path = next((tmp_path / 'v6' / 'models').rglob('provenance.json'))
+    verified = json.loads(provenance_path.read_text())['files'][shard]
+    assert verified['bytes'] == len(b'fixture weights')
+    assert verified['sha256'] == verified['upstream_lfs_sha256']
+    fake_hub[1].AutoProcessor.from_pretrained.assert_called_once()
+
+
+@pytest.mark.parametrize('fake_hub', [
+    {'shard': 'model.safetensors-00001-of-00001.safetensors', 'indexed': indexed}
+    for indexed in ([], ['model.safetensors-00002-of-00002.safetensors'],
+                    ['pytorch_model.bin'], ['../escape.safetensors'],
+                    ['/escape.safetensors'], ['folder\\escape.safetensors'])
+], indirect=True)
+def test_weight_index_rejects_missing_or_unsafe_members_before_weight_transfer(fake_hub, tmp_path):
+    from mediflow_medvlm.campaign_v6 import prepare_model
+    receipt = tmp_path / 'receipt.json'
+    with pytest.raises(ValueError):
+        prepare_model('V1', tmp_path / 'data', tmp_path / 'v6', receipt)
+    assert len(fake_hub[0]) == 1  # Only native assets, never model weights.
+    assert not receipt.exists()
+    failure = json.loads(receipt.with_suffix('.failure.json').read_text())
+    assert failure['phase'] == 'validate_weight_index'
+
+
+@pytest.mark.parametrize('fake_hub', [
+    {'shard': 'model.safetensors-00001-of-00001.safetensors', 'corrupt': corrupt}
+    for corrupt in ('size', 'digest')
+], indirect=True)
+def test_alternate_shard_still_requires_size_and_lfs_integrity(fake_hub, tmp_path):
+    from mediflow_medvlm.campaign_v6 import prepare_model
+    receipt = tmp_path / 'receipt.json'
+    with pytest.raises(ValueError, match='model (file size|LFS digest) mismatch'):
+        prepare_model('V1', tmp_path / 'data', tmp_path / 'v6', receipt)
+    assert not receipt.exists()
+    assert json.loads(receipt.with_suffix('.failure.json').read_text())['phase'] == 'verify_files'
+
+
+@pytest.mark.parametrize('fake_hub', [{'shard': 'unsupported.safetensors'}], indirect=True)
+def test_layout_failure_reports_precise_stage_before_any_download(fake_hub, tmp_path):
+    from mediflow_medvlm.campaign_v6 import prepare_model
+    receipt = tmp_path / 'receipt.json'
+    with pytest.raises(ValueError, match='unsupported or unbounded'):
+        prepare_model('V1', tmp_path / 'data', tmp_path / 'v6', receipt)
+    assert fake_hub[0] == []
+    assert json.loads(receipt.with_suffix('.failure.json').read_text())['phase'] == 'validate_file_layout'
+    assert json.loads(receipt.with_suffix('.progress.json').read_text())['stage'] == 'validate_file_layout'
+
+
 def test_free_disk_guard_precedes_any_download_and_preserves_pin(fake_hub, monkeypatch, tmp_path):
     from mediflow_medvlm.campaign_v6 import prepare_model
     monkeypatch.setattr('mediflow_medvlm.campaign_v6.shutil.disk_usage', lambda p: SimpleNamespace(free=0))
@@ -173,6 +265,7 @@ def test_free_disk_guard_precedes_any_download_and_preserves_pin(fake_hub, monke
     assert list((tmp_path / 'v6' / 'models').rglob('pin.json'))
     failure = json.loads(receipt.with_suffix('.failure.json').read_text())
     assert failure['reason_code'] == 'INSUFFICIENT_DISK_BEFORE_WEIGHT_DOWNLOAD'
+    assert failure['phase'] == 'validate_disk'
     assert not receipt.exists()
 
 

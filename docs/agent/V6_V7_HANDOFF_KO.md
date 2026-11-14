@@ -41,6 +41,14 @@ systemctl --user start medvlm-v6-v7-supervisor.service
 
 2회 실패 후에는 `ANALYSIS_REQUIRED`로 보류하고 실제 Astra 분석 후 `authorize-recovery --job-id ... --analysis-receipt ...`로 남은 1회만 허용한다. 분석 receipt는 실제 호출 모델·강도·원인·결과·누적 실패 수와 근거 artifact SHA를 기록한다. 실패 횟수를 초기화하지 않는다.
 
+### 2026-11-14 Qwen3.5 준비 복구 인계
+
+`prepare-V1`의 두 worker exit는 모두 실패다. Hub 접근·고정 revision 확인은 성공했지만 `model.safetensors-00001-of-00001.safetensors`를 기존 파일명 allowlist가 인식하지 못했다. 기존 failure의 `resolve_pin` 단계명은 실제 실패 위치보다 앞선 값이다. Astra medium 분석과 로컬 CPU native config/tokenizer/processor 확인을 완료했다. 6개 성공 준비 결과, 모델 pin, 기존 snapshot·attempt는 보존한다.
+
+수정 코드와 검증 결과는 Git 이력에 보존하고, 실제 등록용 후보는 작업 폴더의 `outputs/v6_v7/recovery/prepared_recovery.json`에 저장한다. 이 후보 파일의 존재는 등록·복구 성공을 뜻하지 않는다. 이번 점검에서는 추가 tick이나 마지막 시도를 실행하지 않았다. 다음 예약의 **단일 tick**이 두 번째 실패를 영속 상태에 반영하면 V1은 `ANALYSIS_REQUIRED`가 되고 나머지 준비 job은 계속 진행할 수 있다. 정상 worker가 있으면 통상 규칙대로 해당 점검을 끝낸다.
+
+worker가 없는 점검에서 V1의 `failure_count=2`, `attempts=2`, `ANALYSIS_REQUIRED` 및 후보의 원본 job/manifest hash가 현재 상태와 일치하는지 확인한다. 후보에 기록된 수정 snapshot의 supervisor로 `authorize-recovery --job-id prepare-V1 --analysis-receipt <검증된 분석 receipt> --manifest <수정 manifest>`를 실행한다. 이 연산은 해당 실패 job의 `cwd/source_files/source_hash`만 변경하며 나머지 job, argv, config/data/model identity와 누적 횟수를 보존한다. 이전 manifest와 실행 snapshot을 수정하지 않는다. 기존 OS launcher는 versioned manifest를 읽으므로 서비스 교체는 필요 없다. 이 등록 자체는 worker를 실행하지 않으며 다음 예약의 tick이 남은 마지막 시도를 시작한다. 후보·분석이 변경됐거나 검증되지 않았으면 등록하지 않는다.
+
 상태 수집은 local Python, 필요 시 Luna low/medium. 일반 구현은 Sol medium, 학습 pipeline은 Sol high. 아키텍처·누수·반복 오류는 Astra medium/high, 복잡한 종합 설계는 Astra high/xhigh. 현재 채팅 모델을 바꿨다고 주장하지 않는다. 실제 subagent 호출 모델/effort와 결과는 `reports/public_summary/v6/orchestration_log.json`에 누적한다. 네이티브 heartbeat의 모델/effort override는 현재 도구가 노출하지 않는다.
 
 ## 종료 조건과 공개 범위

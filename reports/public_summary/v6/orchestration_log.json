@@ -61,6 +61,55 @@
       "trigger_failure_count": 1,
       "trigger_ci_run": 43557824314,
       "result": "Noneditable wheel full suite 303 passed, 7 skipped, 23 subtests; five regression tests added; live snapshot and shared environment unchanged"
+    },
+    {
+      "task": "Diagnose repeated Qwen3.5 model preparation failure",
+      "agent": "/root/v1_prepare_diagnosis",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "medium",
+      "reason": "Same deterministic preparation error after two allocated attempts; stronger model escalation before final recovery",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "trigger_failure_count": 2,
+      "result": "Pinned upstream revision valid; native safetensors shard filename rejected by narrow old allowlist. Six completed preparations retain valid artifact hashes. No retry authorized with unchanged source."
+    },
+    {
+      "task": "Fix Qwen3.5 native shard naming and precise preparation stages",
+      "agent": "/root/v1_shard_layout_fix",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "medium",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat model switch",
+      "reason": "Bounded implementation fix with confirmed upstream layout",
+      "status": "SUCCEEDED",
+      "task_failure_count": 1,
+      "failure_note": "Initial test collection invoked without PYTHONPATH; corrected invocation succeeded. No campaign attempt consumed.",
+      "result": "35 focused CPU tests passed; existing path/index/size/LFS checks preserved. Root additionally verified pinned cached native config, tokenizer and processor locally without model/GPU load."
+    },
+    {
+      "task": "Audited source-only recovery registration and cumulative attempt preservation",
+      "agent": "/root/v1_recovery_registration",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent",
+      "reason": "Single-owner durable queue change requires concurrency, identity and crash recovery reasoning",
+      "status": "SUCCEEDED",
+      "task_failure_count": 2,
+      "failure_notes": [
+        "Initial test collection without PYTHONPATH failed; invocation corrected.",
+        "Fixture copied stale Python bytecode; replaced with cache-free fixture snapshot. Same root cause also reproduced in root installed suite; Astra reviewed."
+      ],
+      "result": "67 focused supervisor tests passed; full noneditable suite subsequently passed. Old/new source bytes verified, exact two-attempt hold enforced, only cwd/source identities change, old attempts/counters/manifests retained."
+    },
+    {
+      "task": "Review final Qwen3.5 source-only recovery and bytecode cache preservation",
+      "agent": "/root/v1_prepare_diagnosis",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "medium",
+      "reason": "Last allowed technical recovery and source identity invariants need independent stronger-model review",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "Conditional approval of exact reviewed bytes after full installed tests, actual supervisor second-failure hold, preserved original snapshot, and cache-free git archive deployment. No runtime authorization or third attempt performed.",
+      "evidence_sha256": "27f612e492f2279d4569431a56ce674dabaea445e39e2de2985abed78a3bc1f6"
     }
   ]
 }
