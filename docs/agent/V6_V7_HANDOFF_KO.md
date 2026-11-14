@@ -2,6 +2,20 @@
 
 2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 초기 설정 인계이며 V6/V7 완료 보고가 아니다.
 
+## 최신 복구 등록 — 2026-11-15 03:59 KST
+
+이번 예약에서 supervisor tick을 한 번 호출해 V4의 두 번째 실패를 반영했다. 실제 native GPU smoke 성공은 T2·T5·T6·V1의4개다(각20updates/320표본/새process재로드). T3/T4는 backward OOM, V2/V3는20updates 뒤 fresh reload OOM, V4는 학습 전 native image merge shape 오류로 각각2회 실패했다. V6 본학습·공통 train 동결·평가·V7은 미시작이다.
+
+worker가 없는 상태에서 T1의 기존 PEFT 검증 수정(f7eece1)을 마지막 복구로 등록했다. 이어 실제 Astra/high 진단·검토와 Sol/high 구현으로 Gemma 전정답 CE의64token 단위 재계산, 같은 lease를 상속한 학습 child 종료 후 reload child 실행, SmolVLM의 projected crop feature 결합을 수정했다. 설치 환경·정답·표본·seed·processor·recipe는 그대로다. CPU에서 원래 GC도 모델 참조를 해제하므로 추가 GC만으로 해결됐다고 주장하지 않고, 프로세스 종료로 GPU lifetime 중첩을 제거한다. 수학적 정답 평균은 유지하되 부동소수점 연산 순서는 달라질 수 있다.
+
+수정 source commit `7896177f3f56547bd50fdbbe51a7c205f3c8fb8c`, source hash `befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8`다. T3/T4/V2/V3/V4만 supervisor `authorize-recovery`로 새 immutable source/config에 순차 연결했고 활성 manifest는 `7f35bcd93c46e3c30687040540b48f307c23f5f9ed9a33e3c3a97cdeb7e000bc`다. 모든 기존 실패·누적 횟수·성공 job과 baseline343파일 SHA를 보존했다. 현재 전체43개는 SUCCEEDED23 / PENDING6 / IMPLEMENTATION_PENDING14. PENDING6개 모두 attempts2/failure2/recovery1이며 다음 실행이 마지막 허용 시도다. 기존 coordinator1602f35와 단일 queue 소유권을 유지한다.
+
+**복구는 등록 완료, GPU 재실행은 아직0회다.** `outputs/v6_v7/recovery/native-runtime-20261115/registration-receipt.json`이 최종 등록 근거다. `prepared-recoveries.json`은 생성 당시 후보 기록이며 다시 등록하지 않는다. T1 등록 영수증은 `outputs/v6_v7/recovery/gpu-target-coverage/T1-registration-receipt.json`이다. 현재 worker는 없고 다음 단일 예약 tick 대상은 `v6-native-smoke-T1`이다. 이 턴에서는 추가 tick·별도 GPU worker를 만들지 않았다. 정상 worker는 한 번 확인하고 종료한다.
+
+검증: noneditable 전체611passed/47optional-skipped/32subtests/기존Pillow경고6; 독립 Astra/high native CPU72passed/1optional-skipped; 새5config의 실제 고정 data/source/recipe validation 통과. 전체 CUDA 메모리 적합성과 수정 후 fresh reload 성공은 다음 실제 시도로만 판정한다. 검토·진단·소스 및 테스트 SHA·등록·보존 근거는 위 recovery 폴더, 공개 집계는 [runtime 복구 기록](../../reports/public_summary/v6/native_runtime_recovery.json)에 있다.
+
+네이티브 예약 `medvlm-v6-v7`은 실제20분 간격 ACTIVE, 조회 당시 다음 시각은 **2026-11-15 04:01:28 KST**다. OS service는 launcher이며 별도20분 타이머가 아니다. 이전 전달 HEAD c50ff3d의 실제CI43602092164는SUCCESS. 이번 전달 HEAD의 실제 CI 상태는 `outputs/v6_v7/git_receipt.json`에서 별도 확인하며 이전 CI를 현재 성공으로 쓰지 않는다. 아직 최종 완료 조건을 만족하지 않아 예약을 유지한다.
+
 ## 최신 복구 준비 — 2026-11-14 22:52 KST
 
 T1 native GPU smoke가 `GPU_CONFIG_TARGET_COVERAGE_MISMATCH`로 실제 두 번 종료했다(각 step0). PEFT는 대상20개 이상에서 exact 경로 목록을 동등한 suffix 목록으로 줄인다. 기존 검증의 문자열집합 비교가 이를 거부했으며, Astra/high가 pinned native10셀 meta에서 모두 재현했다. 실제 adapter 경로는 계획과 일치했다. 수정은 PEFT matcher로 전체 native tree에서 selector를 확장하여 정확한 대상집합을 요구하고, 기존 실제경로·shape·rank·count·NF4·frozen 검사를 유지한다. 이는 실제 GPU 학습 성공을 뜻하지 않는다.

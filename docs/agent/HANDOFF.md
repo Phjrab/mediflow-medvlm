@@ -1,5 +1,9 @@
 # 실행 인계
 
+## 2026-11-15 03:59 KST — native smoke4개 성공·나머지6개 마지막 복구 등록
+
+T2/T5/T6/V1은 실제20update·320표본·fresh reload 성공. T1/T3/T4/V2/V3/V4는 각2회 실패와 기존 기록을 보존하고 마지막 허용 복구를 supervisor API로 등록했다. Gemma의 전정답 loss 메모리·학습 child 종료/reload 분리, SmolVLM native image merge를 Sol/high가 수정하고 Astra/high가 독립검증했다. 설치본611passed47optional-skipped32subtests, native독립72passed1skip. source7896177, 활성manifest7f35bcd, baseline343파일 보존. 현재 worker없음/다음T1, 이번 tick1회·수정후GPU실행0. 본학습·공통freeze·평가·V7 미시작. 상세 실행identity·등록영수증·재개 지침은 [V6/V7 인계](V6_V7_HANDOFF_KO.md)를 따른다.
+
 ## 2026-11-14 22:52 KST — native GPU 검증 오류 수정·미시작9개 등록
 
 T1은 LoRA config대상 검사에서 실제2회 step0 실패. Astra/high가 PEFT 경로목록 자동축약을 원인으로 확인하고 실제10셀 meta에서 재현·수정검증했다. Sol/high 수정은 expanded target와 실제 adapter exact경로 검사를 모두 유지한다. 전체 설치본598passed/28optional-skipped/32subtests. source f7eece1, 활성manifest a864a244로 미시작9개만 source/config 실행 identity를 재등록했다. scientific config는 그대로이며 기존43state/241files/누적횟수 보존, 추가 GPU실행0. T1 마지막 복구는 준비만 했고 다음예약이 실패2를 반영한 뒤 idle exact hold에서 정식등록한다. 상세 명령·guard·근거는 [V6/V7 인계](V6_V7_HANDOFF_KO.md)와 workspace outputs/v6_v7/recovery/gpu-target-coverage. GPU 성공·본학습·평가 완료로 세지 않는다.

@@ -1,0 +1,174 @@
+{
+  "schema_version": "medvlm.v6.native-runtime-recovery.v1",
+  "checked_at": "2026-11-14T18:59:36.761753+00:00",
+  "scope": "NATIVE_GPU_SMOKE_ONLY",
+  "native_gpu_smoke_successes": 4,
+  "native_cells": [
+    {
+      "cell_id": "T1",
+      "status": "PENDING",
+      "attempts": 2,
+      "failure_count": 2,
+      "recovery_attempts": 1,
+      "optimizer_steps_verified": null,
+      "samples_processed_verified": null,
+      "fresh_process_reload_verified": false
+    },
+    {
+      "cell_id": "T2",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "optimizer_steps_verified": 20,
+      "samples_processed_verified": 320,
+      "fresh_process_reload_verified": true
+    },
+    {
+      "cell_id": "T3",
+      "status": "PENDING",
+      "attempts": 2,
+      "failure_count": 2,
+      "recovery_attempts": 1,
+      "optimizer_steps_verified": null,
+      "samples_processed_verified": null,
+      "fresh_process_reload_verified": false
+    },
+    {
+      "cell_id": "T4",
+      "status": "PENDING",
+      "attempts": 2,
+      "failure_count": 2,
+      "recovery_attempts": 1,
+      "optimizer_steps_verified": null,
+      "samples_processed_verified": null,
+      "fresh_process_reload_verified": false
+    },
+    {
+      "cell_id": "T5",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "optimizer_steps_verified": 20,
+      "samples_processed_verified": 320,
+      "fresh_process_reload_verified": true
+    },
+    {
+      "cell_id": "T6",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "optimizer_steps_verified": 20,
+      "samples_processed_verified": 320,
+      "fresh_process_reload_verified": true
+    },
+    {
+      "cell_id": "V1",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "optimizer_steps_verified": 20,
+      "samples_processed_verified": 320,
+      "fresh_process_reload_verified": true
+    },
+    {
+      "cell_id": "V2",
+      "status": "PENDING",
+      "attempts": 2,
+      "failure_count": 2,
+      "recovery_attempts": 1,
+      "optimizer_steps_verified": null,
+      "samples_processed_verified": null,
+      "fresh_process_reload_verified": false
+    },
+    {
+      "cell_id": "V3",
+      "status": "PENDING",
+      "attempts": 2,
+      "failure_count": 2,
+      "recovery_attempts": 1,
+      "optimizer_steps_verified": null,
+      "samples_processed_verified": null,
+      "fresh_process_reload_verified": false
+    },
+    {
+      "cell_id": "V4",
+      "status": "PENDING",
+      "attempts": 2,
+      "failure_count": 2,
+      "recovery_attempts": 1,
+      "optimizer_steps_verified": null,
+      "samples_processed_verified": null,
+      "fresh_process_reload_verified": false
+    }
+  ],
+  "T1_final_recovery_registered": true,
+  "T1_final_recovery_executed": false,
+  "runtime_fix_status": "CPU_VERIFIED_ASTRA_APPROVED_REGISTERED_NOT_STARTED",
+  "failure_findings": {
+    "T3_T4": "Two backward CUDA OOM failures at completed optimizer step16; full target vocabulary activations require bounded-memory exact loss.",
+    "V2_V3": "20 optimizer updates/320 samples completed on each failed attempt; fresh reload OOM with parent GPU allocations still retained. No reload success claimed.",
+    "V4": "Two step0 native image-merger shape failures; projected image sequence length differs from raw patch_size."
+  },
+  "preservation": {
+    "prior_failure_counts_preserved": true,
+    "T1_other_jobs_unchanged": 42,
+    "T1_old_files_sha_verified": 241,
+    "new_baseline_files": 343,
+    "extra_supervisor_ticks": 0,
+    "new_gpu_workers_started_by_repair": 0,
+    "old_files_sha_verified_after_registration": 343
+  },
+  "v6_main_training_started": false,
+  "common_train_frozen": false,
+  "v7_started": false,
+  "test_used_for_selection": false,
+  "gpu_time_cap_seconds": null,
+  "jetson_status": "USER_DEFERRED_NOT_RUN",
+  "new_weights_public_upload": false,
+  "limitations": [
+    "Actual GPU success remains4/10 native cells; the newly registered repairs have not run on GPU.",
+    "Every pending recovery retains attempts2/failures2/recoveries1 and may run only its final permitted third attempt.",
+    "Common train freeze, V6 main training/evaluation and V7 remain unstarted."
+  ],
+  "repair_design": {
+    "gemma_loss": "Native Gemma conditional backbone once; frozen output projection and FP32 target CE in bounded recomputed chunks; preserve all target tokens and example weighting. Floating-point reduction order may differ.",
+    "gemma_reload": "Sequential training subprocess exits before separate reload subprocess; both inherit the supervisor worker/GPU lease. Parent queue worker does not own a CUDA model.",
+    "smolvlm_merger": "Exact native instance compatibility method using projected per-crop token length and strict mask/feature counts; frozen processor/images/config unchanged.",
+    "lifecycle_counterevidence": "CPU reproduction of original full training loop found ordinary native model weakrefs already freed by old cleanup. Post-frame garbage collection alone was therefore not accepted as sufficient evidence for last retry."
+  },
+  "source_commit": "7896177f3f56547bd50fdbbe51a7c205f3c8fb8c",
+  "source_hash": "befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8",
+  "active_manifest_hash": "7f35bcd93c46e3c30687040540b48f307c23f5f9ed9a33e3c3a97cdeb7e000bc",
+  "queue_counts": {
+    "SUCCEEDED": 23,
+    "IMPLEMENTATION_PENDING": 14,
+    "PENDING": 6
+  },
+  "worker_active": false,
+  "next_job": "v6-native-smoke-T1",
+  "registered_final_recoveries": [
+    "T1",
+    "T3",
+    "T4",
+    "V2",
+    "V3",
+    "V4"
+  ],
+  "validation": {
+    "noneditable_suite": {
+      "passed": 611,
+      "optional_skipped": 47,
+      "subtests": 32,
+      "prior_warnings": 6
+    },
+    "independent_astra_native_cpu": {
+      "passed": 72,
+      "optional_skipped": 1
+    },
+    "candidate_configs_validated": 5
+  }
+}

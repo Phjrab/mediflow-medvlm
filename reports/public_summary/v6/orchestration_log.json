@@ -255,6 +255,56 @@
       "status": "SUCCEEDED",
       "result": "Core231pass1skip and native76pass. Source filename inventory, strict non-source config equality, prior byte checks, live PID/lease guard and idempotency; no live campaign mutation by agent.",
       "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat model switch claimed"
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Gemma OOM and SmolVLM2 repeated failures architecture analysis",
+      "agent": "/root/gemma_oom_diagnosis",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Two actual failures per held cell; remaining last attempt needs evidence-based diagnosis",
+      "status": "CPU_VERIFIED_APPROVED",
+      "task_failure_count": 0,
+      "result": "Independent nativeCPU72passed1skip; approved four exact code/test hashes; no GPU-fit claim."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Bounded exact Gemma loss and robust train/reload GPU lifecycle",
+      "agent": "/root/v6_gpu_recovery_protocol",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Pipeline implementation following actual Astra/high repeated-failure diagnosis",
+      "status": "CPU_VERIFIED_APPROVED",
+      "task_failure_count": 2,
+      "result": "Gemma worker native58passed/core39passed19skip. Two development failed runs (3 assertions) resolved; actual GPU recovery not executed."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Native SmolVLM image-merger compatibility repair",
+      "agent": "/root/v6_gpu_target_fix",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Confirmed native projected-token shape mismatch implementation",
+      "status": "CPU_VERIFIED_APPROVED",
+      "task_failure_count": 0,
+      "result": "SmolVLM merger native26passed1skip; exact image order and gradient verified."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "recovery registration and preservation checks",
+      "actual_model": "local Python supervisor; main model not changed",
+      "actual_reasoning_effort": null,
+      "status": "REGISTERED_NOT_STARTED",
+      "result": "T1 plus5 final recoveries registered through supervisor. Baseline343files and all counters preserved; no extra tick. Initial T1 postcheck corrected appended audit-history expectation without repeating registration.",
+      "task_failure_count": 1,
+      "platform_constraint": {
+        "attempted_model": "gpt-6-astra",
+        "reasoning_effort": "high",
+        "task": "separate SmolVLM2 diagnosis",
+        "spawn_result": "agent thread limit reached",
+        "spawned": false,
+        "fallback": "existing actual Astra/high diagnostic agent takes both architecture diagnoses"
+      }
     }
   ],
   "updated_at": "2026-11-14T13:53:48.476554+00:00"
