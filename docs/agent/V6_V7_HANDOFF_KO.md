@@ -1,6 +1,22 @@
 # V6/V7 R2 감독 인계
 
-2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 초기 설정 인계이며 V6/V7 완료 보고가 아니다.
+2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 현재 실행 인계이며 V6/V7 완료 보고가 아니다.
+
+## 최신 등록 — 2026-11-15 06:24 KST
+
+고유8모델의 텍스트6·VLM4, **native GPU smoke10개 모두 SUCCEEDED**다. 각20updates/320표본/제외0·대상projection adapter 변화·fresh-process reload를 검증했다. 총22시도와12실패는 그대로 보존했다. [실제 GPU 결과](../../reports/public_summary/v6/NATIVE_GPU_SMOKE_KO.md)를 참고한다. 공통 train 동결·V6 본학습·평가·추가seed 및 V7은 아직 미시작이다.
+
+다음 미시작 CPU 집계 `v6-preflight_smoke` 하나만 supervisor `activate`로 등록했다. source commit `5b5cc75b38a1d0e95a11ab4071ea74dce6f470c0`, source hash `d28ab790165ec3e7b66022a207c1fc32125ccde6c49c63f2038661c23f842dfb`, config hash `39ea7e06e91e361b28e19e66457e8dfb7d9cd0e19d2bb88ab647e89ca4c47d6b`, 활성 manifest `fd9395b6772c607447b497153e2f21cc009e8461a3a7edc460640585b1c97457`다. 기존500파일 SHA와 다른42개 state record, 모든 누적 시도·실패·복구 횟수를 보존했다. 전체43개는 SUCCEEDED29 / PENDING1 / IMPLEMENTATION_PENDING13이다. **등록 완료·실제 gate worker 미실행**이며 현재 worker는 없다. 이 예약의 tick은 한 번뿐이고 등록 뒤 추가 tick·GPU worker는 만들지 않았다.
+
+등록 영수증은 workspace `outputs/v6_v7/preflight_gate/registration-receipt.json`, 검토는 `astra-review.json`, 설정·명령은 `prepared-activation.json`이다. 다시 등록하지 않는다. 기존 coordinator1602f35·OS service·deployment_receipt의 명령을 유지한다. 다음 단일 예약 tick이 CPU gate를 시작하며 queue·복구 횟수는 계속 supervisor만 변경한다.
+
+집계는 준비8·CPU10·GPU10의 실제 terminal 기록과 receipt/artifact SHA, 고정 model/data/config/source 연결, 전정답·gradient·adapter·fresh reload 증거를 재검증한다. 실패·차단 셀이 생긴 경우 이를 명시하며 감사 성공을 모든 셀 성공으로 바꾸지 않는다. 원본 base shard 전체를 다시 읽지는 않으며 준비 provenance와 실제 GPU loader의 기존 full-weight 검증 증거를 연결한다. saved adapter/processor/output bytes는 직접 재해시한다. GPU 라이브러리 import·GPU 연산·dev/test 조회·공통 train 동결·smoke adapter 본학습 재사용은 없다.
+
+검증: Sol/high 구현 후 core/native 각각50passed, Astra/high 독립50passed와3변조·race검사, 일반 설치본 전체661passed/47optional-skipped/32subtests/기존Pillow경고6. 실제28개 선행 작업 읽기 전용 감사도10개 지원 셀을 확인했다. 정확한 source/test SHA를 승인한 snapshot으로 등록했으며 [구현 집계](../../reports/public_summary/v6/preflight_gate_implementation.json)에 공개 요약을 기록했다.
+
+**다음 구현:** gate 성공 뒤 `v6-common_train_freeze`를 미시작 범위에서 구현한다. 지원 모델의 축별 전체 적격 교집합과 보호셋/group 경계, 표본·토큰·updates·recipe를 동결해야 하며 아직 이를 완료했다고 보지 않는다. 이후 first-seed10조건 queue 세분화·final checkpoint/fresh reload·평가·validation선정 추가seed≤8·별도V7 네 조건은 기존 R2를 유지한다.
+
+네이티브 예약 `medvlm-v6-v7`은20분 설정 ACTIVE다. 06:24 조회의 앱 등록 다음 시각은 **2026-11-15T06:24:28.884000+09:00**이며 활성 채팅 턴 동안 실행이 지연될 수 있다. 최신 scheduler receipt를 우선한다. OS service는 launcher이고 별도20분 타이머는 없다. 이전 전달HEAD3c1e5f2의 실제CI43629717925는SUCCESS. 이번 전달HEAD CI는 workspace `outputs/v6_v7/git_receipt.json`에 실제 조회 결과를 따로 기록하며, 다음 점검에서 pending이면 해당HEAD를 확인한다. 최종 완료 조건은 미충족이므로 예약을 유지한다.
 
 ## 최신 복구 등록 — 2026-11-15 03:59 KST
 

@@ -1,0 +1,500 @@
+{
+  "schema_version": "medvlm.v6.native-smoke-results.v1",
+  "checked_at": "2026-11-14T21:04:19.344965+00:00",
+  "scope": "NATIVE_GPU_SMOKE_ONLY",
+  "unique_models": 8,
+  "task_cells": 10,
+  "text_cells": 6,
+  "vlm_cells": 4,
+  "native_successes": 10,
+  "native_attempts": 22,
+  "native_failed_attempts": 12,
+  "successful_updates": 200,
+  "successful_sample_exposures": 3200,
+  "sample_exposures_are_not_unique_questions": true,
+  "cells": [
+    {
+      "cell_id": "T1",
+      "model_id": "Qwen/Qwen3-1.7B",
+      "task": "text",
+      "family": "qwen",
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "status": "SUCCEEDED",
+      "attempts": 3,
+      "failure_count": 2,
+      "recovery_attempts": 2,
+      "source_hash": "9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8",
+      "config_hash": "f1bec9c7d97300f258b4a39b5f438ae819cd5482d76d936a3e44b5ff988f796a",
+      "receipt_sha256": "5c3e9db1f7fb63804141c6f497f0c32d6d196e88f2ed59a3749fdef72c364453",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 8000,
+        "eligible_count": 8000,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 44970,
+      "sequence_tokens": 78348,
+      "trainable_parameters": 8716288,
+      "original_dense_parameters": {
+        "total": 1720574976,
+        "language": 1720574976,
+        "vision": 0,
+        "projector": 0,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 116.25071425898932,
+        "peak_allocated_bytes": 5182681600,
+        "peak_reserved_bytes": 8174698496
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 117.50721907615662,
+        "reload_seconds": 10.21540117263794
+      },
+      "finished_at": "2026-11-14T19:04:20.451618+00:00"
+    },
+    {
+      "cell_id": "T2",
+      "model_id": "Qwen/Qwen3-4B",
+      "task": "text",
+      "family": "qwen",
+      "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "source_hash": "9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8",
+      "config_hash": "b99515a72f1e269e564977ec9c71eb5a8c9af27edf6afb8a67ff9017a9bc774c",
+      "receipt_sha256": "85ac1fc37e420dd9a13d827c2097c43cb61ac51ed91db39e8e8ead481efe6c28",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 8000,
+        "eligible_count": 8000,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 44970,
+      "sequence_tokens": 78348,
+      "trainable_parameters": 16515072,
+      "original_dense_parameters": {
+        "total": 4022468096,
+        "language": 4022468096,
+        "vision": 0,
+        "projector": 0,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 227.11865082097938,
+        "peak_allocated_bytes": 7115618816,
+        "peak_reserved_bytes": 8501854208
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 228.61792755126953,
+        "reload_seconds": 16.748693704605103
+      },
+      "finished_at": "2026-11-14T14:06:16.180607+00:00"
+    },
+    {
+      "cell_id": "T3",
+      "model_id": "google/gemma-3-4b-it",
+      "task": "text",
+      "family": "gemma",
+      "revision": "093f9f388b31de276ce2de164bdc2081324b9767",
+      "status": "SUCCEEDED",
+      "attempts": 3,
+      "failure_count": 2,
+      "recovery_attempts": 2,
+      "source_hash": "befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8",
+      "config_hash": "d292f7592c3a4181be15cfb38e7e5593333cfc3328dc64941eadb6ac8a989e10",
+      "receipt_sha256": "17ac33d3f64f7e78fed105d95cb90cca6ee106d1a66087cb0acb68ead71aae33",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 8000,
+        "eligible_count": 7999,
+        "excluded_count": 1,
+        "excluded_reasons": {
+          "CONTEXT_OVERFLOW": 1
+        }
+      },
+      "supervised_tokens": 41759,
+      "sequence_tokens": 71949,
+      "trainable_parameters": 14901248,
+      "original_dense_parameters": {
+        "total": 4300079472,
+        "language": 3880263168,
+        "vision": 416866032,
+        "projector": 2950272,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 237.74780951696448,
+        "peak_allocated_bytes": 8254294016,
+        "peak_reserved_bytes": 9170845696
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 241.64835715293884,
+        "reload_seconds": 18.535191535949707
+      },
+      "finished_at": "2026-11-14T19:26:30.776875+00:00"
+    },
+    {
+      "cell_id": "T4",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "task": "text",
+      "family": "gemma",
+      "revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "status": "SUCCEEDED",
+      "attempts": 3,
+      "failure_count": 2,
+      "recovery_attempts": 2,
+      "source_hash": "befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8",
+      "config_hash": "ce210f316536e09d034519576e858d249f2e567a3902f71e88b252bfc238a183",
+      "receipt_sha256": "721ec426787bb021409515b5a612d9d3e117e9be3d5ce693e1e9ddf6e4e6749c",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 8000,
+        "eligible_count": 7999,
+        "excluded_count": 1,
+        "excluded_reasons": {
+          "CONTEXT_OVERFLOW": 1
+        }
+      },
+      "supervised_tokens": 41759,
+      "sequence_tokens": 71949,
+      "trainable_parameters": 14901248,
+      "original_dense_parameters": {
+        "total": 4300079472,
+        "language": 3880263168,
+        "vision": 416866032,
+        "projector": 2950272,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 237.77180196903646,
+        "peak_allocated_bytes": 8254294016,
+        "peak_reserved_bytes": 9170845696
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 241.83524703979492,
+        "reload_seconds": 16.823163270950317
+      },
+      "finished_at": "2026-11-14T19:46:31.817157+00:00"
+    },
+    {
+      "cell_id": "T5",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "task": "text",
+      "family": "phi",
+      "revision": "cfbefacb99257ffa30c83adab238a50856ac3083",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "source_hash": "9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8",
+      "config_hash": "eb46c4eb885582038b3ebd567bdd524b6a8a6ca800fd52e17ea907b829b80882",
+      "receipt_sha256": "ebee4e726f7f47d4ff873975c49689f1f2fb3ee7f0501aee54de3f31e8ba0aa9",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 8000,
+        "eligible_count": 8000,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 42519,
+      "sequence_tokens": 70246,
+      "trainable_parameters": 11534336,
+      "original_dense_parameters": {
+        "total": 3836021760,
+        "language": 3836021760,
+        "vision": 0,
+        "projector": 0,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 175.12003852397902,
+        "peak_allocated_bytes": 8703229440,
+        "peak_reserved_bytes": 10940841984
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 176.5857276916504,
+        "reload_seconds": 15.859551906585693
+      },
+      "finished_at": "2026-11-14T15:45:17.942146+00:00"
+    },
+    {
+      "cell_id": "T6",
+      "model_id": "HuggingFaceTB/SmolLM3-3B",
+      "task": "text",
+      "family": "smollm",
+      "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "source_hash": "9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8",
+      "config_hash": "0e46feb71029d88b76f914e51329256522f3a9d16da70fd64f90e0eb3b4f4ebd",
+      "receipt_sha256": "9b6d8ec996ec4338c81154aeeefd922c9c06b012d7a421f8526d0108a70d2292",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 8000,
+        "eligible_count": 7997,
+        "excluded_count": 3,
+        "excluded_reasons": {
+          "CONTEXT_OVERFLOW": 3
+        }
+      },
+      "supervised_tokens": 43619,
+      "sequence_tokens": 92947,
+      "trainable_parameters": 15114240,
+      "original_dense_parameters": {
+        "total": 3075098624,
+        "language": 3075098624,
+        "vision": 0,
+        "projector": 0,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 201.3558947229758,
+        "peak_allocated_bytes": 5468649472,
+        "peak_reserved_bytes": 7923040256
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 202.73302555084229,
+        "reload_seconds": 18.83929705619812
+      },
+      "finished_at": "2026-11-14T16:08:57.440304+00:00"
+    },
+    {
+      "cell_id": "V1",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "task": "vqa",
+      "family": "qwen_vlm",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "status": "SUCCEEDED",
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "source_hash": "9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8",
+      "config_hash": "ac7c29c29dc97225a3095275b04860449c080642c5e9c39d9684f3de07ece445",
+      "receipt_sha256": "f6ed9030951feb4637d4052586000f78ee0be2c7a8d7466b465d8510be034668",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 1979,
+        "eligible_count": 1979,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 1249,
+      "sequence_tokens": 180308,
+      "trainable_parameters": 8409600,
+      "original_dense_parameters": {
+        "total": 2213241664,
+        "language": 1881825088,
+        "vision": 306242560,
+        "projector": 25174016,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 327.9542721839971,
+        "peak_allocated_bytes": 6558768128,
+        "peak_reserved_bytes": 8514437120
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 329.3217363357544,
+        "reload_seconds": 10.33627200126648
+      },
+      "finished_at": "2026-11-14T16:27:48.723457+00:00"
+    },
+    {
+      "cell_id": "V2",
+      "model_id": "google/gemma-3-4b-it",
+      "task": "vqa",
+      "family": "gemma_vlm",
+      "revision": "093f9f388b31de276ce2de164bdc2081324b9767",
+      "status": "SUCCEEDED",
+      "attempts": 3,
+      "failure_count": 2,
+      "recovery_attempts": 2,
+      "source_hash": "befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8",
+      "config_hash": "3d235927a7f3131ee19b3752da0cfa3c5d9c957bcba1bba4953c3d1fb5d4a571",
+      "receipt_sha256": "df64c5c4381261e04555fea673d14063a54c6c10d923dcbe6c74bd28506d6edd",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 1979,
+        "eligible_count": 1979,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 1185,
+      "sequence_tokens": 95152,
+      "trainable_parameters": 14901248,
+      "original_dense_parameters": {
+        "total": 4300079472,
+        "language": 3880263168,
+        "vision": 416866032,
+        "projector": 2950272,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 612.4694324150332,
+        "peak_allocated_bytes": 8393482752,
+        "peak_reserved_bytes": 9158262784
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 616.1000485420227,
+        "reload_seconds": 15.06471872329712
+      },
+      "finished_at": "2026-11-14T20:12:41.713163+00:00"
+    },
+    {
+      "cell_id": "V3",
+      "model_id": "google/medgemma-1.5-4b-it",
+      "task": "vqa",
+      "family": "gemma_vlm",
+      "revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "status": "SUCCEEDED",
+      "attempts": 3,
+      "failure_count": 2,
+      "recovery_attempts": 2,
+      "source_hash": "befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8",
+      "config_hash": "de5b94deb2a7326197a39387965bf8e7e66c42521c3dc6734c230cec5272042a",
+      "receipt_sha256": "273cd4c396f1d43afc4db8d8c0c78ddbea55a9b5d1e3f26c56d0cb291a0b6c03",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 1979,
+        "eligible_count": 1979,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 1185,
+      "sequence_tokens": 95152,
+      "trainable_parameters": 14901248,
+      "original_dense_parameters": {
+        "total": 4300079472,
+        "language": 3880263168,
+        "vision": 416866032,
+        "projector": 2950272,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 613.0953725840081,
+        "peak_allocated_bytes": 8393482752,
+        "peak_reserved_bytes": 9158262784
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 616.8583016395569,
+        "reload_seconds": 15.1460120677948
+      },
+      "finished_at": "2026-11-14T20:32:39.100080+00:00"
+    },
+    {
+      "cell_id": "V4",
+      "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
+      "task": "vqa",
+      "family": "smolvlm",
+      "revision": "be92141c8d0ceb98596a923c308ac2bbb4a7c466",
+      "status": "SUCCEEDED",
+      "attempts": 3,
+      "failure_count": 2,
+      "recovery_attempts": 2,
+      "source_hash": "befad7f25b1ea9cc5e0dfd82bb3e3a74fbd8605a09e16af59b6b13100f31dde8",
+      "config_hash": "94f6ddb89e4fd369618073a5788e8de0f9847f3f2e91f0358da83dcaa8e02f56",
+      "receipt_sha256": "9b52030998d3c2d4c4fd5750cabd45eef4525bbed04cbfc1c44e418cf39cbceb",
+      "optimizer_steps": 20,
+      "samples_processed": 320,
+      "excluded_count": 0,
+      "adapter_changed": true,
+      "fresh_process_reload_verified": true,
+      "full_train_eligibility": {
+        "original_count": 1979,
+        "eligible_count": 1979,
+        "excluded_count": 0,
+        "excluded_reasons": {}
+      },
+      "supervised_tokens": 1200,
+      "sequence_tokens": 465425,
+      "trainable_parameters": 9043968,
+      "original_dense_parameters": {
+        "total": 2246784880,
+        "language": 1812563968,
+        "vision": 412987248,
+        "projector": 21233664,
+        "other": 0
+      },
+      "successful_attempt_training": {
+        "device_name": "NVIDIA GeForce RTX 3060",
+        "wall_seconds": 1070.59215611103,
+        "peak_allocated_bytes": 6133595136,
+        "peak_reserved_bytes": 7549747200
+      },
+      "successful_attempt_accounting_seconds": {
+        "train_seconds": 1072.4214780330658,
+        "reload_seconds": 13.976178646087646
+      },
+      "finished_at": "2026-11-14T21:00:15.918156+00:00"
+    }
+  ],
+  "all_original_failures_preserved": true,
+  "smoke_adapters_used_as_main_initialization": false,
+  "common_train_frozen": false,
+  "v6_main_training_started": false,
+  "v6_evaluation_started": false,
+  "v7_started": false,
+  "aggregate_gate_status": "REGISTERED_NOT_STARTED",
+  "gpu_time_cap_seconds": null,
+  "new_weights_public": false,
+  "jetson_status": "USER_DEFERRED_NOT_RUN",
+  "clinical_human_reviews": 0,
+  "limitations": [
+    "Engineering smoke is not full training, clinical validation, model selection or a quality benchmark.",
+    "Successful-attempt resource values exclude failed attempts; cumulative shared GPU ledger preserves all accounting.",
+    "The train-only smoke uses per-model eligible samples; common train will be frozen separately after the aggregate gate."
+  ],
+  "aggregate_gate_source_commit": "5b5cc75b38a1d0e95a11ab4071ea74dce6f470c0"
+}

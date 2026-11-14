@@ -1,5 +1,9 @@
 # 작업 기록
 
+## 2026-11-15 06:24 KST — native GPU10개 성공·CPU aggregate gate 등록
+
+텍스트6/VLM4 모두 실제20updates/320표본·adapter변화·freshreload 성공. 총22시도/실패12회는 보존했다. 다음 미시작 CPU 집계 gate 하나를 Sol/high로 구현하고 Astra/high가 독립검증했다. core/native50검사씩, 독립50+3fault검사, noneditable전체661passed47skip32subtests. source5b5cc75, manifestfd9395b, baseline500files 및 다른42state·모든 누적횟수 보존. SUCCEEDED29/PENDING1/IMPLEMENTATION_PENDING13. gate는등록완료·미실행, worker없음; 이번tick1회만호출. 다음20분 예약에서집계실행 후공통train동결 구현을이어간다. 본학습·평가·V7 미시작. [인계](V6_V7_HANDOFF_KO.md)와[실제GPU결과](../../reports/public_summary/v6/NATIVE_GPU_SMOKE_KO.md) 참고.
+
 ## 2026-11-15 03:59 KST — native smoke4개 성공·나머지6개 마지막 복구 등록
 
 T2/T5/T6/V1은 실제20update·320표본·fresh reload 성공. T1/T3/T4/V2/V3/V4는 각2회 실패와 기존 기록을 보존하고 마지막 허용 복구를 supervisor API로 등록했다. Gemma의 전정답 loss 메모리·학습 child 종료/reload 분리, SmolVLM native image merge를 Sol/high가 수정하고 Astra/high가 독립검증했다. 설치본611passed47optional-skipped32subtests, native독립72passed1skip. source7896177, 활성manifest7f35bcd, baseline343파일 보존. 현재 worker없음/다음T1, 이번 tick1회·수정후GPU실행0. 본학습·공통freeze·평가·V7 미시작. 상세 실행identity·등록영수증·재개 지침은 [V6/V7 인계](V6_V7_HANDOFF_KO.md)를 따른다.

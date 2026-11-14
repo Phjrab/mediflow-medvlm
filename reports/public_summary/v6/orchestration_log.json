@@ -305,7 +305,42 @@
         "spawned": false,
         "fallback": "existing actual Astra/high diagnostic agent takes both architecture diagnoses"
       }
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Implement next unstarted CPU aggregate gate",
+      "agent": "/root/v6_gpu_recovery_protocol",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Pipeline evidence verification across native architectures and frozen run identities; independent research audit required.",
+      "status": "CPU_VERIFIED_APPROVED",
+      "task_failure_count": 0,
+      "result": "Two new files; focused50passed in Python3.10 and Python3.12; no campaign tick or GPU execution.",
+      "evidence_sha256": "2709d281ec3e6da28f950b5c1fae38ec6af55a1bad15040dc43786347c171292",
+      "model_evidence": "Existing agent reused with its actual explicitly selected model/effort; main chat model not changed."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Independently audit cross-stage research evidence and exact gate bytes",
+      "agent": "/root/gemma_oom_diagnosis",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Pipeline evidence verification across native architectures and frozen run identities; independent research audit required.",
+      "status": "CPU_VERIFIED_APPROVED",
+      "task_failure_count": 0,
+      "result": "Independent50passed and3fault injections; real28prerequisite/10supported-cell audit4.490s with no torch import; approved exact source hashes.",
+      "evidence_sha256": "d26cc817271805951ea9a06be38655064821cfacf07c9fd0b38b376f98723fb5",
+      "model_evidence": "Existing agent reused with its actual explicitly selected model/effort; main chat model not changed."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Native smoke milestone, noneditable verification and single-gate activation",
+      "actual_model": "local Python collector/supervisor; main model not changed",
+      "actual_reasoning_effort": null,
+      "task_failure_count": 0,
+      "status": "REGISTERED_NOT_STARTED",
+      "result": "10nativeGPUsmokes succeeded/22attempts/12failedattempts retained. Installed661passed47optional-skipped32subtests. Supervisor activated only CPU aggregate;500oldfiles and all counters preserved; no additionaltick."
     }
   ],
-  "updated_at": "2026-11-14T13:53:48.476554+00:00"
+  "updated_at": "2026-11-14T21:25:16.920855+00:00"
 }

@@ -1,0 +1,109 @@
+{
+  "schema_version": "medvlm.v6.preflight-gate-implementation.v1",
+  "checked_at": "2026-11-14T21:25:16.920099+00:00",
+  "status": "REGISTERED_NOT_STARTED",
+  "job_id": "v6-preflight_smoke",
+  "scope": "NATIVE_PREFLIGHT_SMOKE_AGGREGATE_ONLY",
+  "source_commit": "5b5cc75b38a1d0e95a11ab4071ea74dce6f470c0",
+  "source_hash": "d28ab790165ec3e7b66022a207c1fc32125ccde6c49c63f2038661c23f842dfb",
+  "config_hash": "39ea7e06e91e361b28e19e66457e8dfb7d9cd0e19d2bb88ab647e89ca4c47d6b",
+  "active_manifest_hash": "fd9395b6772c607447b497153e2f21cc009e8461a3a7edc460640585b1c97457",
+  "task_cells": 10,
+  "unique_models": 8,
+  "terminal_prerequisites": 28,
+  "prerequisites_by_phase": {
+    "preparation": 8,
+    "cpu_preflight": 10,
+    "gpu_smoke": 10
+  },
+  "real_planner_audit_supported_cells": 10,
+  "actual_worker_executed": false,
+  "worker_uses_gpu": false,
+  "common_train_frozen": false,
+  "v6_main_training_started": false,
+  "v6_evaluation_started": false,
+  "v7_started": false,
+  "old_files_unchanged": 500,
+  "other_job_records_preserved": 42,
+  "all_cumulative_counters_preserved": true,
+  "counts": {
+    "SUCCEEDED": 29,
+    "PENDING": 1,
+    "IMPLEMENTATION_PENDING": 13
+  },
+  "new_workers_started_this_implementation": 0,
+  "extra_supervisor_ticks": 0,
+  "tests": {
+    "independent_native_focused": {
+      "passed": 50,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 155.488
+    },
+    "independent_fault_injections": [
+      {
+        "case": "same_size_adapter_corruption",
+        "rejected": true,
+        "reason": "artifact hash mismatch"
+      },
+      {
+        "case": "rehashed_selection_swap",
+        "rejected": true,
+        "reason": "CPU_GPU_MODEL_DATA_SELECTION_MISMATCH"
+      },
+      {
+        "case": "prerequisite_race",
+        "rejected": true,
+        "reason": "PREREQUISITES_CHANGED_DURING_AUDIT"
+      }
+    ],
+    "real_input_read_only_audit": {
+      "prerequisite_jobs": 28,
+      "supported_cells": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "V1",
+        "V2",
+        "V3",
+        "V4"
+      ],
+      "duration_seconds": 4.489805080986116,
+      "torch_imported": false,
+      "state_and_manifest_bytes_unchanged": true
+    },
+    "parent_offline_noneditable_full_suite": {
+      "passed": 661,
+      "skipped": 47,
+      "warnings": 6,
+      "subtests_passed": 32,
+      "exit_code": 0,
+      "seconds": 175.86
+    },
+    "implementation_agent_reported_development_failed_runs": 0,
+    "implementation_agent_reported_development_failed_cases": 0
+  },
+  "review": {
+    "actual_model": "gpt-6-astra",
+    "reasoning_effort": "high",
+    "candidate_approved": true,
+    "receipt_sha256": "d26cc817271805951ea9a06be38655064821cfacf07c9fd0b38b376f98723fb5",
+    "source_hashes": {
+      "src/mediflow_medvlm/campaign_preflight_gate.py": "98522bc5db9045b3ed43e7a28c9cde73d8aa8513a0253fefb6c1d6fd1588e9fa",
+      "tests/test_campaign_preflight_gate.py": "9d128584b66afae7bbd6653e50bf443b27f46c966a4f83abed3be902a767b0b5"
+    }
+  },
+  "gpu_time_cap_seconds": null,
+  "new_weights_public": false,
+  "jetson_status": "USER_DEFERRED_NOT_RUN",
+  "limitations": [
+    "Aggregate receipt means accurate terminal accounting; failed/blocked cells are never counted as supported.",
+    "This stage preserves full train eligibility references but does not freeze the common training cohort or select models.",
+    "Actual prerequisite adapter/processor/output bytes are rehashed. Base shards are bound through preparation and actual GPU loader evidence rather than reread by the aggregate gate.",
+    "Smoke success is technical verification, not clinical validation or final research completion."
+  ]
+}
