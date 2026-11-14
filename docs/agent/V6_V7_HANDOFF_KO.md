@@ -2,6 +2,22 @@
 
 2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 현재 실행 인계이며 V6/V7 완료 보고가 아니다.
 
+## 최신 등록 — 2026-11-15 08:01 KST
+
+`v6-common_train_freeze`가 실제 성공했다(2026-11-15 07:18:54 KST 완료, attempt1/failure0/recovery0). 07:37 예약의 단일 tick이07:38:27 KST에 완료를 반영했다. 실제 공통 train은 text7,997/VQA1,979이며 원본 행·전체 정답·공통 순서와 freeze identity를 보존했다. [동결 결과](../../reports/public_summary/v6/common_train_freeze_results.json)를 참고한다.
+
+첫 seed 본학습10개와 CPU terminal 집계를 Sol/high 구현·Astra/high 독립검토 후 **등록 완료·실제 본학습 미실행** 상태로 등록했다. source commit `cab4a59887d42845909988d066c238574a275b4e`, worker source hash `b6fcf38c8c1cbc48abf5fe85797dc15fe416ac9f2dac6e165523878fbdf95634`, aggregate source hash `a58d62fe7d6c3b6be359dff9f7a0cd4b608f7edbbe141ca90e5ef5da1ab22e0b`, aggregate config hash `cb6a63b3af8e91cc407df45a369303d6986d15acd088ca8cc0263794a9669edd`, manifest `6282505feec5c200f498abba8e127cc469020bf19db6e56a87395d66a2a9c6d1`다. 총53개는 SUCCEEDED31/PENDING11/IMPLEMENTATION_PENDING11이며 현재 worker는 없다. 기존561파일·다른42state와 모든누적횟수를 보존했다.
+
+새 작업은 `v6-first-seed-T1`~`T6`, `v6-first-seed-V1`~`V4`이며 모두 실제 성공한 common freeze에 독립 의존한다. aggregate `v6-first_seed_final`은10개 terminal을 기다린다. 다음 예약 대상은 `v6-first-seed-T1`이다. workspace `outputs/v6_v7/first_seed/registration-receipt.json`과 `prepared-activation.json`에 실제 명령·identity를 저장했다. **등록을 반복하지 않는다.** 기존 coordinator1602f35·service·deployment_receipt를 유지한다. 이번 tick1회/등록후 추가tick0/GPU실행0이며 정상 worker는 한 번 확인 후 종료한다.
+
+첫 seed20261023, 독립 원본Base·한 pass·effective16·text500updates/마지막13개·VQA124updates/마지막11개를 유지한다. 완전한 final checkpoint와 학습 child 종료 뒤 fresh child reload만 완료로 인정한다. 재로드 probe는 학습 표본 sanity check이며 독립 성능평가가 아니다. 부분 optimizer/RNG resume은 미지원으로 실패 attempt를 보존한 뒤 같은 허용횟수 내 원본Base에서 재실행한다. 두 번 실패하면 실제 Astra 분석 뒤에만 마지막 복구를 허용한다. 새 recovery를 등록할 때 검증된 새 source의 supervisor를 사용하고 기존 누적횟수를 초기화하지 않는다.
+
+검증은 설치본 전체830passed/52skip/32subtests, 마지막 receipt-reuse 수정 후 정확한 최종 설치본114passed/4torchskip, 독립 native CPU185passed다. 실제10개 고정 설정의 표본·토큰·순서와 수치 partial-batch 평균을 확인했다. [구현 범위·제한](../../reports/public_summary/v6/FIRST_SEED_IMPLEMENTATION_KO.md), [기계 판독 집계](../../reports/public_summary/v6/first_seed_implementation.json), [실제 모델 선택 내역](../../reports/public_summary/v6/orchestration_log.json)에 근거를 보존했다.
+
+**다음 미시작 구현:** 10셀 first-seed terminal 뒤 `v6-validation_caps`, 전체 공통 dev, family 선정, 추가seed≤8, test·보고 순으로 진행한다. 평가 조건을 먼저 동결하고 test를 선택에 사용하지 않는다. 지금 평가·추가seed·V7은 미시작이다. V6 terminal 뒤 V7 P0/P1/R0/R1을 별도 진행한다. GPU상한null·Jetson미실행·원본/새가중치비공개를 유지한다.
+
+네이티브 예약 `medvlm-v6-v7`은20분 설정 ACTIVE다. 2026-11-15 08:01 KST 조회에서 다음 등록 시각은 **2026-11-15T08:02:28.961000+09:00**이며 활성 턴 때문에 지연될 수 있다. OS service는 launcher이고 별도20분 timer는 없다. 직전 전달HEAD338deab 실제CI43647223457는SUCCESS다. 이번 전달HEAD CI는 workspace `outputs/v6_v7/git_receipt.json`의 별도 실제 조회를 우선하며 이전 CI를 새 HEAD 성공으로 사용하지 않는다. 최종완료 조건 미충족으로 예약을 유지한다.
+
 ## 최신 등록 — 2026-11-15 07:14 KST
 
 `v6-preflight_smoke` CPU 집계가 실제 성공했다(완료 2026-11-15 06:29:23 KST, attempt1/failure0/recovery0). 고유8모델·텍스트6/VLM4 native GPU smoke10개 성공과 준비8·CPU10의 artifact 연결을 확인했다. 06:48 예약의 단일 tick이 완료를 반영했으며 추가 tick은 없다. [집계 실행 결과](../../reports/public_summary/v6/preflight_gate_results.json)를 참고한다.

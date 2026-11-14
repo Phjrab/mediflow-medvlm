@@ -1,0 +1,707 @@
+{
+  "schema_version": "medvlm.v6.common-train-freeze-results.v1",
+  "checked_at": "2026-11-14T22:41:30.194972+00:00",
+  "status": "SUCCEEDED",
+  "finished_at": "2026-11-14T22:18:54.822660+00:00",
+  "receipt_sha256": "4c2523ef94fbf57131e48641b41ebc132691b5b6a127fda4fdd563a100ced6bf",
+  "freeze_id": "6b3753c375273579e55d17d598282b4934eb79a7a7cc3572191b3b7c11073feb",
+  "job_id": "v6-common_train_freeze",
+  "source_hash": "01279d04181e2dfc2e32875943f131ccaf08db3ea958a04fcef49b4c8860547f",
+  "config_hash": "909b55c9e5e9a8de3c5a30559214f4995442cc12944f72845b05efdf28525ce8",
+  "data_hash": "7c6ef2ca4d397c6b8d57aaa1ed7dbce6bde30f2dbb73be52b3369ba4c7b671d6",
+  "model_hash": "92b2ed1c3a76dc21cfede72ae713debbfddb7af6658b60a3efa096c39abdf1e5",
+  "attempts": 1,
+  "failure_count": 0,
+  "recovery_attempts": 0,
+  "verified_artifacts": 6,
+  "axes": {
+    "text": {
+      "cells": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6"
+      ],
+      "original_count": 8000,
+      "common_count": 7997,
+      "excluded_count": 3,
+      "train_sha256": "af625a97c355021256180f9db2a906a196714c5677e287d0b8696e55e78b9b7d",
+      "sample_order_sha256": "87c6905077a7033ccb7dd49e2144dcead79478cedebd585f340738233f4baabb",
+      "original_strata": [
+        {
+          "source_id": "pubmedqa_labeled",
+          "language": "en",
+          "task_type": "context_qa",
+          "q_type": null,
+          "answer_type": null,
+          "classification_label": "no",
+          "count": 152
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "exams and tests",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 142
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "complications",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 15
+        },
+        {
+          "source_id": "pubmedqa_labeled",
+          "language": "en",
+          "task_type": "context_qa",
+          "q_type": null,
+          "answer_type": null,
+          "classification_label": "maybe",
+          "count": 49
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "symptoms",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 687
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "considerations",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 13
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "outlook",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 74
+        },
+        {
+          "source_id": "pubmedqa_labeled",
+          "language": "en",
+          "task_type": "context_qa",
+          "q_type": null,
+          "answer_type": null,
+          "classification_label": "yes",
+          "count": 249
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "information",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 874
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "research",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 75
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "B",
+          "count": 392
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "D",
+          "count": 235
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "treatment",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 515
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "frequency",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 285
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "E",
+          "count": 90
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "inheritance",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 334
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "causes",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 166
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "A",
+          "count": 323
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "susceptibility",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 42
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_qa",
+          "q_type": "2",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1300
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "prevention",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 42
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "genetic changes",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 275
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_qa",
+          "q_type": "3",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1200
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "C",
+          "count": 460
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "stages",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 11
+        }
+      ],
+      "common_strata": [
+        {
+          "source_id": "pubmedqa_labeled",
+          "language": "en",
+          "task_type": "context_qa",
+          "q_type": null,
+          "answer_type": null,
+          "classification_label": "no",
+          "count": 152
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "exams and tests",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 141
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "complications",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 15
+        },
+        {
+          "source_id": "pubmedqa_labeled",
+          "language": "en",
+          "task_type": "context_qa",
+          "q_type": null,
+          "answer_type": null,
+          "classification_label": "maybe",
+          "count": 49
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "symptoms",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 687
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "considerations",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 13
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "outlook",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 74
+        },
+        {
+          "source_id": "pubmedqa_labeled",
+          "language": "en",
+          "task_type": "context_qa",
+          "q_type": null,
+          "answer_type": null,
+          "classification_label": "yes",
+          "count": 249
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "information",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 874
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "research",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 75
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "B",
+          "count": 392
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "D",
+          "count": 235
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "treatment",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 514
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "frequency",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 285
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "E",
+          "count": 90
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "inheritance",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 334
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "causes",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 166
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "A",
+          "count": 323
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "susceptibility",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 42
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_qa",
+          "q_type": "2",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1300
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "prevention",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 42
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "genetic changes",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 275
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_qa",
+          "q_type": "3",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1200
+        },
+        {
+          "source_id": "aihub_71875",
+          "language": "ko",
+          "task_type": "medical_mcq",
+          "q_type": "1",
+          "answer_type": null,
+          "classification_label": "C",
+          "count": 460
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "stages",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 10
+        }
+      ],
+      "excluded_strata": [
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "exams and tests",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "treatment",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1
+        },
+        {
+          "source_id": "medquad",
+          "language": "en",
+          "task_type": "medical_qa",
+          "q_type": "stages",
+          "answer_type": null,
+          "classification_label": null,
+          "count": 1
+        }
+      ],
+      "per_model": {
+        "T1": {
+          "original_count": 8000,
+          "eligible_count": 8000,
+          "common_count": 7997,
+          "eligible_sequence_tokens": 1947254,
+          "eligible_target_tokens": 1137306,
+          "common_sequence_tokens": 1941197,
+          "common_target_tokens": 1131366,
+          "excluded_count": 0,
+          "eligibility_sha256": "79c96a32413cbaa32eec87254e380194dda8d1a6e4f4b2e6a525cf8164f52951",
+          "eligible_ids_sha256": "33288e40728f9fda018a6f93699f740a6c771dc0591199e78d99fe502b585d22"
+        },
+        "T2": {
+          "original_count": 8000,
+          "eligible_count": 8000,
+          "common_count": 7997,
+          "eligible_sequence_tokens": 1947254,
+          "eligible_target_tokens": 1137306,
+          "common_sequence_tokens": 1941197,
+          "common_target_tokens": 1131366,
+          "excluded_count": 0,
+          "eligibility_sha256": "79c96a32413cbaa32eec87254e380194dda8d1a6e4f4b2e6a525cf8164f52951",
+          "eligible_ids_sha256": "33288e40728f9fda018a6f93699f740a6c771dc0591199e78d99fe502b585d22"
+        },
+        "T3": {
+          "original_count": 8000,
+          "eligible_count": 7999,
+          "common_count": 7997,
+          "eligible_sequence_tokens": 1790415,
+          "eligible_target_tokens": 1060201,
+          "common_sequence_tokens": 1786446,
+          "common_target_tokens": 1056309,
+          "excluded_count": 1,
+          "eligibility_sha256": "463f6856f8156318c66a349da22e421be7caa413fea641ae6da44d450caf6c7d",
+          "eligible_ids_sha256": "8264360d810a359a9371fe2a3f2688e4458b0fb6b79b3fe62be3909329f77b8f"
+        },
+        "T4": {
+          "original_count": 8000,
+          "eligible_count": 7999,
+          "common_count": 7997,
+          "eligible_sequence_tokens": 1790415,
+          "eligible_target_tokens": 1060201,
+          "common_sequence_tokens": 1786446,
+          "common_target_tokens": 1056309,
+          "excluded_count": 1,
+          "eligibility_sha256": "463f6856f8156318c66a349da22e421be7caa413fea641ae6da44d450caf6c7d",
+          "eligible_ids_sha256": "8264360d810a359a9371fe2a3f2688e4458b0fb6b79b3fe62be3909329f77b8f"
+        },
+        "T5": {
+          "original_count": 8000,
+          "eligible_count": 8000,
+          "common_count": 7997,
+          "eligible_sequence_tokens": 1753465,
+          "eligible_target_tokens": 1083268,
+          "common_sequence_tokens": 1747546,
+          "common_target_tokens": 1077439,
+          "excluded_count": 0,
+          "eligibility_sha256": "8849609179ac25cb61b9f60e1de419fd3e0b0c2bb08043d2b88b55be3c9f6a6f",
+          "eligible_ids_sha256": "33288e40728f9fda018a6f93699f740a6c771dc0591199e78d99fe502b585d22"
+        },
+        "T6": {
+          "original_count": 8000,
+          "eligible_count": 7997,
+          "common_count": 7997,
+          "eligible_sequence_tokens": 2308093,
+          "eligible_target_tokens": 1101198,
+          "common_sequence_tokens": 2308093,
+          "common_target_tokens": 1101198,
+          "excluded_count": 3,
+          "eligibility_sha256": "5f50bc425e5434b0f3b67d5fbbb121380ee6dad7fe2c71df54122f8e53c27990",
+          "eligible_ids_sha256": "87c6905077a7033ccb7dd49e2144dcead79478cedebd585f340738233f4baabb"
+        }
+      }
+    },
+    "vqa": {
+      "cells": [
+        "V1",
+        "V2",
+        "V3",
+        "V4"
+      ],
+      "original_count": 1979,
+      "common_count": 1979,
+      "excluded_count": 0,
+      "train_sha256": "1810b04cd4a435d58a7464366a3c0d74f7ece6d621c69f3830039d17657d3418",
+      "sample_order_sha256": "9b712f0c9ba598fd065f4a5e6220de642ef3e4abd6bc4b60ee0d31da316acbb4",
+      "original_strata": [
+        {
+          "source_id": "slake",
+          "language": "en",
+          "task_type": "medical_vqa",
+          "q_type": null,
+          "answer_type": "OPEN",
+          "classification_label": null,
+          "count": 1207
+        },
+        {
+          "source_id": "slake",
+          "language": "en",
+          "task_type": "medical_vqa",
+          "q_type": null,
+          "answer_type": "CLOSED",
+          "classification_label": null,
+          "count": 772
+        }
+      ],
+      "common_strata": [
+        {
+          "source_id": "slake",
+          "language": "en",
+          "task_type": "medical_vqa",
+          "q_type": null,
+          "answer_type": "OPEN",
+          "classification_label": null,
+          "count": 1207
+        },
+        {
+          "source_id": "slake",
+          "language": "en",
+          "task_type": "medical_vqa",
+          "q_type": null,
+          "answer_type": "CLOSED",
+          "classification_label": null,
+          "count": 772
+        }
+      ],
+      "excluded_strata": [],
+      "per_model": {
+        "V1": {
+          "original_count": 1979,
+          "eligible_count": 1979,
+          "common_count": 1979,
+          "eligible_sequence_tokens": 1120630,
+          "eligible_target_tokens": 7693,
+          "common_sequence_tokens": 1120630,
+          "common_target_tokens": 7693,
+          "excluded_count": 0,
+          "eligibility_sha256": "a38ec00a1a605ab6446b5880677f8a0d4f5f191ab7d816c611c2e8d63cf7f13c",
+          "eligible_ids_sha256": "9b712f0c9ba598fd065f4a5e6220de642ef3e4abd6bc4b60ee0d31da316acbb4"
+        },
+        "V2": {
+          "original_count": 1979,
+          "eligible_count": 1979,
+          "common_count": 1979,
+          "eligible_sequence_tokens": 588622,
+          "eligible_target_tokens": 7252,
+          "common_sequence_tokens": 588622,
+          "common_target_tokens": 7252,
+          "excluded_count": 0,
+          "eligibility_sha256": "026bc443f1ab99649cba033eace361aa0e097fdfd61746f09cc14c0da6572bf1",
+          "eligible_ids_sha256": "9b712f0c9ba598fd065f4a5e6220de642ef3e4abd6bc4b60ee0d31da316acbb4"
+        },
+        "V3": {
+          "original_count": 1979,
+          "eligible_count": 1979,
+          "common_count": 1979,
+          "eligible_sequence_tokens": 588622,
+          "eligible_target_tokens": 7252,
+          "common_sequence_tokens": 588622,
+          "common_target_tokens": 7252,
+          "excluded_count": 0,
+          "eligibility_sha256": "026bc443f1ab99649cba033eace361aa0e097fdfd61746f09cc14c0da6572bf1",
+          "eligible_ids_sha256": "9b712f0c9ba598fd065f4a5e6220de642ef3e4abd6bc4b60ee0d31da316acbb4"
+        },
+        "V4": {
+          "original_count": 1979,
+          "eligible_count": 1979,
+          "common_count": 1979,
+          "eligible_sequence_tokens": 2878512,
+          "eligible_target_tokens": 7331,
+          "common_sequence_tokens": 2878512,
+          "common_target_tokens": 7331,
+          "excluded_count": 0,
+          "eligibility_sha256": "4dce9ad5a0e0cda75a23ccd3f0427e37d7393e02553063bb1c26b22583c06052",
+          "eligible_ids_sha256": "9b712f0c9ba598fd065f4a5e6220de642ef3e4abd6bc4b60ee0d31da316acbb4"
+        }
+      }
+    }
+  },
+  "comparison_cohort_frozen": true,
+  "later_failure_may_widen_cohort": false,
+  "protected_eval_metadata_rows": 11350,
+  "semantic_test_candidates_preserved": 188,
+  "v6_main_training_completed": false,
+  "v6_evaluation_started": false,
+  "v7_started": false,
+  "gpu_work_performed": false,
+  "limitations": [
+    "Frozen data and an unexecuted main-training recipe are distinct from actual main training.",
+    "Historical semantic candidates remain; this is not complete decontamination or clinical validation."
+  ]
+}

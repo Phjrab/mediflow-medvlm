@@ -1,6 +1,6 @@
-# V6 공통 학습 데이터 동결 준비 — 2026-11-15
+# V6 공통 학습 데이터 동결 — 2026-11-15
 
-준비 8개·CPU preflight 10개·GPU smoke 10개의 집계 검증은 실제 완료됐다. 다음 CPU 단계 `v6-common_train_freeze`는 구현·독립검토 후 supervisor에 등록됐으며, **아래 수량은 기존 증거를 읽어 독립 계산한 동결 계획이다. 실제 동결 worker 실행이나 본학습 완료를 의미하지 않는다.** [집계 실행 결과](preflight_gate_results.json)와 [최신 인계](../../../docs/agent/V6_V7_HANDOFF_KO.md)를 함께 확인한다.
+**실제 동결 완료:** `v6-common_train_freeze`가 2026-11-15 07:18:54 KST에 정상 종료했고, 07:38 supervisor가 성공을 반영했다. 최초 시도·실패0·복구0이며 산출물6개 SHA를 확인했다. 아래 text7,997/VQA1,979·순서·처방은 실제 동결 결과이고, 본학습 실행은 아직 아니다. [실행 결과](common_train_freeze_results.json)와 [최신 인계](../../../docs/agent/V6_V7_HANDOFF_KO.md)를 함께 확인한다.
 
 ## 공통 표본과 노출량
 
@@ -44,7 +44,7 @@ KorMedMCQA dev 1,059 + test 3,009의 4,068개 보호 범위를 유지한다. 기
 
 ## 등록과 검증
 
-상태는 **REGISTERED_NOT_STARTED**다. source commit `537bccc43785ca1861ff0c1e5b2707f77e70a1d1`을 immutable snapshot으로 고정했고, 검토한 코드·테스트 SHA와 일치한다. 기존 520개 파일과 다른 42개 작업 기록, 모든 누적 시도·실패·복구 횟수를 보존했다. 전체 43개 작업은 성공 30개·다음 동결 단계 대기 1개·미구현 12개다. 등록 뒤 추가 tick이나 worker 실행은 없었다.
+아래는 실행 전 등록·검증 기록이다. 당시 상태는 **REGISTERED_NOT_STARTED**였으며, 이후 실제 동결 성공은 위 실행 결과에 따로 기록했다. source commit `537bccc43785ca1861ff0c1e5b2707f77e70a1d1`을 immutable snapshot으로 고정했고, 검토한 코드·테스트 SHA와 일치한다. 기존 520개 파일과 다른 42개 작업 기록, 모든 누적 시도·실패·복구 횟수를 보존했다. 전체 43개 작업은 성공 30개·다음 동결 단계 대기 1개·미구현 12개다. 등록 뒤 추가 tick이나 worker 실행은 없었다.
 
 일반 설치본 전체 검사는 717개 통과·47개 optional skip·32개 subtest 통과였다. 그 뒤 테스트의 import 격리만 수정했고, 같은 실행 코드에 대해 최종 설치본 focused 56개 및 Astra 독립 native 56개가 통과했다. 실제 자료의 읽기 전용 계획·토큰·세 seed 순서를 독립 계산과 대조했고, 보호 데이터 충돌 주입 3건을 모두 거부했다. 개발 중 실패 2건은 수정했으며 campaign 복구 횟수와 구분한다. 전체 검사와 최종 focused 검사의 정확한 파일 SHA·제한은 [구현 집계](common_train_freeze_implementation.json)에 기록했다.
 

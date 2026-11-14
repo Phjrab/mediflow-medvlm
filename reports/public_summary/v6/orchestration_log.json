@@ -366,7 +366,56 @@
       "result": "Final native56 passed; actual read-only plan and all seed hashes matched; three overlap faults rejected; exact final code/test bytes approved.",
       "evidence_sha256": "cfded2a6761c95516eacd72a56fc8e623522fadfe4b760a7d7871a57da8961ae",
       "model_evidence": "Existing agent reused with its actual selected model and effort; main chat model unchanged."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Implement exact first-seed full-pass worker and final reload",
+      "agent": "/root/v6_gpu_recovery_protocol",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Pipeline implementation and independent high-accuracy review before first full-pass medical training; existing agents reused.",
+      "status": "CPU_VERIFIED_REGISTERED_NOT_STARTED",
+      "task_failure_count": 3,
+      "result": "Native47/core43+4torchskip; frozen full-pass/partial-loss/final proof; three fixture-only development failures resolved.",
+      "evidence_sha256": "472833fae7aa5fe5adabaad8de4a6c392bca3b322189d6abcd61fcc8bf24e858",
+      "model_evidence": "Existing agent actual model/effort; main chat model unchanged."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Implement single supervisor ten-cell refinement and terminal aggregate",
+      "agent": "/root/v6_gpu_target_fix",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Pipeline implementation and independent high-accuracy review before first full-pass medical training; existing agents reused.",
+      "status": "CPU_VERIFIED_REGISTERED_NOT_STARTED",
+      "task_failure_count": 1,
+      "result": "Final core/native71 each; source-only recovery, isolated terminal failure audit, no duplicate queue; one synthetic original-job-count fixture failure resolved.",
+      "evidence_sha256": "7763ccb3766072cceca970298975254244e02c72b7d8f8b23bbacfd4769c0b44",
+      "model_evidence": "Existing agent actual model/effort; main chat model unchanged."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Independent main training architecture and preservation review",
+      "agent": "/root/gemma_oom_diagnosis",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Pipeline implementation and independent high-accuracy review before first full-pass medical training; existing agents reused.",
+      "status": "CPU_VERIFIED_REGISTERED_NOT_STARTED",
+      "task_failure_count": 0,
+      "result": "Exact final185 native CPU tests and direct faults/parity passed; approved registration, actual main CUDA success unverified.",
+      "evidence_sha256": "9e4aee80d2f8de7cb9c23742e72bf81533d6ec352cb658ec9d29ceb1982f735a",
+      "model_evidence": "Existing agent actual model/effort; main chat model unchanged."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Local collection, installed verification and single first-seed registration",
+      "actual_model": "local Python collector/supervisor; main model not changed",
+      "actual_reasoning_effort": null,
+      "reason": "Use local deterministic checks for state and registration.",
+      "status": "REGISTERED_NOT_STARTED",
+      "task_failure_count": 2,
+      "result": "Two development verification failures resolved: collector field name and installed historical Git test. Broad830+52skip, final114+4skip. Registered10children+gate while preserving561files and42records; no additionaltick/GPU."
     }
   ],
-  "updated_at": "2026-11-14T22:16:03.966723+00:00"
+  "updated_at": "2026-11-14T23:01:49.870378+00:00"
 }
