@@ -1,5 +1,9 @@
 # 실행 인계
 
+## 2026-11-14 22:17 KST — CPU native10 완료·GPU smoke10 등록
+
+CPU10 모두 최초 시도 성공, 잠정 교집합text7,997/VQA1,979. 다음 미시작 GPU smoke10만 source9634b0f/snapshot으로 activate했고 이전state33개·파일262개 및 모든 누적 횟수를 보존했다. manifest30d28fb. worker는 없으며 다음20분 예약에서 T1을 시작한다. 이번 tick은 한 번뿐이다. 새 NF4/strictLoRA loader와20update·320train worker, savedprocessor·freshprocess generation, inheritedGPUlease·shared accounting을 Sol/high가 구현하고 Astra/high가 검토했다. nativeCPU runtime9/worker29 및 noneditable전체523passed/24skipped/32subtests 통과. 실제 CUDA smoke와본학습·평가는미실행이며, aggregate/commonfreeze와후속단계를예약으로이어간다. 상세근거는V6_V7_HANDOFF_KO.md 및workspace outputs/v6_v7/gpu_smoke, 실제CI는gitreceipt를확인한다.
+
 ## 현재 V6/V7 — 2026-11-14 18:36 KST
 
 고유8개 모델의 준비가 모두 성공했고, 다음 native CPU train 적격성 검사10개를 단일 supervisor에 등록했다. GPU smoke10개와 공통 freeze·본학습·평가는 아직 미시작이다. 새 source2ff65d4, 활성 manifest5c6d818f, 기존 실행·누적 실패 보존 및 다음 작업은 [V6/V7 전용 인계](V6_V7_HANDOFF_KO.md)를 따른다. 네이티브20분 예약 `medvlm-v6-v7`은 ACTIVE이며 정상 worker를 한 번 확인한 뒤 종료한다. 이 상태를 아래 역사 결과와 혼동하지 않는다.

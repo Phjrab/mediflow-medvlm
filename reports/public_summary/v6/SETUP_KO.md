@@ -29,3 +29,5 @@ CI 보완: 실제 import된 package bytes를 고정 logical source key로 hash�
 18:36 KST에 검증한 source2ff65d4의 CPU preflight10개를 supervisor에 등록했다. GPU smoke10개는 별도 미구현 작업이며 이번 턴에는 추가 worker를 실행하지 않았다. [구현·CPU 검증 집계](native_preflight_implementation.json)와 [최신 인계](../../../docs/agent/V6_V7_HANDOFF_KO.md)를 참고한다. 전체 train scan과 본학습 결과는 아직 없다.
 
 2026-11-14 22:00 KST 점검: native CPU preflight10개가 모두 최초 시도에 성공했다. 실제 train 전체의 인코딩·정답 mask·이미지 tensor 검사 결과는 [CPU 결과](NATIVE_PREFLIGHT_KO.md)와 [집계 JSON](native_preflight_results.json)에 보존했다. 길이 초과를 제외한 잠정 교집합은 text7,997/VQA1,979다. 공통 학습셋 동결은 GPU smoke 이후이며, CPU 검사를 본학습·평가 성공으로 세지 않는다.
+
+2026-11-14 22:17 KST 등록: [GPU smoke 실행부 검증](native_gpu_smoke_implementation.json)을 완료하고 미시작10개를 기존 supervisor에 등록했다. source`9634b0f`, manifest`30d28fbfbb110c1f5c577ec2bc84bddb0cb8aaca7220da302c8b0bc0d24a3b87`. 전체 설치523passed/24skipped/32subtests, nativeCPU runtime9/worker29, Astra/high 검토 통과. worker 없음·GPU native 실제실행0이며 다음22:19:58 KST 예약이 T1을 시작한다. 이전파일262개와state33개 보존. 부분resume 없이 같은config의 허용된 복구는원본Base에서시작하며이전attempt를보존한다. GPU시간상한null·Jetson미실행·새가중치비공개를유지한다.

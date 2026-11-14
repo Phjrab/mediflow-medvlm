@@ -1,5 +1,9 @@
 # 작업 기록
 
+## 2026-11-14 22:17 KST — CPU native10 완료·GPU smoke10 등록
+
+CPU10 모두 최초 시도 성공, 잠정 교집합text7,997/VQA1,979. 다음 미시작 GPU smoke10만 source9634b0f/snapshot으로 activate했고 이전state33개·파일262개 및 모든 누적 횟수를 보존했다. manifest30d28fb. worker는 없으며 다음20분 예약에서 T1을 시작한다. 이번 tick은 한 번뿐이다. 새 NF4/strictLoRA loader와20update·320train worker, savedprocessor·freshprocess generation, inheritedGPUlease·shared accounting을 Sol/high가 구현하고 Astra/high가 검토했다. nativeCPU runtime9/worker29 및 noneditable전체523passed/24skipped/32subtests 통과. 실제 CUDA smoke와본학습·평가는미실행이며, aggregate/commonfreeze와후속단계를예약으로이어간다. 상세근거는V6_V7_HANDOFF_KO.md 및workspace outputs/v6_v7/gpu_smoke, 실제CI는gitreceipt를확인한다.
+
 ## 2026-11-14 18:36 KST — 고유8모델 준비 완료·셀별 CPU preflight 등록
 
 V1/V4 최종 허용 복구가 성공했으며 각 시도3/실패2/복구2를 보존했다. GPU worker가 없는 상태에서 native architecture별 strict projection·고정 native template·CPU train 적격성 worker를 구현했다. Sol/high 구현과 Astra/high 검토를 거쳤으며 일반 wheel 전체495passed/14skipped/30subtests, native contracts12 및 worker28검사, supervisor refinement89검사를 통과했다. 8개 pinned 모델의 meta 구조와 template, SmolLM3 날짜 의미20사례도 확인했다. source2ff65d4를 cache-free archive로 고정하고 supervisor API가 기존23개 record와 파일131개를 보존하면서 CPU10/PENDING 및 GPU smoke10/IMPLEMENTATION_PENDING을 등록했다. 이번 tick은 한 번뿐이며 추가 worker를 실행하지 않았다. 전체 train scan·GPU smoke·본학습·평가 성공으로 세지 않는다. 실제 등록·보존·검증·다음 예약 근거는 outputs/v6_v7/preflight와 scheduler receipt, 전달 및 CI는 git receipt에 보존한다.

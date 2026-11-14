@@ -1,6 +1,6 @@
 {
   "schema_version": "medvlm.v6.native-gpu-smoke-implementation.v1",
-  "status": "VERIFIED_IMPLEMENTATION_NOT_REGISTERED",
+  "status": "REGISTERED_NOT_STARTED",
   "reported_at": "2026-11-14T13:16:22.795470+00:00",
   "source_hash": "a0b8e6de3cdbae6b9952879f5ceb060d1188e1130dac795738504146cb164a62",
   "cells": [
@@ -37,5 +37,23 @@
   "retry_policy": "Supervisor cumulative attempt limits unchanged; failed private staging preserved; freshbase deterministic retry; no partial optimizer/RNG resume",
   "gpu_time_policy": "unlimited/null",
   "new_weights_public": false,
-  "jetson_executed": false
+  "jetson_executed": false,
+  "source_commit": "9634b0f4e1b56fb1cefe13ce1084ce32dd737eea",
+  "manifest_hash": "30d28fbfbb110c1f5c577ec2bc84bddb0cb8aaca7220da302c8b0bc0d24a3b87",
+  "registered_at": "2026-11-14T13:17:53.089894+00:00",
+  "registration_receipt_sha256": "1c35e63c3e1e8dae92a97d2baf47187f2963a3a8c5ff07a0956656788cd308e1",
+  "preserved_files": 262,
+  "preserved_state_records": 33,
+  "activated_jobs": [
+    "v6-native-smoke-T1",
+    "v6-native-smoke-T2",
+    "v6-native-smoke-T3",
+    "v6-native-smoke-T4",
+    "v6-native-smoke-T5",
+    "v6-native-smoke-T6",
+    "v6-native-smoke-V1",
+    "v6-native-smoke-V2",
+    "v6-native-smoke-V3",
+    "v6-native-smoke-V4"
+  ]
 }

@@ -2,6 +2,22 @@
 
 2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 초기 설정 인계이며 V6/V7 완료 보고가 아니다.
 
+## 최신 등록 — 2026-11-14 22:17 KST
+
+CPU native preflight10개가 모두 최초 시도에 성공했다. 텍스트6경로의 잠정 적격 교집합은7,997개, VLM4경로는1,979개다. 제외는 context overflow이며 정답을 자르지 않았다. 아직 공통 train 동결·GPU native smoke·본학습·평가 완료가 아니다.
+
+다음 미시작 `v6-native-smoke-T1..T6,V1..V4` 10개를 기존 supervisor의 `activate`로 등록했다. 활성 manifest hash는 `30d28fbfbb110c1f5c577ec2bc84bddb0cb8aaca7220da302c8b0bc0d24a3b87`, GPU source commit은 `9634b0f4e1b56fb1cefe13ce1084ce32dd737eea`, source hash는 `a0b8e6de3cdbae6b9952879f5ceb060d1188e1130dac795738504146cb164a62`다. 기존19개 성공 결과를 포함한 state33개와 파일262개 bytes를 보존했고 모든 누적 시도·실패·복구 횟수도 유지했다. 전체43 jobs는 SUCCEEDED19 / PENDING10 / IMPLEMENTATION_PENDING14다. 이번 heartbeat의 tick은 한 번뿐이며 등록 후 추가 worker를 실행하지 않았다.
+
+현재 worker는 없고 다음 단일 tick은 `v6-native-smoke-T1`을 시작한다. 기존 OS coordinator1602f35·서비스·deployment_receipt의 상태/재개 명령을 유지한다. 새 job만 위 immutable snapshot의 `campaign_gpu_smoke`를 사용한다. 각 셀320개 train·20updates, strict native NF4/LoRA projection, 전정답 마스킹, finite gradient·각 projection adapter 변화, 저장한 processor, 새 프로세스의 held-TRAIN greedy generation을 확인한다. actual CUDA/NF4/VRAM fit은 아직 미검증이다. smoke adapter를 본학습에 이어 쓰지 않는다.
+
+GPU lease는 supervisor wrapper 소유이며 reload가 동일 worker/GPU lock FD를 상속한다. 공유 GPU 원장 `runtime/gpu_budget.json`의 native_smoke_train/reload phase로 누적하고 5개 시간 상한은 모두null이다. 같은 config의 허용된 복구는 원본 Base에서 다시 시작하며 이전 private attempt directory와 diagnostics를 보존한다. 부분 optimizer/RNG resume은 이 smoke에 없으며 완료 marker가 검증된 output만 재사용한다. 생존 worker를 임의 재시작하지 않는다.
+
+검증: 실제 pinned processor 저장/재로드 및 CPU PEFT runtime9검사/15subtests, CPU worker29검사, 일반 wheel 전체523passed/24optional-skipped/32subtests/기존Pillow경고6. Astra/high의 최종 SHA 검토가 승인했고 CPU10 실제 receipt로 설정320개·shared ledger binding도 검증했다. 근거는 workspace `outputs/v6_v7/gpu_smoke/`의 `astra_review.json`, `noneditable-test-receipt.json`, `registration-receipt.json`, `deployment-native-gpu-smoke.json`이다. [CPU 결과](../../reports/public_summary/v6/NATIVE_PREFLIGHT_KO.md)와 [GPU 구현/등록 집계](../../reports/public_summary/v6/native_gpu_smoke_implementation.json)를 참고한다.
+
+다음 미시작 구현은 GPU10 결과 뒤 aggregate `v6-preflight_smoke` gate와 supported-model common train/recipe freeze다. 이후 first-seed/final checkpoint/evaluation/extra-seed/V7은 여전히 미구현·미시작이다. 실제 GPU 오류의 source 복구가 필요하면 frozen config에 source hash도 있다는 점을 확인하고, 근거 있는 supervisor recovery 절차로 처리한다. 기존 config/manifest/state를 직접 수정하지 않는다.
+
+네이티브20분 예약 ACTIVE, 확인 당시 다음시각22:19:58 KST다. 이 값은 역사 기록이며 최신 scheduler receipt를 우선한다. 이전 전달HEAD33087ef의 실제 CI43581444434는SUCCESS. 새 전달HEAD CI는 git receipt에 실제 조회 결과로 기록하며 성공을 미리 가정하지 않는다.
+
 ## 최신 등록 — 2026-11-14 18:36 KST
 
 고유8개 모델의 준비가 모두 성공했다. V1/V4는 각각 시도3회·실패2회·복구2회를 그대로 유지한다. 이번 18:19 예약의 tick은 한 번뿐이며 V4 성공을 검증한 뒤 worker가 없는 미구현 gate에서 다음 코드를 구현했다. 새 작업을 이 턴에 실행하지 않았다.
