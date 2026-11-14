@@ -1,5 +1,5 @@
 {
-  "status": "CPU_VERIFIED_GPU_WORKER_LAUNCH_PENDING",
+  "status": "INITIAL_SETUP_VERIFIED_WORKER_RUNNING",
   "python": "3.10",
   "tests_passed": 298,
   "tests_skipped": 7,
@@ -11,5 +11,30 @@
   "finalization_bound_to_manifest_and_outcomes": true,
   "native_heartbeat_minutes_requested_and_accepted": 20,
   "main_training_completed": false,
-  "evaluation_completed": false
+  "evaluation_completed": false,
+  "initial_worker": {
+    "job_id": "engineering-T1-smoke",
+    "run_id": "v6-engineering-t1-smoke-20261114",
+    "phase": "preliminary_engineering_smoke",
+    "training_pid": 236836,
+    "worker_pid": 236828,
+    "worker_alive": true,
+    "child_alive": true,
+    "checked_at": "2026-11-14T04:39:23.881594+00:00",
+    "source_commit": "1602f3557c09ce4b3347362075c4088030ab368d",
+    "source_hash": "5468ae6aca62428210a4a3479853f9c5fe98cf64ac2daab937f183a750e685f8",
+    "failure_count": 0,
+    "training_status": "RUNNING",
+    "training_complete": false
+  },
+  "scheduler": {
+    "id": "medvlm-v6-v7",
+    "status": "ACTIVE",
+    "interval_minutes": 20,
+    "next_run_kst_at_verification": "2026-11-14T13:59:43.293000+09:00",
+    "native_model_override_available": false,
+    "os_timer_installed": false,
+    "os_worker_service": "medvlm-v6-v7-supervisor.service"
+  },
+  "actual_ci_for_delivery_commit": "PENDING_POST_PUSH_CHECK"
 }

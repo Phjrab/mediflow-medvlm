@@ -15,3 +15,5 @@ CPU 전체 검사 및 독립 launcher 생존·동시 실행 배제·복구 횟�
 [현재 재개 방법](../../../docs/agent/V6_V7_HANDOFF_KO.md), [실제 에이전트 모델 선택 기록](orchestration_log.json), [채택된 사용자 R2](../../../docs/research/V6_V7_R2_INSTRUCTIONS.txt)를 함께 보존한다. 상태 수집은 로컬 Python, pipeline 구현은 Sol/high, 아키텍처 감사는 Astra/high로 수행했다. 메인 채팅 모델은 변경하지 않았다.
 
 71762는 제공처가 설명한 category·질환명·의도 내 random 연결 실험이다. 개별 QA의 임상 정합성·증강 lineage는 검증되지 않았다. GPU 시간 상한은 모두 unlimited/null이고, Jetson은 계획만 있으며 실행하지 않는다. 새로운 원본·V6/V7 가중치·비공개 예측은 공개하지 않는다. 최종 보고와 실제 최종 HEAD CI를 검증한 후에만 해당 campaign 예약을 중지한다.
+
+초기 등록 검증: 2026-11-14 13:39 KST, 독립 worker PID236828 및 학습 PID236836의 생존과 실제 GPU 점유를 확인했다. 실행 소스 commit은 `1602f3557c09ce4b3347362075c4088030ab368d`이며 복구0회다. 네이티브 예약은 ACTIVE, 다음 등록 시각은 2026-11-14 13:59:43 KST다. CPU298passed/7skipped/23subtests passed. 본학습·평가 완료를 기다리지 않고 예약으로 이어간다. 이 시각 이후 상태는 private supervisor receipt가 기준이다.
