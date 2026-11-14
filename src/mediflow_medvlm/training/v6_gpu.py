@@ -89,6 +89,7 @@ def assert_frozen_base(model, *, training=True):
 def audit_lora_coverage(model, audit, *, training=True, require_quantized=True):
     """Validate PEFT shapes/rank and every real quantized projection post-load."""
     import torch
+    from peft.tuners.tuners_utils import check_target_module_exists
     if require_quantized:
         from bitsandbytes.nn import Linear4bit, Params4bit
     config = getattr(model, "peft_config", {}).get("default")
@@ -98,7 +99,18 @@ def audit_lora_coverage(model, audit, *, training=True, require_quantized=True):
         raise ValueError("GPU_LORA_RECIPE_MISMATCH")
     if config.modules_to_save or config.use_dora or config.use_rslora or config.rank_pattern or config.alpha_pattern:
         raise ValueError("GPU_UNEXPECTED_ADAPTER_VARIANT")
-    if not isinstance(config.target_modules, (set, list, tuple)) or set(config.target_modules) != set(audit["exact_target_modules"]):
+    targets = config.target_modules
+    if (not isinstance(targets, (set, list, tuple)) or not targets
+            or any(not isinstance(target, str) or not target for target in targets)):
+        raise ValueError("GPU_CONFIG_TARGET_COVERAGE_MISMATCH")
+    # PEFT can minimize long exact-path lists to suffix selectors during injection.
+    # Expand with its own matcher over the entire native tree, including excluded
+    # vision/projector modules, and still require precisely the audited path set.
+    expanded = {name for name, _ in _native_model(model).named_modules()
+                if check_target_module_exists(config, name)}
+    if (expanded != set(audit["exact_target_modules"])
+            or any(not any(name == target or name.endswith("." + target) for name in expanded)
+                   for target in targets)):
         raise ValueError("GPU_CONFIG_TARGET_COVERAGE_MISMATCH")
     count, rows = 0, []
     for entry, layer in _adapter_layers(model, audit):

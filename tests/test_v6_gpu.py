@@ -58,11 +58,11 @@ _HAS_NATIVE = all(importlib.util.find_spec(name) for name in ("torch", "transfor
 @unittest.skipUnless(_HAS_NATIVE, "optional native CPU/PEFT profile")
 class NativePeftTests(unittest.TestCase):
     @staticmethod
-    def config(kind="qwen3"):
+    def config(kind="qwen3", *, layers=2):
         from transformers import Qwen3Config, Phi3Config, SmolLM3Config
         cls = {"qwen3": Qwen3Config, "phi3": Phi3Config, "smollm3": SmolLM3Config}[kind]
         config = cls(vocab_size=32, hidden_size=16, intermediate_size=32,
-            num_hidden_layers=2, num_attention_heads=4, num_key_value_heads=2,
+            num_hidden_layers=layers, num_attention_heads=4, num_key_value_heads=2,
             head_dim=4, max_position_embeddings=128, original_max_position_embeddings=128,
             pad_token_id=0, bos_token_id=1, eos_token_id=2)
         config.architectures = [{"qwen3": "Qwen3ForCausalLM", "phi3": "Phi3ForCausalLM",
@@ -151,6 +151,87 @@ class NativePeftTests(unittest.TestCase):
         storage = parameter_storage_report(model, audit)
         self.assertEqual(storage["original_dense_parameter_counts"], audit["parameter_counts"])
         self.assertGreater(storage["runtime_unique_tensor_storage_bytes"], 0)
+
+    def test_peft_reduced_targets_cover_all_native_paths_and_cpu_save_reload(self):
+        import torch
+        from peft import PeftModel
+        from transformers import Qwen3ForCausalLM
+        config = self.config(layers=3)  # 21 paths cross PEFT's minimization threshold.
+        torch.manual_seed(812)
+        model, audit = self.peft(config, "T1")
+        targets = set(model.peft_config["default"].target_modules)
+        self.assertGreaterEqual(audit["target_count"], 20)
+        self.assertLess(len(targets), audit["target_count"])
+        self.assertNotEqual(targets, set(audit["exact_target_modules"]))
+        coverage = audit_lora_coverage(model, audit, require_quantized=False)
+        self.assertEqual(coverage["target_count"], audit["target_count"])
+        self.assertEqual(coverage["adapter_parameters"], audit["expected_lora_parameters"])
+        with torch.no_grad():
+            for name, parameter in model.named_parameters():
+                if ".lora_B.default.weight" in name:
+                    parameter.fill_(0.01)
+        model.eval()
+        ids = torch.tensor([[1, 5, 7, 2]])
+        with torch.no_grad():
+            expected_logits = model(input_ids=ids).logits
+        with tempfile.TemporaryDirectory() as tmp:
+            model.save_pretrained(tmp)
+            saved = json.loads((Path(tmp) / "adapter_config.json").read_text())
+            self.assertEqual(set(saved["target_modules"]), targets)
+            torch.manual_seed(812)
+            native = Qwen3ForCausalLM(deepcopy(config))
+            reloaded = PeftModel.from_pretrained(native, tmp, is_trainable=True)
+            reloaded.eval()
+            repeated = audit_lora_coverage(reloaded, audit, require_quantized=False)
+            self.assertEqual(repeated["exact_target_modules"], audit["exact_target_modules"])
+            self.assertEqual(adapter_digest(reloaded), adapter_digest(model))
+            with torch.no_grad():
+                torch.testing.assert_close(reloaded(input_ids=ids).logits, expected_logits)
+
+    def test_reduced_config_missing_extra_and_unused_targets_rejected(self):
+        config = self.config(layers=3)
+        model, audit = self.peft(config, "T1", meta=True)
+        peft_config = model.peft_config["default"]
+        targets = set(peft_config.target_modules)
+        for malformed in (targets - {next(iter(targets))}, targets | {"lm_head"},
+                          targets | {"does_not_exist"}, set(), {None}, "q_proj"):
+            with self.subTest(targets=malformed):
+                peft_config.target_modules = malformed
+                with self.assertRaisesRegex(ValueError, "CONFIG_TARGET_COVERAGE"):
+                    audit_lora_coverage(model, audit, require_quantized=False)
+
+    def test_reduced_multimodal_targets_reject_vision_and_projector_collisions(self):
+        import torch
+        from transformers import SmolVLMConfig
+        text = self.config(layers=3).to_dict()
+        text.update(model_type="llama")
+        config = SmolVLMConfig(text_config=text, vision_config=dict(hidden_size=16,
+            intermediate_size=32, num_hidden_layers=1, num_attention_heads=4,
+            image_size=8, patch_size=2), scale_factor=2)
+        config.architectures = ["SmolVLMForConditionalGeneration"]
+        model, audit = self.peft(config, "V4", meta=True)
+        peft_config = model.peft_config["default"]
+        reduced = set(peft_config.target_modules)
+        self.assertGreaterEqual(audit["target_count"], 20)
+        self.assertLess(len(reduced), audit["target_count"])
+        audit_lora_coverage(model, audit, require_quantized=False)
+        # The real vision encoder has q_proj; a leaf selector would overreach.
+        peft_config.target_modules = reduced | {"q_proj"}
+        with self.assertRaisesRegex(ValueError, "CONFIG_TARGET_COVERAGE"):
+            audit_lora_coverage(model, audit, require_quantized=False)
+        peft_config.target_modules = reduced
+        native = model.get_base_model()
+        projector = native.get_submodule("model.connector")
+        with torch.device("meta"):
+            projector.q_proj = torch.nn.Linear(16, 16, bias=False)
+        peft_config.target_modules = reduced | {"connector.q_proj"}
+        with self.assertRaisesRegex(ValueError, "CONFIG_TARGET_COVERAGE"):
+            audit_lora_coverage(model, audit, require_quantized=False)
+        peft_config.target_modules = reduced
+        # Actual adapters remain independently bound to the exact audited paths.
+        projector.q_proj = deepcopy(native.get_submodule(audit["exact_target_modules"][0]))
+        with self.assertRaisesRegex(ValueError, "LORA_PATH_COVERAGE"):
+            audit_lora_coverage(model, audit, require_quantized=False)
 
     def test_missing_nonfinite_gradients_and_trainable_base_fail_closed(self):
         import torch

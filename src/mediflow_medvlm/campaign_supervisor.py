@@ -177,6 +177,82 @@ def verify_source(job):
             raise ValueError(f"source snapshot changed: {name}")
 
 
+def native_gpu_config(job):
+    """Read a frozen native-smoke config and bind it to its executable job."""
+    from .campaign_v6 import cell_spec
+
+    cell_id = job.get("cell_id")
+    if (not re.fullmatch(r"(?:T[1-6]|V[1-4])", str(cell_id))
+            or job.get("job_id") != "v6-native-smoke-" + cell_id
+            or job.get("run_id") != job["job_id"] or job.get("phase") != "native_smoke"
+            or job.get("uses_gpu") is not True or job.get("requires_gpu") is not True
+            or job.get("implementation_pending") is not False):
+        raise ValueError("source/config rebind requires an exact native GPU smoke job")
+    argv = job["argv"]
+    if argv[1:3] != ["-m", "mediflow_medvlm.campaign_gpu_smoke"] or argv.count("--config") != 1:
+        raise ValueError("native GPU smoke requires one --config argument")
+    index = argv.index("--config") + 1
+    if index >= len(argv) or not Path(argv[index]).is_absolute() or ".." in Path(argv[index]).parts:
+        raise ValueError("native GPU config path must be absolute")
+    path = Path(argv[index])
+    config = read_json(path)
+    if not isinstance(config, dict):
+        raise ValueError("native GPU config must be an existing JSON object")
+    if (config.get("schema_version") != "medvlm.v6.native-gpu-smoke-config.v1"
+            or config.get("scope") != "NATIVE_GPU_SMOKE_ONLY"
+            or config.get("config_hash") != canonical_hash({k: v for k, v in config.items() if k != "config_hash"})):
+        raise ValueError("native GPU config schema or canonical hash mismatch")
+    for key in ("job_id", "run_id", "source_files", *HASH_FIELDS):
+        if canonical_hash(config.get(key)) != canonical_hash(job.get(key)):
+            raise ValueError(f"native GPU config/job identity mismatch: {key}")
+    for key, value in cell_spec(cell_id).items():
+        if job.get(key) != value or config.get(key) != value:
+            raise ValueError("native GPU config cell identity mismatch")
+    return path, config, index
+
+
+def verify_gpu_source_rebind(before, after):
+    """Permit only a new snapshot and config whose only change is source identity.
+
+    This function reads both configs; it never writes or replaces either one.
+    Canonical hashes bind even JSON scalar types (True must not equal 1).
+    """
+    allowed = {"cwd", "source_files", "source_hash", "argv", "config_hash"}
+    if canonical_hash({k: v for k, v in before.items() if k not in allowed}) != canonical_hash(
+            {k: v for k, v in after.items() if k not in allowed}):
+        raise ValueError("GPU source revision cannot change scientific job identity")
+    if set(before["source_files"]) != set(after["source_files"]):
+        raise ValueError("GPU source revision must preserve the complete captured source file set")
+    old_path, old_config, old_index = native_gpu_config(before)
+    new_path, new_config, new_index = native_gpu_config(after)
+    if old_index != new_index or before["argv"][:old_index] + before["argv"][old_index + 1:] != after["argv"][:new_index] + after["argv"][new_index + 1:]:
+        raise ValueError("GPU source revision cannot change non-config argv")
+    if old_path.resolve() == new_path.resolve():
+        raise ValueError("GPU source revision requires a new immutable config path")
+    if Path(before["cwd"]).resolve() == Path(after["cwd"]).resolve() or before["source_hash"] == after["source_hash"]:
+        raise ValueError("GPU source revision requires changed source in a different snapshot")
+    identity_keys = {"source_files", "source_hash", "config_hash"}
+    if canonical_hash({k: v for k, v in old_config.items() if k not in identity_keys}) != canonical_hash(
+            {k: v for k, v in new_config.items() if k not in identity_keys}):
+        raise ValueError("GPU configs may differ only in source_files, source_hash, and config_hash")
+    verify_source(before)
+    verify_source(after)
+    return {"original_config_path": str(old_path), "replacement_config_path": str(new_path),
+            "original_config_hash": before["config_hash"], "replacement_config_hash": after["config_hash"],
+            "original_config_sha256": file_hash(old_path), "replacement_config_sha256": file_hash(new_path)}
+
+
+def verify_analysis_evidence(receipt):
+    if receipt.get("actual_model") != "gpt-6-astra" or receipt.get("reasoning_effort") not in {"low", "medium", "high", "xhigh", "max", "ultra"}:
+        raise ValueError("actual stronger-model analysis requires GPT-6 Astra and a supported reasoning effort")
+    if any(not isinstance(receipt.get(key), str) or not receipt[key].strip() for key in
+           ("original_model", "original_reasoning_effort", "escalation_reason", "analysis_summary", "code_fix_explanation")):
+        raise ValueError("source revision requires original model/effort, analysis and code fix explanation")
+    evidence = receipt.get("model_execution_receipt", {})
+    if not Path(evidence.get("path", "")).is_absolute() or file_hash(evidence["path"]) != evidence.get("sha256"):
+        raise ValueError("actual model execution evidence is missing or changed")
+
+
 def verify_success(job):
     """A zero exit status is insufficient: verify identity and actual artifact bytes."""
     receipt = read_json(job["success_receipt"])
@@ -440,6 +516,98 @@ class Supervisor:
                 atomic_json(self.state_path, state)
             return self.status()
 
+    def _guard_gpu_source_revision(self, state, leases):
+        # A stale RUNNING label is not a live process. Never reconcile it here.
+        for record in state["jobs"].values():
+            health = read_json(Path(record["attempt_dir"]) / "heartbeat.json", {}) if record.get("attempt_dir") else {}
+            if any(same_process(identity) for identity in
+                   (record.get("worker_identity"), health.get("worker_identity"), health.get("child_identity"))):
+                raise ValueError("worker active; refuse GPU source revision")
+        for path in (self.root / "worker.lock", self.data_root / "runtime/medvlm_gpu.lock"):
+            if leases.enter_context(try_lock(path)) is None:
+                raise ValueError("worker/GPU lease held; refuse GPU source revision")
+
+    def revise_gpu_source(self, revised, receipt_path):
+        """Register an Astra-audited fix for exactly named, never-started GPU jobs.
+
+        Registration has no scheduler transition. All job records, including
+        counters and started identities, remain byte-for-byte equivalent in JSON.
+        """
+        validate_manifest(revised)
+        with contextlib.ExitStack() as leases, try_lock(self.root / "supervisor.lock") as lock:
+            if lock is None:
+                return {"status": "SUPERVISOR_BUSY"}
+            current, state = self.load()
+            if state["queue_owner"] != "supervisor":
+                raise ValueError("GPU source revision requires supervisor ownership")
+            receipt = read_json(receipt_path)
+            if not isinstance(receipt, dict):
+                raise ValueError("GPU source revision requires an analysis receipt object")
+            receipt_hash = file_hash(receipt_path)
+            verify_analysis_evidence(receipt)
+            if receipt.get("revision_authorized") is not True:
+                raise ValueError("analysis must explicitly authorize GPU source revision")
+            digest = canonical_hash(revised)
+            previous = next((event for event in state["manifest_revisions"]
+                             if event.get("kind") == "UNSTARTED_GPU_SOURCE_REVISION"
+                             and event.get("analysis_receipt_hash") == receipt_hash), None)
+            original = current
+            if previous is not None:
+                if digest != previous["manifest_hash"] or digest != state["manifest_hash"]:
+                    raise ValueError("repeated GPU revision conflicts with active manifest")
+                original = read_json(previous["previous_manifest_path"])
+                if canonical_hash(original) != previous["previous_hash"]:
+                    raise ValueError("original GPU revision manifest changed")
+            if canonical_hash({k: v for k, v in revised.items() if k != "jobs"}) != canonical_hash(
+                    {k: v for k, v in original.items() if k != "jobs"}):
+                raise ValueError("GPU source revision cannot change campaign metadata")
+            if [j["job_id"] for j in revised["jobs"]] != [j["job_id"] for j in original["jobs"]]:
+                raise ValueError("GPU source revision cannot add, remove, or reorder jobs")
+            changes, bindings = {}, {}
+            for before, after in zip(original["jobs"], revised["jobs"]):
+                if canonical_hash(before) == canonical_hash(after):
+                    continue
+                job_id = before["job_id"]
+                record = state["jobs"][job_id]
+                if previous is None and (record["status"] != "PENDING"
+                        or any(type(record.get(k)) is not int or record[k] != 0 for k in
+                               ("attempts", "failure_count", "recovery_attempts"))
+                        or record.get("history") or any(record.get(k) is not None for k in
+                            ("attempt_dir", "launch_token", "worker_identity", "verification",
+                             "recovery_authorization_hash", "recovery_authorization"))):
+                    raise ValueError("GPU source revision requires never-started PENDING jobs with zero cumulative counters")
+                bindings[job_id] = verify_gpu_source_rebind(before, after)
+                changes[job_id] = {"job_hash": canonical_hash(before),
+                    "replacement_job_hash": canonical_hash(after), "replacement_source_hash": after["source_hash"]}
+            if (not changes or canonical_hash(receipt.get("jobs")) != canonical_hash(changes)
+                    or receipt.get("manifest_hash") != canonical_hash(original)
+                    or receipt.get("replacement_manifest_hash") != digest):
+                raise ValueError("analysis receipt must bind exact jobs and original/replacement manifests")
+            if previous is not None:
+                if canonical_hash(bindings) != canonical_hash(previous["config_bindings"]):
+                    raise ValueError("GPU revision config bytes changed")
+                return self.status()
+            self._guard_gpu_source_revision(state, leases)
+            version = self.root / "manifests" / (digest + ".json")
+            if version.exists():
+                if canonical_hash(read_json(version)) != digest:
+                    raise ValueError("immutable GPU revision manifest version changed")
+            else:
+                atomic_json(version, revised)
+            state["manifest_revisions"].append({"kind": "UNSTARTED_GPU_SOURCE_REVISION",
+                "previous_hash": state["manifest_hash"], "previous_manifest_path": state["manifest_path"],
+                "manifest_hash": digest, "manifest_path": str(version), "job_bindings": changes,
+                "config_bindings": bindings, "analysis_receipt": str(Path(receipt_path).resolve()),
+                "analysis_receipt_hash": receipt_hash, "actual_model": receipt["actual_model"],
+                "reasoning_effort": receipt["reasoning_effort"], "original_model": receipt["original_model"],
+                "original_reasoning_effort": receipt["original_reasoning_effort"],
+                "escalation_reason": receipt["escalation_reason"], "analysis_summary": receipt["analysis_summary"],
+                "code_fix_explanation": receipt["code_fix_explanation"],
+                "model_execution_receipt": receipt["model_execution_receipt"], "at": now()})
+            state.update(manifest_hash=digest, manifest_path=str(version), updated_at=now())
+            atomic_json(self.state_path, state)
+            return self.status()
+
     def handoff(self):
         with try_lock(self.root / "supervisor.lock") as lock:
             if lock is None:
@@ -471,12 +639,13 @@ class Supervisor:
     def authorize_recovery(self, job_id, receipt_path, revised=None):
         """Authorize retry 3, optionally registering an audited source-only fix.
 
-        The revision is restricted to the held job's snapshot identity. The argv
-        and every scientific/configuration field remain identical. A durable
+        The revision is restricted to the held job's snapshot identity. Native
+        GPU jobs may also rebind --config to a new file whose only changes are
+        source_files/source_hash/config_hash. Scientific settings stay identical. A durable
         immutable manifest is installed before the atomic state-pointer update;
         attempts and prior manifests are never reset or replaced.
         """
-        with try_lock(self.root / "supervisor.lock") as lock:
+        with contextlib.ExitStack() as leases, try_lock(self.root / "supervisor.lock") as lock:
             if lock is None:
                 return {"status": "SUPERVISOR_BUSY"}
             manifest, state = self.load()
@@ -504,6 +673,12 @@ class Supervisor:
                     if canonical_hash(revised) != state["manifest_hash"]:
                         raise ValueError("repeated recovery receipt supplied a conflicting revised manifest")
                 verify_source(job)
+                if authorization.get("config_binding"):
+                    original = next(j for j in read_json(authorization["previous_manifest_path"])["jobs"] if j["job_id"] == job_id)
+                    if canonical_hash(original) != authorization["original_job_hash"]:
+                        raise ValueError("original authorized GPU job changed")
+                    if verify_gpu_source_rebind(original, job) != authorization["config_binding"]:
+                        raise ValueError("authorized GPU config bytes changed")
                 verify_execution_evidence()
                 return self.status()
             if record["status"] != "ANALYSIS_REQUIRED" or record["failure_count"] != 2 or record["attempts"] != 2:
@@ -520,7 +695,9 @@ class Supervisor:
             if receipt.get("retry_authorized") is not True or not str(receipt.get("analysis_summary", "")).strip():
                 raise ValueError("analysis must explain and explicitly authorize the remaining recovery")
             replacement = job
+            config_binding = None
             previous_manifest_hash = state["manifest_hash"]
+            previous_manifest_path = state["manifest_path"]
             manifest_hash = previous_manifest_hash
             if revised is not None:
                 validate_manifest(revised)
@@ -533,6 +710,9 @@ class Supervisor:
                     if before["job_id"] != job_id:
                         if canonical_hash(before) != canonical_hash(after):
                             raise ValueError("recovery cannot change other jobs")
+                    elif before.get("phase") == "native_smoke":
+                        config_binding = verify_gpu_source_rebind(before, after)
+                        replacement = after
                     elif canonical_hash({k: v for k, v in before.items() if k not in allowed}) != canonical_hash({k: v for k, v in after.items() if k not in allowed}):
                         raise ValueError("recovery can change only cwd, source_files, and source_hash; argv and scientific identity are immutable")
                     else:
@@ -562,6 +742,12 @@ class Supervisor:
                 "original_source_hash": job["source_hash"], "replacement_source_hash": replacement["source_hash"],
                 "previous_manifest_hash": previous_manifest_hash, "manifest_hash": manifest_hash,
                 "failure_count": record["failure_count"], "at": now()}
+            if config_binding is not None:
+                self._guard_gpu_source_revision(state, leases)
+                if (receipt.get("manifest_hash") != previous_manifest_hash
+                        or receipt.get("replacement_manifest_hash") != manifest_hash):
+                    raise ValueError("GPU recovery receipt must bind original/replacement manifests")
+                audit["config_binding"] = config_binding
             if revised is not None:
                 audit["code_fix_explanation"] = receipt["code_fix_explanation"]
                 version = self.root / "manifests" / (manifest_hash + ".json")
@@ -577,7 +763,10 @@ class Supervisor:
                 recovery_authorization_receipt=str(Path(receipt_path).resolve()),
                 recovery_authorization={"job_hash": canonical_hash(replacement),
                     "original_job_hash": canonical_hash(job), "manifest_hash": manifest_hash,
-                    "manifest_revised": revised is not None})
+                    "manifest_revised": revised is not None,
+                    **({"config_binding": config_binding,
+                        "previous_manifest_path": previous_manifest_path}
+                       if config_binding is not None else {})})
             record["history"].append({"status": "RECOVERY_AUTHORIZED", **audit})
             state["updated_at"] = now()
             atomic_json(self.state_path, state)
@@ -794,6 +983,9 @@ def main(argv=None):
     activate.add_argument("--manifest", type=Path, required=True)
     refine = sub.add_parser("refine-preflight")
     refine.add_argument("--manifest", type=Path, required=True)
+    revise_gpu = sub.add_parser("revise-gpu-source")
+    revise_gpu.add_argument("--manifest", type=Path, required=True)
+    revise_gpu.add_argument("--analysis-receipt", type=Path, required=True)
     sub.add_parser("status")
     sub.add_parser("tick")
     sub.add_parser("handoff")
@@ -818,6 +1010,11 @@ def main(argv=None):
         if args.manifest and not isinstance(revised, dict):
             raise ValueError("recovery --manifest must contain a manifest object")
         result = supervisor.authorize_recovery(args.job_id, args.analysis_receipt, revised)
+    elif args.command == "revise-gpu-source":
+        revised = read_json(args.manifest)
+        if not isinstance(revised, dict):
+            raise ValueError("GPU revision --manifest must contain a manifest object")
+        result = supervisor.revise_gpu_source(revised, args.analysis_receipt)
     elif args.command == "activate":
         result = supervisor.activate(read_json(args.manifest))
     elif args.command == "refine-preflight":
