@@ -124,6 +124,53 @@
       "result": "Identified missing mandatory num2words. Reviewed official package artifacts, additive environment diff with no existing package changes, native synthetic-image validation and preserved snapshots/attempts; approved one final recovery through supervisor.",
       "analysis_sha256": "fdbd499f63a665bd92ceaef3372f918f42c46aaef0faa79626f53082e2ea0b36",
       "review_sha256": "3d25ea2085eab6936a3e4a0fec86565200f6dddfa2b903aeb09340b5a4ec2359"
+    },
+    {
+      "task": "Bounded single-supervisor refinement of an unstarted gate into 10 native CPU preflights and 10 pending GPU smokes",
+      "agent": "/root/v6_preflight_refinement",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat switch claimed",
+      "reason": "Durable identity and cumulative-attempt invariants across a versioned queue change",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "89 focused CPU tests passed, including isolated compatibility with the deployed coordinator; no live registration performed by agent."
+    },
+    {
+      "task": "Native decoder projection coverage and deterministic native template contracts",
+      "agent": "/root/v6_native_contracts",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat switch claimed",
+      "reason": "Architecture-aware pipeline implementation under previously audited native paths",
+      "status": "SUCCEEDED",
+      "task_failure_count": 1,
+      "result": "12 native CPU/meta tests passed; all 8 pinned model structure/template probes and 20 fixed-clock SmolLM3 semantic cases passed.",
+      "failure_note": "Initial SmolVLM native Assistant whitespace guard rejected valid rendering; corrected before registration. Final 8-model probe has zero failures.",
+      "evidence_sha256": "b12753c52c341298d91bd97527cebf73858557b3f2400b1a75678d23709cbbc0"
+    },
+    {
+      "task": "Independent local-only CPU/meta TRAIN eligibility worker",
+      "agent": "/root/v6_cpu_preflight",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat switch claimed",
+      "reason": "Immutable source/model/data receipts, full target masks, interruption recovery and per-cell isolation",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "28 native focused tests passed; core 25 passed/3 optional skips. Actual cached T1/V4 engineering fixtures passed. No complete TRAIN scan or GPU run performed."
+    },
+    {
+      "task": "Independent scientific and runtime review of native preflight registration",
+      "agent": "/root/v6_preflight_review",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat switch claimed",
+      "reason": "Multiple architectures, data exclusion policy and preservation boundaries",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "result": "Read-only Astra review approved CPU-only registration conditional on final tests and immutable source. Fatal contract errors, complete target masks, label strata, crash-gap recovery and directory durability verified. GPU work remains pending.",
+      "evidence_sha256": "ff90480f1fe96abdead8da9689d7c6f1e4069f26d993ef3c01dd60390bc4dee1"
     }
   ]
 }

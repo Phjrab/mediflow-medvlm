@@ -1,0 +1,242 @@
+{
+  "schema_version": "medvlm.v6.native-preflight-implementation.v1",
+  "checked_at": "2026-11-14T09:34:32.416581+00:00",
+  "scope": "IMPLEMENTED_AND_CPU_TESTED_NOT_COMPLETE_TRAIN_SCAN",
+  "native_model_structure_probes": [
+    {
+      "cell_id": "T1",
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "architecture": "Qwen3ForCausalLM",
+      "target_count": 196,
+      "target_modules_sha256": "1e57874a63c23dab76d3731b219dea34c3e6e0f164760b44d564c74cdbd6ff2c",
+      "coverage_by_projection": {
+        "mlp.down_proj": 28,
+        "mlp.gate_proj": 28,
+        "mlp.up_proj": 28,
+        "self_attn.k_proj": 28,
+        "self_attn.o_proj": 28,
+        "self_attn.q_proj": 28,
+        "self_attn.v_proj": 28
+      },
+      "parameter_counts": {
+        "language": 1720574976,
+        "other": 0,
+        "projector": 0,
+        "total": 1720574976,
+        "vision": 0
+      },
+      "expected_lora_parameters_rank8": 8716288,
+      "template_status": "NATIVE_DISABLE_SWITCH_VERIFIED"
+    },
+    {
+      "cell_id": "T2",
+      "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "architecture": "Qwen3ForCausalLM",
+      "target_count": 252,
+      "target_modules_sha256": "631bb032cfdb9bd207f490e5d968932d9916e2b6646745083d4c58b7eb1df69a",
+      "coverage_by_projection": {
+        "mlp.down_proj": 36,
+        "mlp.gate_proj": 36,
+        "mlp.up_proj": 36,
+        "self_attn.k_proj": 36,
+        "self_attn.o_proj": 36,
+        "self_attn.q_proj": 36,
+        "self_attn.v_proj": 36
+      },
+      "parameter_counts": {
+        "language": 4022468096,
+        "other": 0,
+        "projector": 0,
+        "total": 4022468096,
+        "vision": 0
+      },
+      "expected_lora_parameters_rank8": 16515072,
+      "template_status": "NATIVE_DISABLE_SWITCH_VERIFIED"
+    },
+    {
+      "cell_id": "T3",
+      "revision": "093f9f388b31de276ce2de164bdc2081324b9767",
+      "architecture": "Gemma3ForConditionalGeneration",
+      "target_count": 238,
+      "target_modules_sha256": "b6b439af0788f986fa98920f7cafd7a46389e3591c00e49de9797d6aca4faa1a",
+      "coverage_by_projection": {
+        "mlp.down_proj": 34,
+        "mlp.gate_proj": 34,
+        "mlp.up_proj": 34,
+        "self_attn.k_proj": 34,
+        "self_attn.o_proj": 34,
+        "self_attn.q_proj": 34,
+        "self_attn.v_proj": 34
+      },
+      "parameter_counts": {
+        "language": 3880263168,
+        "other": 0,
+        "projector": 2950272,
+        "total": 4300079472,
+        "vision": 416866032
+      },
+      "expected_lora_parameters_rank8": 14901248,
+      "template_status": "NATIVE_TEMPLATE_HAS_NO_THINKING_SWITCH"
+    },
+    {
+      "cell_id": "T4",
+      "revision": "91850547d9f0b2fdd21aa7c5f4f3d1a8a52c243b",
+      "architecture": "Gemma3ForConditionalGeneration",
+      "target_count": 238,
+      "target_modules_sha256": "b6b439af0788f986fa98920f7cafd7a46389e3591c00e49de9797d6aca4faa1a",
+      "coverage_by_projection": {
+        "mlp.down_proj": 34,
+        "mlp.gate_proj": 34,
+        "mlp.up_proj": 34,
+        "self_attn.k_proj": 34,
+        "self_attn.o_proj": 34,
+        "self_attn.q_proj": 34,
+        "self_attn.v_proj": 34
+      },
+      "parameter_counts": {
+        "language": 3880263168,
+        "other": 0,
+        "projector": 2950272,
+        "total": 4300079472,
+        "vision": 416866032
+      },
+      "expected_lora_parameters_rank8": 14901248,
+      "template_status": "NATIVE_TEMPLATE_HAS_NO_THINKING_SWITCH"
+    },
+    {
+      "cell_id": "T5",
+      "revision": "cfbefacb99257ffa30c83adab238a50856ac3083",
+      "architecture": "Phi3ForCausalLM",
+      "target_count": 128,
+      "target_modules_sha256": "015e70b08f8bde6b5bf3c22bc423d23a9c26f6c892eaeb12a56425beaea1d2db",
+      "coverage_by_projection": {
+        "mlp.down_proj": 32,
+        "mlp.gate_up_proj": 32,
+        "self_attn.o_proj": 32,
+        "self_attn.qkv_proj": 32
+      },
+      "parameter_counts": {
+        "language": 3836021760,
+        "other": 0,
+        "projector": 0,
+        "total": 3836021760,
+        "vision": 0
+      },
+      "expected_lora_parameters_rank8": 11534336,
+      "template_status": "NATIVE_TEMPLATE_HAS_NO_THINKING_SWITCH"
+    },
+    {
+      "cell_id": "T6",
+      "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+      "architecture": "SmolLM3ForCausalLM",
+      "target_count": 252,
+      "target_modules_sha256": "631bb032cfdb9bd207f490e5d968932d9916e2b6646745083d4c58b7eb1df69a",
+      "coverage_by_projection": {
+        "mlp.down_proj": 36,
+        "mlp.gate_proj": 36,
+        "mlp.up_proj": 36,
+        "self_attn.k_proj": 36,
+        "self_attn.o_proj": 36,
+        "self_attn.q_proj": 36,
+        "self_attn.v_proj": 36
+      },
+      "parameter_counts": {
+        "language": 3075098624,
+        "other": 0,
+        "projector": 0,
+        "total": 3075098624,
+        "vision": 0
+      },
+      "expected_lora_parameters_rank8": 15114240,
+      "template_status": "NATIVE_DISABLE_SWITCH_VERIFIED"
+    },
+    {
+      "cell_id": "V1",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "architecture": "Qwen3_5ForConditionalGeneration",
+      "target_count": 186,
+      "target_modules_sha256": "0c2e69b4f3f741d214edf7d4ebb2befc4dbd570e4d3e51f7e844e62e93edcf46",
+      "coverage_by_projection": {
+        "linear_attn.in_proj_a": 18,
+        "linear_attn.in_proj_b": 18,
+        "linear_attn.in_proj_qkv": 18,
+        "linear_attn.in_proj_z": 18,
+        "linear_attn.out_proj": 18,
+        "mlp.down_proj": 24,
+        "mlp.gate_proj": 24,
+        "mlp.up_proj": 24,
+        "self_attn.k_proj": 6,
+        "self_attn.o_proj": 6,
+        "self_attn.q_proj": 6,
+        "self_attn.v_proj": 6
+      },
+      "parameter_counts": {
+        "language": 1881825088,
+        "other": 0,
+        "projector": 25174016,
+        "total": 2213241664,
+        "vision": 306242560
+      },
+      "expected_lora_parameters_rank8": 8409600,
+      "template_status": "NATIVE_DISABLE_SWITCH_VERIFIED"
+    },
+    {
+      "cell_id": "V4",
+      "revision": "be92141c8d0ceb98596a923c308ac2bbb4a7c466",
+      "architecture": "SmolVLMForConditionalGeneration",
+      "target_count": 168,
+      "target_modules_sha256": "962916bb32d2abb158307af58e4871399b22199cc50fca3ad61b5aa564dca004",
+      "coverage_by_projection": {
+        "mlp.down_proj": 24,
+        "mlp.gate_proj": 24,
+        "mlp.up_proj": 24,
+        "self_attn.k_proj": 24,
+        "self_attn.o_proj": 24,
+        "self_attn.q_proj": 24,
+        "self_attn.v_proj": 24
+      },
+      "parameter_counts": {
+        "language": 1812563968,
+        "other": 0,
+        "projector": 21233664,
+        "total": 2246784880,
+        "vision": 412987248
+      },
+      "expected_lora_parameters_rank8": 9043968,
+      "template_status": "NATIVE_TEMPLATE_HAS_NO_THINKING_SWITCH"
+    }
+  ],
+  "whole_train_scans_completed": 0,
+  "v6_native_gpu_smokes_completed": 0,
+  "v6_main_training_completed": 0,
+  "tests": {
+    "noneditable_full_suite": {
+      "passed": 495,
+      "skipped": 14,
+      "subtests_passed": 30,
+      "existing_pillow_warnings": 6
+    },
+    "native_contracts": {
+      "passed": 12
+    },
+    "native_worker": {
+      "passed": 28
+    },
+    "supervisor_refinement": {
+      "passed": 89
+    }
+  },
+  "source_hashes": {
+    "campaign_supervisor.py": "4e79c3fc5e3891f11b2a00c3d4ae64542c3f39e3358ca4642ce4ae828f2ebdd5",
+    "campaign_preflight.py": "df4ee53202a976c041885a00fc71c63252fc3eb58f4806d9b27cb4778af31a30",
+    "training/v6_native.py": "703d30cf0bbfe523dcc9f7bf02ab3682f61ad7dcd24eba2f210ffc728158f5f9"
+  },
+  "cpu_receipt_sha256": "b12753c52c341298d91bd97527cebf73858557b3f2400b1a75678d23709cbbc0",
+  "registration_scope": "10 CPU eligibility jobs; 10 GPU smoke placeholders and aggregate gate remain implementation pending",
+  "common_train_frozen": false,
+  "cuda_training_supported": "NOT_YET_VERIFIED_FOR_NEW_V6_PATHS",
+  "generated_thinking_output_verified": false,
+  "fixed_template_date": "2026-11-14",
+  "train_context": 2048,
+  "jetson": "USER_DEFERRED_NOT_RUN"
+}

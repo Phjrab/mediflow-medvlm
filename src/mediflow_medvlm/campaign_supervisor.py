@@ -305,6 +305,141 @@ class Supervisor:
         output["ready_to_stop_scheduler"] = output["all_terminal"] and state["finalization"] == "VERIFIED"
         return output
 
+    def refine_preflight(self, revised):
+        """Expand the unstarted V6 gate into the fixed ten native paths.
+
+        This is a registration operation, never a queue tick. The old manifest
+        stays immutable; a version file precedes the atomic state-pointer commit.
+        Its schema is deliberately readable by already deployed v1 coordinators.
+        """
+        from .campaign_v6 import CELLS
+
+        validate_manifest(revised)
+        gate_id = "v6-preflight_smoke"
+        child_ids = [f"v6-native-{kind}-{cell[0]}"
+                     for kind in ("preflight", "smoke") for cell in CELLS]
+        with try_lock(self.root / "supervisor.lock") as lock:
+            if lock is None:
+                return {"status": "SUPERVISOR_BUSY"}
+            current, state = self.load()
+            if state["queue_owner"] != "supervisor":
+                raise ValueError("preflight refinement requires supervisor ownership")
+            if canonical_hash({k: v for k, v in revised.items() if k != "jobs"}) != canonical_hash(
+                    {k: v for k, v in current.items() if k != "jobs"}):
+                raise ValueError("preflight refinement cannot change campaign metadata")
+            expected_cells = {cell[0]: dict(zip(("cell_id", "model_id", "task", "family"), cell))
+                              for cell in CELLS}
+            declared = current.get("cells", [])
+            if (len(declared) != 10 or {c.get("cell_id") for c in declared} != set(expected_cells)
+                    or any({key: c.get(key) for key in expected_cells[c["cell_id"]]}
+                           != expected_cells[c["cell_id"]] for c in declared)):
+                raise ValueError("preflight refinement requires the declared eight-model ten-cell plan")
+            digest = canonical_hash(revised)
+            repeated = digest == state["manifest_hash"]
+            if repeated:
+                if not any(event.get("kind") == "V6_PREFLIGHT_REFINEMENT"
+                           and event.get("manifest_hash") == digest
+                           and event.get("added_jobs") == child_ids
+                           for event in state["manifest_revisions"]):
+                    raise ValueError("no matching preflight refinement audit")
+                # Never accept a repeated registration without rechecking bytes.
+                for job in current["jobs"]:
+                    if job.get("source_files"):
+                        if canonical_hash(job["source_files"]) != job.get("source_hash"):
+                            raise ValueError("source_hash must bind source_files")
+                        verify_source(job)
+                return self.status()
+            before = {j["job_id"]: j for j in current["jobs"]}
+            after = {j["job_id"]: j for j in revised["jobs"]}
+            if gate_id not in before or set(before) & set(child_ids):
+                raise ValueError("preflight gate absent or children already registered")
+            position = [j["job_id"] for j in current["jobs"]].index(gate_id)
+            expected_order = [j["job_id"] for j in current["jobs"]]
+            expected_order[position:position] = child_ids
+            if [j["job_id"] for j in revised["jobs"]] != expected_order:
+                raise ValueError("preflight refinement requires exactly twenty ordered children and unchanged old job order")
+            gate = before[gate_id]
+            if (gate.get("phase") != "preflight_smoke" or gate.get("cell_id") != "ALL_V6"
+                    or gate.get("run_id") != gate_id or gate.get("implementation_pending") is not True
+                    or gate.get("argv") or state["jobs"][gate_id]["status"] != "IMPLEMENTATION_PENDING"):
+                raise ValueError("preflight refinement requires the unimplemented original gate")
+            for job_id, job in before.items():
+                expected = dict(job)
+                if job_id == gate_id:
+                    expected["dependencies"] = job.get("dependencies", []) + child_ids
+                if canonical_hash(after[job_id]) != canonical_hash(expected):
+                    raise ValueError("preflight refinement can change only the original gate dependency list")
+            descendants = {gate_id}
+            while True:
+                expanded = descendants | {j["job_id"] for j in current["jobs"]
+                    if descendants.intersection(j.get("dependencies", []))}
+                if expanded == descendants:
+                    break
+                descendants = expanded
+            for job_id in descendants:
+                record = state["jobs"][job_id]
+                if (any(type(record.get(key)) is not int or record[key] != 0
+                        for key in ("attempts", "failure_count", "recovery_attempts"))
+                        or record.get("history") or record["status"] not in {"PENDING", "IMPLEMENTATION_PENDING"}
+                        or any(record.get(key) is not None for key in
+                               ("attempt_dir", "launch_token", "worker_identity", "verification"))):
+                    raise ValueError("preflight gate or descendant has already started")
+            allowed = {"job_id", "phase", "cell_id", "run_id", "model_id", "task", "family",
+                       "dependencies", "dependency_policy", "implementation_pending", "argv", "cwd",
+                       "source_files", *HASH_FIELDS, "success_receipt", "uses_gpu", "requires_gpu", "gpu_lock_mode"}
+            old_runs = {j["run_id"] for j in current["jobs"]}
+            for kind in ("preflight", "smoke"):
+                for cell in CELLS:
+                    cell_id = cell[0]
+                    job_id = f"v6-native-{kind}-{cell_id}"
+                    job = after[job_id]
+                    gpu = kind == "smoke"
+                    prepare_id = "prepare-" + {"V2": "T3", "V3": "T4"}.get(cell_id, cell_id)
+                    dependency = f"v6-native-preflight-{cell_id}" if gpu else prepare_id
+                    if (set(job) - allowed or job["run_id"] != job_id or job_id in old_runs
+                            or job["phase"] != "native_" + kind
+                            or any(job.get(key) != value for key, value in expected_cells[cell_id].items())
+                            or job.get("dependencies") != [dependency]
+                            or job.get("dependency_policy", "success") != "success"
+                            or job.get("uses_gpu") is not gpu or job.get("requires_gpu") is not gpu
+                            or job.get("implementation_pending") is not gpu
+                            or (bool(job.get("argv")) == gpu)
+                            or (not gpu and prepare_id not in before)):
+                        raise ValueError("invalid bounded native preflight/smoke child identity or dependencies")
+            # No worker may race registration, including a process whose state has
+            # not yet been reconciled. No GPU access is needed for registration.
+            for record in state["jobs"].values():
+                health = read_json(Path(record["attempt_dir"]) / "heartbeat.json", {}) if record.get("attempt_dir") else {}
+                if (record["status"] in {"STARTING", "RUNNING"}
+                        or any(same_process(identity) for identity in
+                               (record.get("worker_identity"), health.get("worker_identity"), health.get("child_identity")))):
+                    raise ValueError("worker active; preflight refinement is registration only")
+            with try_lock(self.root / "worker.lock") as worker_lock:
+                if worker_lock is None:
+                    raise ValueError("worker lease held; refuse preflight refinement")
+                for job in revised["jobs"]:
+                    if job.get("source_files"):
+                        if canonical_hash(job["source_files"]) != job.get("source_hash"):
+                            raise ValueError("source_hash must bind source_files")
+                        verify_source(job)
+                version = self.root / "manifests" / (digest + ".json")
+                if version.exists():
+                    if canonical_hash(read_json(version)) != digest:
+                        raise ValueError("immutable preflight manifest version changed")
+                else:
+                    atomic_json(version, revised)
+                state["manifest_revisions"].append({"kind": "V6_PREFLIGHT_REFINEMENT", "gate_id": gate_id,
+                    "previous_hash": state["manifest_hash"], "previous_manifest_path": state["manifest_path"],
+                    "manifest_hash": digest, "manifest_path": str(version), "added_jobs": child_ids,
+                    "original_gate_hash": canonical_hash(gate), "revised_gate_hash": canonical_hash(after[gate_id]),
+                    "child_job_hashes": {key: canonical_hash(after[key]) for key in child_ids}, "at": now()})
+                for job_id in child_ids:
+                    state["jobs"][job_id] = {"status": "IMPLEMENTATION_PENDING" if after[job_id]["implementation_pending"] else "PENDING",
+                        "attempts": 0, "failure_count": 0, "recovery_attempts": 0, "history": []}
+                state.update(manifest_hash=digest, manifest_path=str(version), updated_at=now())
+                atomic_json(self.state_path, state)
+            return self.status()
+
     def handoff(self):
         with try_lock(self.root / "supervisor.lock") as lock:
             if lock is None:
@@ -657,6 +792,8 @@ def main(argv=None):
     init.add_argument("--legacy-observer", type=Path)
     activate = sub.add_parser("activate")
     activate.add_argument("--manifest", type=Path, required=True)
+    refine = sub.add_parser("refine-preflight")
+    refine.add_argument("--manifest", type=Path, required=True)
     sub.add_parser("status")
     sub.add_parser("tick")
     sub.add_parser("handoff")
@@ -683,6 +820,8 @@ def main(argv=None):
         result = supervisor.authorize_recovery(args.job_id, args.analysis_receipt, revised)
     elif args.command == "activate":
         result = supervisor.activate(read_json(args.manifest))
+    elif args.command == "refine-preflight":
+        result = supervisor.refine_preflight(read_json(args.manifest))
     elif args.command == "finalize":
         result = supervisor.finalize(args.receipt)
     else:

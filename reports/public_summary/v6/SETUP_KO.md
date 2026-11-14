@@ -21,3 +21,7 @@ CPU 전체 검사 및 독립 launcher 생존·동시 실행 배제·복구 횟�
 2026-11-14 14:00 KST 첫 예약 점검: engineering smoke 20update/320예제/46,179 target tokens, 제외0·adapter 변화·fresh reload 모두 성공을 artifact SHA로 확인했다. GPU126.561초, 기술 실패0회이며 V6 본학습 성공으로 집계하지 않는다. supervisor가 prepare-T1로 진행했다. 전달 HEAD1cad6f1의 실제 CI43557824314는 일반 wheel 설치에서 source 경로를 checkout처럼 계산한 문제로 실패했다. 실행 snapshot은 보존하고 다음 source의 설치 형태별 identity 처리를 보완한다.
 
 CI 보완: 실제 import된 package bytes를 고정 logical source key로 hash하고 planner에는 명시적 checkout/snapshot 경로를 지원했다. source fallback은 필요한 경우에만 계산하며 runner/smoke hash를 일치시켰다. 일반 wheel 설치 전체303passed/7skipped/23subtests, 추가 회귀검사5개 통과. 실행 중 snapshot·공유 환경·동결 config는 변경하지 않았다. 새 commit의 원격 CI는 다음 실제 조회로 별도 확인한다.
+
+2026-11-14 18:20 KST 점검: 고유 8개 모델의 준비 결과가 모두 `SUCCEEDED`다. Qwen3.5는 native shard 파일명 지원을 보완했고 SmolVLM2는 필수 processor 의존성 두 개를 추가한 뒤 각각 마지막 허용 복구에서 성공했다. 두 모델의 이전 실패2회와 총 시도3회는 그대로 보존했다. [집계와 고정 revision](model_preparation.json)에 준비 receipt hash를 기록한다. 이 결과는 가중치·native asset 준비 범위이며, 전체 train 적격성·10셀 CUDA smoke·본학습 성공을 의미하지 않는다.
+
+현재 본학습 완료 수는0이다. 다음 범위는 텍스트8,000개와 SLAKE train1,979개의 셀별 native 입력·정답 mask·2048 context 적격성 검사다. 이후 지원 가능한 셀의20-update GPU smoke를 확인하고 축별 공통 train을 동결한다. 준비된 모델 수가 늘었다는 이유로 예전96-target Qwen3.5 adapter나 minimum-validation-loss checkpoint를 V6 결과로 재해석하지 않는다.
