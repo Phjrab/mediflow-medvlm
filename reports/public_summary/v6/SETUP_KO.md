@@ -1,5 +1,7 @@
 # V6/V7 초기 설정 — 2026-11-14
 
+2026-11-14 22:52 KST 갱신: T1 native GPU는 학습 전 검증 오류로2회 실패했다. PEFT 경로축약 검증을 수정하고 미시작9개에만 새source를 등록했다. T1 마지막 복구는 준비 상태다. [오류·수정·검증 집계](native_gpu_source_recovery.json) 및 [최신 인계](../../../docs/agent/V6_V7_HANDOFF_KO.md)를 우선한다. 실제 GPU 성공·본학습 완료를 의미하지 않는다.
+
 R2 통합 지시와 사용자의 모델·추론 강도 위임을 적용했다. 기존 실행은 실제 호스트의 process identity, GPU 사용, lock과 원장으로 확인했으며 시작 시 진행 중인 의료 모델 worker는 없었다. 기존 완료 v1~v5 및 11/13 Release를 보존한다.
 
 이번 구현은 독립 worker, 단일 supervisor, 영속 queue·복구 횟수, immutable source/config/data/model identity, 성공 artifact 검증, 미시작 단계의 versioned activation을 제공한다. 최초 시도 이후 복구는 최대2회이며 2회 실패 후 강한 모델의 실제 분석 근거 없이 마지막 시도를 시작하지 않는다. 살아 있는 worker는 heartbeat가 늦다는 이유로 중단하지 않는다.

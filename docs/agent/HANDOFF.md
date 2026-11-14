@@ -1,5 +1,9 @@
 # 실행 인계
 
+## 2026-11-14 22:52 KST — native GPU 검증 오류 수정·미시작9개 등록
+
+T1은 LoRA config대상 검사에서 실제2회 step0 실패. Astra/high가 PEFT 경로목록 자동축약을 원인으로 확인하고 실제10셀 meta에서 재현·수정검증했다. Sol/high 수정은 expanded target와 실제 adapter exact경로 검사를 모두 유지한다. 전체 설치본598passed/28optional-skipped/32subtests. source f7eece1, 활성manifest a864a244로 미시작9개만 source/config 실행 identity를 재등록했다. scientific config는 그대로이며 기존43state/241files/누적횟수 보존, 추가 GPU실행0. T1 마지막 복구는 준비만 했고 다음예약이 실패2를 반영한 뒤 idle exact hold에서 정식등록한다. 상세 명령·guard·근거는 [V6/V7 인계](V6_V7_HANDOFF_KO.md)와 workspace outputs/v6_v7/recovery/gpu-target-coverage. GPU 성공·본학습·평가 완료로 세지 않는다.
+
 ## 2026-11-14 22:17 KST — CPU native10 완료·GPU smoke10 등록
 
 CPU10 모두 최초 시도 성공, 잠정 교집합text7,997/VQA1,979. 다음 미시작 GPU smoke10만 source9634b0f/snapshot으로 activate했고 이전state33개·파일262개 및 모든 누적 횟수를 보존했다. manifest30d28fb. worker는 없으며 다음20분 예약에서 T1을 시작한다. 이번 tick은 한 번뿐이다. 새 NF4/strictLoRA loader와20update·320train worker, savedprocessor·freshprocess generation, inheritedGPUlease·shared accounting을 Sol/high가 구현하고 Astra/high가 검토했다. nativeCPU runtime9/worker29 및 noneditable전체523passed/24skipped/32subtests 통과. 실제 CUDA smoke와본학습·평가는미실행이며, aggregate/commonfreeze와후속단계를예약으로이어간다. 상세근거는V6_V7_HANDOFF_KO.md 및workspace outputs/v6_v7/gpu_smoke, 실제CI는gitreceipt를확인한다.

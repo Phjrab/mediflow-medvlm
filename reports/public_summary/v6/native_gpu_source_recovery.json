@@ -1,0 +1,57 @@
+{
+  "schema_version": "medvlm.v6.native-gpu-source-recovery.v1",
+  "updated_at": "2026-11-14T13:53:48.476554+00:00",
+  "status": "UNSTARTED_NINE_REGISTERED_T1_RECOVERY_PREPARED_ONLY",
+  "actual_T1_attempts": 2,
+  "actual_T1_failures": 2,
+  "T1_optimizer_steps": 0,
+  "failure_code": "GPU_CONFIG_TARGET_COVERAGE_MISMATCH",
+  "cause": "PEFT automatically minimizes exact target paths at 20 or more targets; the prior config-string equality check rejected equivalent selectors while actual adapters matched exactly.",
+  "fix": "Expand PEFT selectors over the complete native tree and require the exact audited set; preserve actual layer, shape, rank, parameter count, NF4 and frozen-base checks.",
+  "native_meta_verified_cells": 10,
+  "native_GPU_success_verified": false,
+  "main_training_completed": false,
+  "evaluation_completed": false,
+  "source_commit": "f7eece1a425aebbc7e4e6e9829f00e2de2a1f059",
+  "source_hash": "9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8",
+  "active_manifest_hash": "a864a2447e112a6a5583de88d84f4293976dafd0927aaed829dc30c956b82124",
+  "unstarted_revised_jobs": 9,
+  "new_workers_started_after_correction": 0,
+  "state_records_preserved": 43,
+  "prior_files_verified_unchanged": 241,
+  "T1_status_at_registration": "RUNNING label awaiting scheduled reconciliation; actual attempt2 exit=1",
+  "T1_recorded_failure_count_at_registration": 1,
+  "T1_remaining_technical_recoveries": 1,
+  "T1_recovery_registered": false,
+  "scientific_config_fields_changed": [],
+  "execution_fields_rebound": [
+    "cwd",
+    "source_files",
+    "source_hash",
+    "argv --config path",
+    "config_hash"
+  ],
+  "old_configs_and_attempts_preserved": true,
+  "full_installed_tests": {
+    "passed": 598,
+    "optional_skipped": 28,
+    "subtests_passed": 32,
+    "existing_pillow_warnings": 6
+  },
+  "native_independent_targeted_tests": {
+    "passed": 87,
+    "optional_skipped": 1
+  },
+  "supervisor_core_targeted_tests": {
+    "passed": 231,
+    "optional_skipped": 1
+  },
+  "astra_review_sha256": "991a3c1b61339811572f79a0fe79cb7e13c983f4a90af244e882a0c9e03f8ba1",
+  "constraints": {
+    "gpu_time_caps": "unlimited/null",
+    "Jetson_accessed": false,
+    "private_raw_or_weights_published": false,
+    "common_train_frozen": false
+  },
+  "next_step": "Next scheduled single tick reconciles T1 failure2 and can launch corrected T2. Authorize T1 final retry only at exact held state with no living worker and bound unchanged manifest; registration does not launch it."
+}

@@ -2,6 +2,20 @@
 
 2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 초기 설정 인계이며 V6/V7 완료 보고가 아니다.
 
+## 최신 복구 준비 — 2026-11-14 22:52 KST
+
+T1 native GPU smoke가 `GPU_CONFIG_TARGET_COVERAGE_MISMATCH`로 실제 두 번 종료했다(각 step0). PEFT는 대상20개 이상에서 exact 경로 목록을 동등한 suffix 목록으로 줄인다. 기존 검증의 문자열집합 비교가 이를 거부했으며, Astra/high가 pinned native10셀 meta에서 모두 재현했다. 실제 adapter 경로는 계획과 일치했다. 수정은 PEFT matcher로 전체 native tree에서 selector를 확장하여 정확한 대상집합을 요구하고, 기존 실제경로·shape·rank·count·NF4·frozen 검사를 유지한다. 이는 실제 GPU 학습 성공을 뜻하지 않는다.
+
+수정 source commit `f7eece1a425aebbc7e4e6e9829f00e2de2a1f059`, source hash `9e3c0a3af52b674bd188c6355d0349a99c6f90872051e98c76a1ce3ae1d21cb8`. 기존 coordinator1602f35·서비스를 유지하고, 새 supervisor의 `revise-gpu-source`로 **미시작9개만** 수정 source와 새 immutable config에 연결했다. 활성 manifest는 `a864a2447e112a6a5583de88d84f4293976dafd0927aaed829dc30c956b82124`. config는 source_files/source_hash/config_hash 외 모든 내용이 동일하며 기존 config를 덮어쓰지 않았다. 43개 state record 전체와 기존241개 파일 bytes를 보존했다. 이번 heartbeat tick은 한 번이고 수정 뒤 GPU 실행은0회다.
+
+등록 시 살아 있는 worker와 worker/GPU lease가 없음을 supervisor가 확인했다. T1의 state는 아직 `RUNNING / attempts2 / failure_count1 / recovery_attempts1`로, 두 번째 실제 exit를 다음 **예약 tick**이 반영한다. 직접 state를 고치거나 추가 tick을 호출하지 않는다. 다음 tick은 T1을 `ANALYSIS_REQUIRED / failure_count2`로 반영하고 수정된T2를 시작할 수 있다. 정상 worker가 있으면 한 번 확인하고 종료한다.
+
+T1 마지막 허용 복구는 **준비만 했으며 등록·실행하지 않았다.** workspace `outputs/v6_v7/recovery/gpu-target-coverage/registration-receipt.json`에 `T1_registration_command`, `T1_registration_cwd`, `T1_registration_env`, preconditions가 있다. worker가 없는 점검에서 exact hold(attempts2/failure2), 현재 manifest가 위a864와 동일함, bound error signature·Astra 근거·기존파일/새소스/새config hash 보존을 확인하고 해당 `authorize-recovery` 명령을 실행한다. 후보는 `T1-revised-manifest.json`, 분석은 `T1-analysis-receipt.json`이며 예상 다음 manifest는 `43e8bd85f2592d6506fb57477133e1b473720f21e1e2385a316624ee7c2aca9f`다. 이 등록도 worker를 시작하지 않는다. 다른 정당한 source revision으로 parent manifest가 달라졌다면 후보를 강제 적용하지 말고 최신 manifest의 나머지 job을 보존하여 재검증한다. 누적 횟수는 초기화하지 않는다.
+
+검증: native CPU 독립87passed/1optional-skipped, 실제10셀 meta 수정검사, core supervisor231passed/1skip, 일반 wheel 전체598passed/28optional-skipped/32subtests/기존Pillow경고6. Astra/high 최종 SHA 승인을 받았고 snapshot bytes가 같다. private 근거는 위 recovery 폴더의 `astra-final-review.json`, `candidate-all10-meta.json`, `noneditable-test-receipt.json`, `prepared-candidates.json`, `registration-receipt.json`이다. 공개 집계는 [GPU 오류·수정 기록](../../reports/public_summary/v6/native_gpu_source_recovery.json)이다.
+
+네이티브20분 예약은 ACTIVE, 확인 당시 다음23:01:28 KST. 현재 native GPU 성공0, 본학습·평가·공통 train 동결은 아직 미실행이다. 완료19개(CPU10 포함)와 향후 V6/V7 범위, 무제한 시간상한, Jetson 금지 및 비공개 데이터/새가중치 제한을 유지한다. 이전 전달HEAD21e47e7 실제CI43599136106은SUCCESS였고, 이번 새 전달HEAD의 실제CI는 workspace git_receipt에서 별도 확인한다.
+
 ## 최신 등록 — 2026-11-14 22:17 KST
 
 CPU native preflight10개가 모두 최초 시도에 성공했다. 텍스트6경로의 잠정 적격 교집합은7,997개, VLM4경로는1,979개다. 제외는 context overflow이며 정답을 자르지 않았다. 아직 공통 train 동결·GPU native smoke·본학습·평가 완료가 아니다.

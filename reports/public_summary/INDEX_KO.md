@@ -10,7 +10,7 @@
 | v2 | 한국어 KO/MIX 학습·공통 텍스트 평가·VQA 확대 평가·기존 예측 재분석 | [핵심 해석](v2/READOUT_KO.md), [전체 결과](v2/RESULTS_KO.md) |
 | v3 | 전달된71762 원본·별도 질문/답변 구성요소 감사. 당시에는 QA 연결을 만들지 않음 | [감사 결과](v3/RESULTS_KO.md) |
 | v4 | 사용자 예외 승인에 따라 제공처 설명의 category-random 방식 독립 구현·두 텍스트 모델 학습·평가 | [결과](v4/RESULTS_KO.md), [검증](v4/verification.json), [그림](v4/figures) |
-| v6/v7 | 고유8모델 준비·native CPU 적격성 검사10개 완료. GPU smoke·본학습·평가는 후속 단계 | [CPU 검사 결과](v6/NATIVE_PREFLIGHT_KO.md), [설정 및 미구현 범위](v6/SETUP_KO.md) |
+| v6/v7 | 고유8모델 준비·CPU검사10개 완료. T1 GPU 검증2실패 뒤 소스 수정·미시작9개 등록. 본학습·평가 대기 | [CPU 결과](v6/NATIVE_PREFLIGHT_KO.md), [GPU 오류·수정](v6/native_gpu_source_recovery.json), [설정](v6/SETUP_KO.md) |
 | v5 | 24검증문항의384건 형식 진단. 두 모델 Base/Tuned·기존/한국어 지시·16/256token 비교 | [해석](v5/READOUT_KO.md), [전체 결과](v5/RESULTS_KO.md), [검증](v5/verification.json) |
 
 v4의 실행 성공은 성능 개선 입증을 뜻하지 않는다. 두 모델의 분류형 출력이 요구 형식을 지키지 못했고, 무작위 참조와의 문자열 일치는 임상 정확도가 아니다. 증강 parent와 고정된 문항별 QA 대응은 미제공이다. 자세한 조건과 남은 한계는 각 보고서에 기록했다.

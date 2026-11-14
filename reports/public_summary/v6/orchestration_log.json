@@ -212,7 +212,50 @@
       "result": "SHA-bound final approval for source freeze and supervisor registration. Independent nativeCPU runtime9 and worker29tests passed; actual CUDA/NF4/10smoke success unverified.",
       "evidence_sha256": "dc538f940574e39e8c76af3b782b7c351e9fbdcc8bdc0db00f394dfb747471b3",
       "failure_note": "One independent worker CPU fixture initially hit torch2.14 accelerator probe despite CUDA masking; corrected fixture and final suite passed. No campaign attempt consumed."
+    },
+    {
+      "task": "Diagnose two actual native GPU target coverage failures and independently review correction",
+      "agent": "/root/v6_gpu_target_failure",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Same failure twice requires stronger-model escalation; shared architecture path and immutable recovery need independent review",
+      "trigger_failure_count": 2,
+      "task_failure_count": 0,
+      "status": "SUCCEEDED",
+      "result": "Reproduced all10 pinned native configs with meta adapters; approved exact runtime/recovery hashes after native87pass1skip and installed598pass28skip32subtests. No GPU or campaign mutation by agent.",
+      "evidence_sha256": "991a3c1b61339811572f79a0fe79cb7e13c983f4a90af244e882a0c9e03f8ba1",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat model switch claimed"
+    },
+    {
+      "task": "Correct PEFT minimized target selector validation without weakening exact physical coverage",
+      "agent": "/root/v6_gpu_target_fix",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Architecture-aware GPU pipeline validation fix after confirmed root cause",
+      "trigger_failure_count": 2,
+      "task_failure_count": 2,
+      "failure_notes": [
+        "Initial test import lacked PYTHONPATH",
+        "Fixture layer count changed after config construction; factory layers parameter corrected layer_types"
+      ],
+      "status": "SUCCEEDED",
+      "result": "Native CPU11pass1optional-skip; >20 targets, saved adapter reload parity and missing/extra/vision/projector negatives. No GPU or campaign attempt.",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat model switch claimed"
+    },
+    {
+      "task": "Audited source and immutable config rebinding for unstarted GPU jobs and held final recovery",
+      "agent": "/root/v6_gpu_recovery_protocol",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Single supervisor owns versioned queue registration, cumulative counters and preserved scientific identity",
+      "task_failure_count": 1,
+      "failure_notes": [
+        "First collection omitted PYTHONPATH; corrected invocation passed"
+      ],
+      "status": "SUCCEEDED",
+      "result": "Core231pass1skip and native76pass. Source filename inventory, strict non-source config equality, prior byte checks, live PID/lease guard and idempotency; no live campaign mutation by agent.",
+      "model_evidence": "Explicit model/effort accepted by spawn_agent; no main-chat model switch claimed"
     }
   ],
-  "updated_at": "2026-11-14T13:16:22.795184+00:00"
+  "updated_at": "2026-11-14T13:53:48.476554+00:00"
 }
