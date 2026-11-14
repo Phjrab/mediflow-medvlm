@@ -21,6 +21,6 @@
 
 T1의 PEFT selector 축약 검증, T3/T4의 전정답 loss 메모리, V2/V3의 학습–재로드 CUDA lifetime, V4의 native projected image token 결합 문제는 실제 마지막 허용 복구에서 해결됐다. [복구 구현 기록](native_runtime_recovery.json)은 등록 당시의 역사 기록이며, 수정 후 실제 GPU 성공은 이번 결과에 기록한다. seed·정답·native processor·recipe는 보존했고 smoke adapter를 본학습 초기값으로 쓰지 않는다.
 
-현재 완료 범위는 native 경로의 학습·저장·재로드에 대한 기술 검증이다. **공통 train 동결, V6 본학습·평가·추가 seed, V7 P0/P1/R0/R1은 아직 미시작**이다. 다음 aggregate gate가 준비 8개·CPU 10개·GPU 10개 증거를 검증한 뒤 공통 train과 본학습 recipe를 별도로 동결한다. 임상 성능·모델 순위·사람 검토 결과를 주장하지 않으며 실제 사람 검토는 0건이다.
+현재 완료 범위는 native 경로의 학습·저장·재로드에 대한 기술 검증이다. 집계 worker도 2026-11-15 06:29:23 KST에 준비 8개·CPU 10개·GPU 10개의 증거 검증을 마쳤고, 06:51 점검에서 supervisor가 성공을 확인했다. [집계 실행 결과](preflight_gate_results.json)에 실제 receipt와 실행 identity를 기록했다. **공통 train 동결, V6 본학습·평가·추가 seed, V7 P0/P1/R0/R1은 아직 미시작**이며, 공통 train과 본학습 recipe를 다음 단계에서 별도로 동결한다. 임상 성능·모델 순위·사람 검토 결과를 주장하지 않으며 실제 사람 검토는 0건이다.
 
 원본 데이터·새 V6/V7 가중치·비공개 예측은 공개하지 않았다. Jetson은 향후 계획만 유지한다. [최신 실행 인계와 재개 방법](../../../docs/agent/V6_V7_HANDOFF_KO.md)을 따른다.

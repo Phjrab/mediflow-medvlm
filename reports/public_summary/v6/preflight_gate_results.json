@@ -1,0 +1,55 @@
+{
+  "schema_version": "medvlm.v6.preflight-gate-results.v1",
+  "checked_at": "2026-11-14T21:54:39.864013+00:00",
+  "status": "SUCCEEDED",
+  "finished_at": "2026-11-14T21:29:23.238209+00:00",
+  "job_id": "v6-preflight_smoke",
+  "scope": "NATIVE_PREFLIGHT_SMOKE_AGGREGATE_ONLY",
+  "unique_models": 8,
+  "declared_cells": 10,
+  "supported_cells": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5",
+    "T6",
+    "V1",
+    "V2",
+    "V3",
+    "V4"
+  ],
+  "supported_count": 10,
+  "all_cells_supported": true,
+  "receipt_sha256": "e4ec33b632e2485c3dbfcd085c06e731ad2fd33ba8b99239070ace4fbc859ca5",
+  "source_hash": "d28ab790165ec3e7b66022a207c1fc32125ccde6c49c63f2038661c23f842dfb",
+  "config_hash": "39ea7e06e91e361b28e19e66457e8dfb7d9cd0e19d2bb88ab647e89ca4c47d6b",
+  "data_hash": "025cd80b4960f5b7d97b573a7b9114a582d9212231ed76811efc8d68a3fbff1d",
+  "model_hash": "05de91df29ed483b0bdedde3a4a20d10454aed4434b81f6ed35214d60d1a318d",
+  "attempts": 1,
+  "failure_count": 0,
+  "recovery_attempts": 0,
+  "prerequisite_status_counts": {
+    "model_preparation": {
+      "SUCCEEDED": 8
+    },
+    "native_preflight": {
+      "SUCCEEDED": 10
+    },
+    "native_smoke": {
+      "SUCCEEDED": 10
+    }
+  },
+  "common_train_freeze_decided": false,
+  "v6_main_training_completed": false,
+  "v6_evaluation_started": false,
+  "v7_started": false,
+  "gpu_work_performed": false,
+  "dev_test_read": false,
+  "base_weight_bytes_rehashed": false,
+  "receipt_artifact_bytes_rehashed": true,
+  "limitations": [
+    "Native smoke and aggregate audit verify engineering compatibility only; main training and clinical evaluation are not completed.",
+    "Original model weight shards are linked through preparation and actual GPU-loader evidence; they were not read again by this CPU gate."
+  ]
+}

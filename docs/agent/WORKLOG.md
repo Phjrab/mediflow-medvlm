@@ -1,5 +1,9 @@
 # 작업 기록
 
+## 2026-11-15 07:14 KST — 집계 실제 완료·공통 train 동결 단계 등록
+
+CPU 집계 gate가 최초 시도에 성공했다. 다음 common_train_freeze는 Sol/high 구현·Astra/high 독립검토 후 source537bccc/manifestaecfc0e로 등록했으며 실제 worker는 미실행이다. 계획 text7,997/VQA1,979·독립Base 한 pass·공통 순서·partial divisor·보호 lineage를 동결한다. 설치본 전체717passed47skip32subtests, 마지막 테스트 격리 수정 후 설치본56/native독립56 통과. 기존520파일·다른42state와 모든누적횟수 보존. SUCCEEDED30/PENDING1/IMPLEMENTATION_PENDING12, 현재worker없음, 이번tick1회·추가tick0. 다음20분 예약에서 실행하며 실제 동결 성공 뒤10셀 본학습 queue를 구현한다. 본학습·평가·V7미시작. [인계](V6_V7_HANDOFF_KO.md)와 [계획·검증](../../reports/public_summary/v6/COMMON_TRAIN_FREEZE_KO.md)에 재개 조건·제한·모델 선택 기록을 남겼다.
+
 ## 2026-11-15 06:24 KST — native GPU10개 성공·CPU aggregate gate 등록
 
 텍스트6/VLM4 모두 실제20updates/320표본·adapter변화·freshreload 성공. 총22시도/실패12회는 보존했다. 다음 미시작 CPU 집계 gate 하나를 Sol/high로 구현하고 Astra/high가 독립검증했다. core/native50검사씩, 독립50+3fault검사, noneditable전체661passed47skip32subtests. source5b5cc75, manifestfd9395b, baseline500files 및 다른42state·모든 누적횟수 보존. SUCCEEDED29/PENDING1/IMPLEMENTATION_PENDING13. gate는등록완료·미실행, worker없음; 이번tick1회만호출. 다음20분 예약에서집계실행 후공통train동결 구현을이어간다. 본학습·평가·V7 미시작. [인계](V6_V7_HANDOFF_KO.md)와[실제GPU결과](../../reports/public_summary/v6/NATIVE_GPU_SMOKE_KO.md) 참고.

@@ -340,7 +340,33 @@
       "task_failure_count": 0,
       "status": "REGISTERED_NOT_STARTED",
       "result": "10nativeGPUsmokes succeeded/22attempts/12failedattempts retained. Installed661passed47optional-skipped32subtests. Supervisor activated only CPU aggregate;500oldfiles and all counters preserved; no additionaltick."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Implement common train freeze and exact one-pass plan",
+      "agent": "/root/v6_gpu_recovery_protocol",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "reason": "Multi-model cohort and data leakage controls require pipeline implementation plus independent research review.",
+      "task_failure_count": 2,
+      "status": "CPU_VERIFIED_APPROVED",
+      "result": "Final core/native focused56 passed, including native with torch already imported; two development failures corrected. No campaign mutation or GPU execution.",
+      "evidence_sha256": "41ce2c07180ab120c47fffbf168f2bb58ccf7d074c0b575d5eb861b60691907e",
+      "model_evidence": "Existing agent reused with its actual selected model and effort; main chat model unchanged."
+    },
+    {
+      "date": "2026-11-15",
+      "task": "Independently verify protection lineage, common cohort and execution plan",
+      "agent": "/root/gemma_oom_diagnosis",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "reason": "Multi-model cohort and data leakage controls require pipeline implementation plus independent research review.",
+      "task_failure_count": 0,
+      "status": "CPU_VERIFIED_APPROVED",
+      "result": "Final native56 passed; actual read-only plan and all seed hashes matched; three overlap faults rejected; exact final code/test bytes approved.",
+      "evidence_sha256": "cfded2a6761c95516eacd72a56fc8e623522fadfe4b760a7d7871a57da8961ae",
+      "model_evidence": "Existing agent reused with its actual selected model and effort; main chat model unchanged."
     }
   ],
-  "updated_at": "2026-11-14T21:25:16.920855+00:00"
+  "updated_at": "2026-11-14T22:16:03.966723+00:00"
 }

@@ -1,0 +1,131 @@
+{
+  "schema_version": "medvlm.v6.common-train-freeze-implementation.v1",
+  "checked_at": "2026-11-14T22:16:03.966723+00:00",
+  "status": "REGISTERED_NOT_STARTED",
+  "job_id": "v6-common_train_freeze",
+  "source_commit": "537bccc43785ca1861ff0c1e5b2707f77e70a1d1",
+  "source_hash": "01279d04181e2dfc2e32875943f131ccaf08db3ea958a04fcef49b4c8860547f",
+  "source_hashes": {
+    "src/mediflow_medvlm/campaign_common_train_freeze.py": "1e20ccec82b02a640e5312c1316c14b0c9e94812a7dcd5fddf7a2bcec7f391b7",
+    "tests/test_campaign_common_train_freeze.py": "98755287f86767f599ea90121a056d3d6e9b2417470f3aef5d405b8966fa4b7c"
+  },
+  "config_hash": "909b55c9e5e9a8de3c5a30559214f4995442cc12944f72845b05efdf28525ce8",
+  "planned_freeze_id": "6b3753c375273579e55d17d598282b4934eb79a7a7cc3572191b3b7c11073feb",
+  "active_manifest_hash": "aecfc0e6ef3b44e9641223441602d93fa6c3130f3cbb41919c8c8e94ad7b9da5",
+  "prior_manifest_hash": "fd9395b6772c607447b497153e2f21cc009e8461a3a7edc460640585b1c97457",
+  "review_receipt_sha256": "cfded2a6761c95516eacd72a56fc8e623522fadfe4b760a7d7871a57da8961ae",
+  "implementation_receipt_sha256": "41ce2c07180ab120c47fffbf168f2bb58ccf7d074c0b575d5eb861b60691907e",
+  "planned_common_counts": {
+    "text": 7997,
+    "vqa": 1979
+  },
+  "planned_exclusions": {
+    "text": 3,
+    "vqa": 0,
+    "reason": "native context overflow only"
+  },
+  "training_order": "SHA256(canonical JSON [seed,sample_id]) ascending, sample_id tie breaker",
+  "planned_optimizer_steps": {
+    "text": 500,
+    "vqa": 124
+  },
+  "planned_last_update_examples": {
+    "text": 13,
+    "vqa": 11
+  },
+  "partial_batch_loss_divisor": "actual_example_count",
+  "original_base_independent_initialization_required": true,
+  "smoke_adapter_reuse": false,
+  "per_cell_planned_target_token_totals": {
+    "T1": 1131366,
+    "T2": 1131366,
+    "T3": 1056309,
+    "T4": 1056309,
+    "T5": 1077439,
+    "T6": 1101198,
+    "V1": 7693,
+    "V2": 7252,
+    "V3": 7252,
+    "V4": 7331
+  },
+  "actual_freeze_worker_executed": false,
+  "common_train_frozen": false,
+  "main_training_worker_implemented_or_validated": false,
+  "v6_main_training_started": false,
+  "evaluation_started": false,
+  "v7_started": false,
+  "native_smoke_supported_cells": 10,
+  "terminal_prerequisites_verified": 29,
+  "protected_metadata_rows": 11350,
+  "historical_protection_references": 14,
+  "semantic_test_candidates_preserved": 188,
+  "complete_decontamination_or_clinical_validation_claimed": false,
+  "tests": {
+    "noneditable_full_suite": {
+      "passed": 717,
+      "skipped": 47,
+      "warnings": 6,
+      "subtests_passed": 32,
+      "seconds": 57.47,
+      "failed": 0,
+      "source_hashes": {
+        "src/mediflow_medvlm/campaign_common_train_freeze.py": "1e20ccec82b02a640e5312c1316c14b0c9e94812a7dcd5fddf7a2bcec7f391b7",
+        "tests/test_campaign_common_train_freeze.py": "8fd9db8d6b59d4398af0d67f0c7b132b68d8dc0d854fa86db587dbfafd5b0b7f"
+      },
+      "note": "Full suite used the same final runtime and the preceding test file; only test import isolation changed afterward, and final 56 focused tests passed against final test bytes."
+    },
+    "final_noneditable_focused": {
+      "passed": 56,
+      "failed": 0,
+      "runtime_unchanged_from_full_suite": true,
+      "test_sha256": "98755287f86767f599ea90121a056d3d6e9b2417470f3aef5d405b8966fa4b7c"
+    },
+    "independent_astra_final_native": {
+      "passed": 56,
+      "failed": 0,
+      "seconds": 1.22,
+      "test_sha256": "98755287f86767f599ea90121a056d3d6e9b2417470f3aef5d405b8966fa4b7c"
+    },
+    "actual_read_only_plan_and_seed_hashes_verified": true,
+    "protected_overlap_fault_injections_rejected": 3,
+    "development_failures": 2,
+    "development_failures_resolved": 2
+  },
+  "registration": {
+    "counts": {
+      "SUCCEEDED": 30,
+      "PENDING": 1,
+      "IMPLEMENTATION_PENDING": 12
+    },
+    "old_files_unchanged": 520,
+    "other_job_records_preserved": 42,
+    "all_counters_and_old_history_preserved": true,
+    "additional_ticks": 0,
+    "new_workers_started": 0
+  },
+  "heartbeat_ticks_this_turn": 1,
+  "selected_agents": [
+    {
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "high",
+      "task": "pipeline implementation"
+    },
+    {
+      "model": "gpt-6-astra",
+      "reasoning_effort": "high",
+      "task": "independent design and protection review"
+    }
+  ],
+  "main_model_changed": false,
+  "gpu_time_cap_seconds": null,
+  "jetson_executed": false,
+  "human_review_count": 0,
+  "limitations": [
+    "No CUDA, model/tokenizer execution, queue tick, campaign mutation, training, family selection or additional seed execution occurred in this review.",
+    "This gate freezes data and an unexecuted run plan; future main-training worker implementation and actual one-pass final fresh-process reload remain separate gates.",
+    "Existing semantic and image audits are hash-bound historical evidence; original archives were not reprocessed and semantic encodings were not regenerated.",
+    "Semantic candidates do not establish equivalence, translation equivalence or complete decontamination; 188 existing test candidates remain preserved.",
+    "Patient/study independence and clinical validation are not established.",
+    "The full noneditable suite predates only the final test import-isolation edit; final runtime bytes are identical and final focused tests were rerun."
+  ]
+}
