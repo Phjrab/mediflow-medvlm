@@ -238,5 +238,12 @@
   "generated_thinking_output_verified": false,
   "fixed_template_date": "2026-11-14",
   "train_context": 2048,
-  "jetson": "USER_DEFERRED_NOT_RUN"
+  "jetson": "USER_DEFERRED_NOT_RUN",
+  "registration_status": "REGISTERED_NOT_STARTED",
+  "source_commit": "2ff65d4d6435e14f0c5052044265308c399bf147",
+  "active_manifest_hash": "5c6d818fdf9a43d2fe4c74ed80f499986d8098c272126949a9f62895e7e9746c",
+  "previous_job_records_preserved": 23,
+  "historical_files_verified_unchanged": 131,
+  "workers_started_during_registration": 0,
+  "registration_receipt_sha256": "6c4f7e17ed715a716b8c8fa3190519410f2a055c10f7a4f427a53de416a87eca"
 }

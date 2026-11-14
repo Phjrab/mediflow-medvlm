@@ -25,3 +25,5 @@ CI 보완: 실제 import된 package bytes를 고정 logical source key로 hash�
 2026-11-14 18:20 KST 점검: 고유 8개 모델의 준비 결과가 모두 `SUCCEEDED`다. Qwen3.5는 native shard 파일명 지원을 보완했고 SmolVLM2는 필수 processor 의존성 두 개를 추가한 뒤 각각 마지막 허용 복구에서 성공했다. 두 모델의 이전 실패2회와 총 시도3회는 그대로 보존했다. [집계와 고정 revision](model_preparation.json)에 준비 receipt hash를 기록한다. 이 결과는 가중치·native asset 준비 범위이며, 전체 train 적격성·10셀 CUDA smoke·본학습 성공을 의미하지 않는다.
 
 현재 본학습 완료 수는0이다. 다음 범위는 텍스트8,000개와 SLAKE train1,979개의 셀별 native 입력·정답 mask·2048 context 적격성 검사다. 이후 지원 가능한 셀의20-update GPU smoke를 확인하고 축별 공통 train을 동결한다. 준비된 모델 수가 늘었다는 이유로 예전96-target Qwen3.5 adapter나 minimum-validation-loss checkpoint를 V6 결과로 재해석하지 않는다.
+
+18:36 KST에 검증한 source2ff65d4의 CPU preflight10개를 supervisor에 등록했다. GPU smoke10개는 별도 미구현 작업이며 이번 턴에는 추가 worker를 실행하지 않았다. [구현·CPU 검증 집계](native_preflight_implementation.json)와 [최신 인계](../../../docs/agent/V6_V7_HANDOFF_KO.md)를 참고한다. 전체 train scan과 본학습 결과는 아직 없다.

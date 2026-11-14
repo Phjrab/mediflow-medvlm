@@ -1,5 +1,9 @@
 # 작업 기록
 
+## 2026-11-14 18:36 KST — 고유8모델 준비 완료·셀별 CPU preflight 등록
+
+V1/V4 최종 허용 복구가 성공했으며 각 시도3/실패2/복구2를 보존했다. GPU worker가 없는 상태에서 native architecture별 strict projection·고정 native template·CPU train 적격성 worker를 구현했다. Sol/high 구현과 Astra/high 검토를 거쳤으며 일반 wheel 전체495passed/14skipped/30subtests, native contracts12 및 worker28검사, supervisor refinement89검사를 통과했다. 8개 pinned 모델의 meta 구조와 template, SmolLM3 날짜 의미20사례도 확인했다. source2ff65d4를 cache-free archive로 고정하고 supervisor API가 기존23개 record와 파일131개를 보존하면서 CPU10/PENDING 및 GPU smoke10/IMPLEMENTATION_PENDING을 등록했다. 이번 tick은 한 번뿐이며 추가 worker를 실행하지 않았다. 전체 train scan·GPU smoke·본학습·평가 성공으로 세지 않는다. 실제 등록·보존·검증·다음 예약 근거는 outputs/v6_v7/preflight와 scheduler receipt, 전달 및 CI는 git receipt에 보존한다.
+
 ## 2026-11-12 19:53 KST — 두 모델 학습·재로드 완료, 평가 시작
 
 Qwen3-1.7B/4B의 smoke20 및 본학습250update가 모두 성공했고 각단계의새process재로드도통과했다(학습4회/재로드4회). 각본학습4,000sample/1,093,637target tokens, 양쪽validation선정step250, adapter_changed=true, test_used=false. Qwen3-1.7B의무작위참조256문항Base평가를시작했다. 공통4,530문항을포함한새평가6개완료는아직아니며, 결과값으로새seed·재매핑·학습량을선택하지않는다.

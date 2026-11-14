@@ -2,6 +2,22 @@
 
 2026-11-14 사용자 채택 지시: `docs/research/V6_V7_R2_INSTRUCTIONS.txt` 전체 및 같은 날 모델·추론 강도 자율 위임. 기존 v1~v5와 2026-11-13 Release는 보존한다. 이 문서는 초기 설정 인계이며 V6/V7 완료 보고가 아니다.
 
+## 최신 등록 — 2026-11-14 18:36 KST
+
+고유8개 모델의 준비가 모두 성공했다. V1/V4는 각각 시도3회·실패2회·복구2회를 그대로 유지한다. 이번 18:19 예약의 tick은 한 번뿐이며 V4 성공을 검증한 뒤 worker가 없는 미구현 gate에서 다음 코드를 구현했다. 새 작업을 이 턴에 실행하지 않았다.
+
+`refine-preflight`로 미시작 gate를 세분화했다. 활성 manifest hash는 `5c6d818fdf9a43d2fe4c74ed80f499986d8098c272126949a9f62895e7e9746c`, 새 source commit은 `2ff65d4d6435e14f0c5052044265308c399bf147`, source hash는 `19acab068e17abef54e9983d30d7b3e562e61b051f43f67d4fb91f8bb1146054`다. 기존23개 state record와 기존 파일131개의 bytes를 보존했다. 전체43 jobs 중 새 CPU10개는 `PENDING`, 새 GPU smoke10개와 aggregate gate는 `IMPLEMENTATION_PENDING`이다. 고유8모델/텍스트6·VLM4, 본학습10+추가최대8, V7별도4 범위는 변하지 않았다.
+
+다음 단일 tick의 대상은 `v6-native-preflight-T1`이다. 기존 OS coordinator를 교체하지 않았다. 각 새 job은 위 immutable snapshot의 `campaign_preflight`를 사용하고, worker/queue/복구 횟수는 같은 supervisor가 소유한다. 등록을 반복하거나 별도 worker를 시작하지 말고 아래의 기존 점검 명령을 한 번 사용한다.
+
+CPU worker는 기존 train 텍스트8,000개 또는 SLAKE1,979개 전체를 native processor로 검사하며 정답을 자르지 않는다. template 날짜는 `2026-11-14`, context 적격성은2048로 고정한다. 파일·모델·소스·환경 version을 확인하고 적격/제외 IDs와 source/task/label별 이유를 private에 저장한다. 알려지지 않은 encoder 오류·파일 변조·mask 위반은 셀 실패다. 완료 directory marker와 artifact SHA가 맞으면 receipt 작성 직전 중단도 동일 identity로 복구한다. CPU/meta 성공은 weights/CUDA/gradient/update/reload/본학습 성공을 뜻하지 않는다.
+
+실제 native8모델 meta 구조·template와 SmolLM3 고정 날짜20사례를 검증했다. native contract12검사, CPU worker28검사, supervisor refinement89검사를 통과했고, 일반 wheel 설치 전체495passed/14optional-skipped/30subtests를 확인했다. Astra/high의 최종 검토와 source bytes가 일치한다. private 근거는 workspace `outputs/v6_v7/preflight/`의 `native_contracts_cpu_20261114.json`, `astra_review_20261114.json`, `noneditable-test-receipt.json`, `deployment-preflight.json`, `registration-receipt.json`이다. 공개 집계는 `reports/public_summary/v6/native_preflight_implementation.json`이다.
+
+**다음 미시작 구현:** CPU jobs 이후 GPU smoke10개의 실행부를 개별 활성화한다. 새 strict projection 경로와 frozen native template를 실제 quantized loader에 적용하고, 모든 계열의 finite gradient·adapter 변화·20 updates·fresh reload를 검증해야 한다. 지금 역사 training loader/runner는 바꾸지 않았다. 모든 native eligibility와 지원 가능한 smoke 결과 뒤 공통 train을 동결한다. 기존 `v6-preflight_smoke` aggregate는 자식 결과를 검증하는 미구현 gate이며, CPU 작업 성공만으로 자동 성공시키지 않는다. first-seed/final checkpoint/평가/추가seed/V7은 여전히 미시작이다.
+
+20분 네이티브 예약은 ACTIVE이며 등록 확인 당시 다음 시각은18:39:58 KST였다. 최신 시간은 scheduler receipt를 우선한다. 기존 전달 HEAD780cfc2의 실제 CI43576060020은 성공했다. 새 전달 HEAD CI는 `outputs/v6_v7/git_receipt.json`에서 별도 확인한다.
+
 ## 실제 경로와 단일 소유자
 
 - 작업 저장소: `/home/chosun/Documents/Codex/2026-10-23/01-master-prompt-md-03-09/work/mediflow-medvlm`
