@@ -6,7 +6,7 @@
   "scope": "MODEL_PREPARATION_ONLY",
   "actual_failed_worker_attempts": 2,
   "supervisor_failure_count_at_0719_heartbeat": 1,
-  "second_exit_pending_ingestion": true,
+  "second_exit_pending_ingestion": false,
   "root_cause": "Upstream native shard uses model.safetensors-00001-of-00001.safetensors, rejected by legacy model-N-of-N allowlist. Pin and Hub access succeeded.",
   "upstream_index_entries": 632,
   "index_sha256": "aca8afed9da75b0f050b408d270766fd77627f1af401e240f61c3b47d0db02f9",
@@ -21,7 +21,7 @@
     "full_model_loaded": false,
     "gpu_work": false
   },
-  "recovery_registration": "PREPARED_NOT_REGISTERED",
+  "recovery_registration": "REGISTERED_NOT_STARTED",
   "third_attempt_started": false,
   "recovery_policy": "Supervisor-only source revision after actual Astra analysis and second-failure hold; retain original attempts and counts; one remaining recovery.",
   "scientific_identity_preserved": [
@@ -53,5 +53,11 @@
   "source_sha256": {
     "campaign_supervisor.py": "90bbfe16d2b8e4398ffe74429c84edb230afa6a5c3a138f9d27b0ed78e771914",
     "campaign_v6.py": "a5bb241c9f0d11ff2dfa5ce2d4cfc683285d4762d9f61125f3254a224717c336"
-  }
+  },
+  "registered_at": "2026-11-14T08:21:53.848724+00:00",
+  "registered_source_commit": "f45378c847498682132de00300f367dedd480fb4",
+  "registered_manifest_hash": "f5025fc060467924da8ceafb9874cec6a1d402f08d732a43f36d7b977dd6eacb",
+  "cumulative_attempts": 2,
+  "cumulative_failure_count": 2,
+  "post_v4_environment_native_recheck": "SUCCEEDED"
 }

@@ -49,6 +49,12 @@ systemctl --user start medvlm-v6-v7-supervisor.service
 
 worker가 없는 점검에서 V1의 `failure_count=2`, `attempts=2`, `ANALYSIS_REQUIRED` 및 후보의 원본 job/manifest hash가 현재 상태와 일치하는지 확인한다. 후보에 기록된 수정 snapshot의 supervisor로 `authorize-recovery --job-id prepare-V1 --analysis-receipt <검증된 분석 receipt> --manifest <수정 manifest>`를 실행한다. 이 연산은 해당 실패 job의 `cwd/source_files/source_hash`만 변경하며 나머지 job, argv, config/data/model identity와 누적 횟수를 보존한다. 이전 manifest와 실행 snapshot을 수정하지 않는다. 기존 OS launcher는 versioned manifest를 읽으므로 서비스 교체는 필요 없다. 이 등록 자체는 worker를 실행하지 않으며 다음 예약의 tick이 남은 마지막 시도를 시작한다. 후보·분석이 변경됐거나 검증되지 않았으면 등록하지 않는다.
 
+**2026-11-14 08:28 UTC 갱신:** V1 수정 snapshot은 08:21 UTC에 supervisor API로 등록됐다. 현재 versioned manifest는 `f5025fc060467924da8ceafb9874cec6a1d402f08d732a43f36d7b977dd6eacb`, V1 source commit은 `f45378c847498682132de00300f367dedd480fb4`다. `outputs/v6_v7/recovery/prepare-V1-registration-receipt.json`과 `prepared_recovery.json`은 `REGISTERED_NOT_STARTED`를 기록한다. 위 준비 절차를 다시 실행하지 말고 현재 state와 등록 receipt를 우선 확인한다. 두 기존 시도·실패는 유지됐고 마지막 시도는 다음 단일 tick의 대상이다.
+
+V4도 두 번의 `native_assets` ImportError 뒤 보류됐다. Astra medium은 SmolVLMProcessor가 필수로 요구하는 `num2words` 누락을 확인했다. worker가 없는 상태에서 공식 PyPI SHA256과 대조한 `num2words==0.5.14`, `docopt==0.6.2`만 추가했고 기존 배포판은 변경·삭제하지 않았다. 전체 환경 전후 목록, 설치 artifact hash, native processor·합성 이미지 CPU 검증, V1 native 재확인은 `outputs/v6_v7/recovery/v4/`에 있다. 기존 모델·source snapshot·argv·config/data identity는 유지한다. 저장소 train extra와 training lock은 재현을 위해 추가 의존성을 선언한다.
+
+V4 최종 Astra 검토 후 08:27 UTC에 남은 1회 복구를 supervisor API로 등록했다. `outputs/v6_v7/recovery/v4/registration-receipt.json`을 확인한다. V1/V4 모두 `PENDING`, `attempts=2`, `failure_count=2`이며 실제 세 번째 실행은 아직 시작하지 않았다. 이번 점검에서 tick은 한 번뿐이며 별도 launcher는 없다. 기존 queue 순서대로 V1 다음 V4가 진행된다. 후속 정상 worker는 한 번 확인하고 종료한다. 이 환경 의존성 수정과 native CPU 검증을 본학습·GPU smoke·full weights 검증 성공으로 세지 않는다.
+
 상태 수집은 local Python, 필요 시 Luna low/medium. 일반 구현은 Sol medium, 학습 pipeline은 Sol high. 아키텍처·누수·반복 오류는 Astra medium/high, 복잡한 종합 설계는 Astra high/xhigh. 현재 채팅 모델을 바꿨다고 주장하지 않는다. 실제 subagent 호출 모델/effort와 결과는 `reports/public_summary/v6/orchestration_log.json`에 누적한다. 네이티브 heartbeat의 모델/effort override는 현재 도구가 노출하지 않는다.
 
 ## 종료 조건과 공개 범위

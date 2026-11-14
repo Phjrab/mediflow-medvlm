@@ -1,0 +1,84 @@
+{
+  "schema_version": "medvlm.v6.preparation-recovery-report.v1",
+  "job_id": "prepare-V4",
+  "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
+  "pinned_revision": "be92141c8d0ceb98596a923c308ac2bbb4a7c466",
+  "scope": "MODEL_PREPARATION_ONLY",
+  "actual_failed_worker_attempts": 2,
+  "root_cause": "Native Transformers SmolVLMProcessor requires num2words even for image-only construction; package absent in native environment.",
+  "analysis_model": "gpt-6-astra",
+  "analysis_reasoning_effort": "medium",
+  "analysis_sha256": "fdbd499f63a665bd92ceaef3372f918f42c46aaef0faa79626f53082e2ea0b36",
+  "final_review_sha256": "3d25ea2085eab6936a3e4a0fec86565200f6dddfa2b903aeb09340b5a4ec2359",
+  "additive_environment_repair": {
+    "added": {
+      "docopt": "0.6.2",
+      "num2words": "0.5.14"
+    },
+    "existing_changed_or_removed": {},
+    "packages": [
+      {
+        "name": "num2words",
+        "version": "0.5.14",
+        "sha256": "1c8e5b00142fc2966fd8d685001e36c4a9911e070d1b120e1beb721fa1edb33d",
+        "filename": "num2words-0.5.14-py3-none-any.whl",
+        "metadata_url": "https://pypi.org/pypi/num2words/0.5.14/json"
+      },
+      {
+        "name": "docopt",
+        "version": "0.6.2",
+        "sha256": "49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491",
+        "filename": "docopt-0.6.2.tar.gz",
+        "metadata_url": "https://pypi.org/pypi/docopt/0.6.2/json"
+      }
+    ],
+    "existing_distribution_versions_preserved": true,
+    "no_worker_live_during_install": true
+  },
+  "native_validation": {
+    "status": "SUCCEEDED",
+    "processor_class": "SmolVLMProcessor",
+    "image_processor_class": "SmolVLMImageProcessor",
+    "image_seq_len": 81,
+    "chat_template_sha256": "af80b984f1e7c2dff1bb2dc3ecbf83fe385ab1cf84118b810e4bf64e73b414b8",
+    "tensor_shapes": {
+      "input_ids": [
+        1,
+        1430
+      ],
+      "attention_mask": [
+        1,
+        1430
+      ],
+      "pixel_values": [
+        1,
+        17,
+        3,
+        384,
+        384
+      ],
+      "pixel_attention_mask": [
+        1,
+        17,
+        384,
+        384
+      ]
+    },
+    "image_token_count": 1377,
+    "gpu_used": false,
+    "full_weights_loaded": false,
+    "downloaded_model_files": false,
+    "training_updates": 0
+  },
+  "v1_native_recheck": "SUCCEEDED; same classes/revision/index after additive dependencies",
+  "dependency_metadata_validation": "Built wheel declares train extra; all74 training lock pins match actual environment",
+  "registration_status": "REGISTERED_NOT_STARTED",
+  "registration_time": "2026-11-14T08:27:52.045547+00:00",
+  "source_model_config_data_argv_preserved": true,
+  "cumulative_attempts": 2,
+  "cumulative_failure_count": 2,
+  "third_attempt_started": false,
+  "extra_supervisor_ticks": 0,
+  "campaign_terminal": false,
+  "main_training_started": false
+}
