@@ -1,0 +1,41 @@
+{
+  "schema_version": "medvlm.v6.native-gpu-smoke-implementation.v1",
+  "status": "VERIFIED_IMPLEMENTATION_NOT_REGISTERED",
+  "reported_at": "2026-11-14T13:16:22.795470+00:00",
+  "source_hash": "a0b8e6de3cdbae6b9952879f5ceb060d1188e1130dac795738504146cb164a62",
+  "cells": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5",
+    "T6",
+    "V1",
+    "V2",
+    "V3",
+    "V4"
+  ],
+  "tests": {
+    "noneditable_full": {
+      "passed": 523,
+      "skipped": 24,
+      "subtests": 32,
+      "warnings": 6
+    },
+    "native_cpu_runtime": {
+      "passed": 9,
+      "subtests": 15
+    },
+    "native_cpu_worker": {
+      "passed": 29
+    }
+  },
+  "astra_review_sha256": "dc538f940574e39e8c76af3b782b7c351e9fbdcc8bdc0db00f394dfb747471b3",
+  "gpu_smokes_executed": 0,
+  "main_training_started": false,
+  "scope": "New opt-in native20update/320train smoke with exactNF4/LoRA target coverage, mean example targettoken loss, private atomicartifacts, freshprocess reload and train-only greedy generation",
+  "retry_policy": "Supervisor cumulative attempt limits unchanged; failed private staging preserved; freshbase deterministic retry; no partial optimizer/RNG resume",
+  "gpu_time_policy": "unlimited/null",
+  "new_weights_public": false,
+  "jetson_executed": false
+}

@@ -1,0 +1,182 @@
+{
+  "schema_version": "medvlm.v6.native-preflight-results.v1",
+  "reported_at": "2026-11-14T13:03:07.499079+00:00",
+  "status": "CPU_PREFLIGHT_ALL_10_SUCCEEDED",
+  "scope": "CPU native encoding, full-target eligibility and meta architecture only",
+  "source_commit": "2ff65d4d6435e14f0c5052044265308c399bf147",
+  "source_hash": "19acab068e17abef54e9983d30d7b3e562e61b051f43f67d4fb91f8bb1146054",
+  "model_count": 8,
+  "text_cells": 6,
+  "vlm_cells": 4,
+  "rows": [
+    {
+      "cell_id": "T1",
+      "original_count": 8000,
+      "eligible_count": 8000,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 2036,
+      "eligible_sequence_tokens": 1947254,
+      "eligible_supervised_tokens_after_shift": 1137306,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T09:40:55.704158+00:00",
+      "summary_sha256": "cd790ef2a01ed22cc01ab88f21e4b3a0346ec7b129308477c767225e4a5c8df3",
+      "receipt_sha256": "af8fb7bf646f6758c0f6adc19e9aa5a816aaeea11d8e5672c59ebc334e95e603"
+    },
+    {
+      "cell_id": "T2",
+      "original_count": 8000,
+      "eligible_count": 8000,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 2036,
+      "eligible_sequence_tokens": 1947254,
+      "eligible_supervised_tokens_after_shift": 1137306,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T10:00:51.556733+00:00",
+      "summary_sha256": "e78f25c2d330152a613c3a1f6dd7c888c6be8da961db3fcc5b460675a56b7738",
+      "receipt_sha256": "ba76b6a2405f2c3282f38a45d74b75db509cde07908412bfdb7daffb9538b1ac"
+    },
+    {
+      "cell_id": "T3",
+      "original_count": 8000,
+      "eligible_count": 7999,
+      "excluded_count": 1,
+      "excluded_reasons": {
+        "CONTEXT_OVERFLOW": 1
+      },
+      "max_sequence_tokens": 2016,
+      "eligible_sequence_tokens": 1790415,
+      "eligible_supervised_tokens_after_shift": 1060201,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T10:24:26.810537+00:00",
+      "summary_sha256": "c00dfec336e6ab1859169341a80dda0c01af3ef315f8be6c8139de77d07c0084",
+      "receipt_sha256": "4a378151901e47f5619be94006ac70dea5edce542fc09d0928bb37af91e4b66c"
+    },
+    {
+      "cell_id": "T4",
+      "original_count": 8000,
+      "eligible_count": 7999,
+      "excluded_count": 1,
+      "excluded_reasons": {
+        "CONTEXT_OVERFLOW": 1
+      },
+      "max_sequence_tokens": 2016,
+      "eligible_sequence_tokens": 1790415,
+      "eligible_supervised_tokens_after_shift": 1060201,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T10:41:45.395624+00:00",
+      "summary_sha256": "40b308f1725937accd2b77ead25a492535bed39f9c41585947c9e175b8e2040f",
+      "receipt_sha256": "7157e8875bb45d898d2d318f416dfef84e1633a524a74e6dfffbc689ab818340"
+    },
+    {
+      "cell_id": "T5",
+      "original_count": 8000,
+      "eligible_count": 8000,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 2009,
+      "eligible_sequence_tokens": 1753465,
+      "eligible_supervised_tokens_after_shift": 1083268,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T11:00:48.465364+00:00",
+      "summary_sha256": "cd8bf9a7bf1040036c3acb432cf95b34c882ef630f71e0d30e29986b3636feb5",
+      "receipt_sha256": "2e28f78525f0e8268ebed9f8ef7e5bac151ff81aa3098efd3c89ead7cddc40a7"
+    },
+    {
+      "cell_id": "T6",
+      "original_count": 8000,
+      "eligible_count": 7997,
+      "excluded_count": 3,
+      "excluded_reasons": {
+        "CONTEXT_OVERFLOW": 3
+      },
+      "max_sequence_tokens": 2037,
+      "eligible_sequence_tokens": 2308093,
+      "eligible_supervised_tokens_after_shift": 1101198,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T11:20:50.970503+00:00",
+      "summary_sha256": "08e85ae33311ae1828ced9d8691113e64972acaa74f109df3e3ee0485fb641e6",
+      "receipt_sha256": "f798c9f943f4698828eddf24d9c576e0fe1c3ea8cca7b5fedae6e73210c4f0f2"
+    },
+    {
+      "cell_id": "V1",
+      "original_count": 1979,
+      "eligible_count": 1979,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 1093,
+      "eligible_sequence_tokens": 1120630,
+      "eligible_supervised_tokens_after_shift": 7693,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T11:41:04.621290+00:00",
+      "summary_sha256": "a2265019d641572084e11acf89a9f54921afc62f116924721f5d009f2b307d92",
+      "receipt_sha256": "10facd8123510e7ed636eec8040d514b2165e2e724ef6ba414771d8e63f09ad9"
+    },
+    {
+      "cell_id": "V2",
+      "original_count": 1979,
+      "eligible_count": 1979,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 321,
+      "eligible_sequence_tokens": 588622,
+      "eligible_supervised_tokens_after_shift": 7252,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T12:01:25.156994+00:00",
+      "summary_sha256": "1b453e455f68daef7b7d18bc2176dc03c63798c8db7caa00fcfeca480ffb5440",
+      "receipt_sha256": "4e396d72ee37fd0145e0b22bddb8c747c0da7e16f6e2f80c052be05578cdc51d"
+    },
+    {
+      "cell_id": "V3",
+      "original_count": 1979,
+      "eligible_count": 1979,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 321,
+      "eligible_sequence_tokens": 588622,
+      "eligible_supervised_tokens_after_shift": 7252,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T12:21:16.721462+00:00",
+      "summary_sha256": "6d70ec5646b1d14a63a74bddda8f852ac107cbc06354dc0d7cc1c3c671425950",
+      "receipt_sha256": "9718e7efd36e5e5ce4048b4949473f6ed97ae7beb137d8cacb508f4dd82de16a"
+    },
+    {
+      "cell_id": "V4",
+      "original_count": 1979,
+      "eligible_count": 1979,
+      "excluded_count": 0,
+      "excluded_reasons": {},
+      "max_sequence_tokens": 1481,
+      "eligible_sequence_tokens": 2878512,
+      "eligible_supervised_tokens_after_shift": 7331,
+      "max_length": 2048,
+      "full_targets_preserved": true,
+      "finished_at": "2026-11-14T12:41:50.928471+00:00",
+      "summary_sha256": "2470b22bd06e585c03aad7cb9c294992c52fa2afd0177ee846d90d497cb583a8",
+      "receipt_sha256": "dd2550fcefeebc80fd847bb71773067827c78d6aafa31cd885bea9e444e6764a"
+    }
+  ],
+  "observed_axis_intersection_counts": {
+    "text": 7997,
+    "vqa": 1979
+  },
+  "common_train_freeze_decided": false,
+  "gpu_native_smoke_verified": false,
+  "main_training_started": false,
+  "dev_test_read": false,
+  "limitations": [
+    "Eligibility exclusions are context overflow with full answers preserved; no truncation.",
+    "Intersection counts are preliminary CPU observations; common cohort freeze awaits supported GPU smoke outcomes.",
+    "CPU/meta checks do not verify loaded weight execution, CUDA gradients, updates, save or fresh reload."
+  ]
+}

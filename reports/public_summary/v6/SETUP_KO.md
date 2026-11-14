@@ -27,3 +27,5 @@ CI 보완: 실제 import된 package bytes를 고정 logical source key로 hash�
 현재 본학습 완료 수는0이다. 다음 범위는 텍스트8,000개와 SLAKE train1,979개의 셀별 native 입력·정답 mask·2048 context 적격성 검사다. 이후 지원 가능한 셀의20-update GPU smoke를 확인하고 축별 공통 train을 동결한다. 준비된 모델 수가 늘었다는 이유로 예전96-target Qwen3.5 adapter나 minimum-validation-loss checkpoint를 V6 결과로 재해석하지 않는다.
 
 18:36 KST에 검증한 source2ff65d4의 CPU preflight10개를 supervisor에 등록했다. GPU smoke10개는 별도 미구현 작업이며 이번 턴에는 추가 worker를 실행하지 않았다. [구현·CPU 검증 집계](native_preflight_implementation.json)와 [최신 인계](../../../docs/agent/V6_V7_HANDOFF_KO.md)를 참고한다. 전체 train scan과 본학습 결과는 아직 없다.
+
+2026-11-14 22:00 KST 점검: native CPU preflight10개가 모두 최초 시도에 성공했다. 실제 train 전체의 인코딩·정답 mask·이미지 tensor 검사 결과는 [CPU 결과](NATIVE_PREFLIGHT_KO.md)와 [집계 JSON](native_preflight_results.json)에 보존했다. 길이 초과를 제외한 잠정 교집합은 text7,997/VQA1,979다. 공통 학습셋 동결은 GPU smoke 이후이며, CPU 검사를 본학습·평가 성공으로 세지 않는다.

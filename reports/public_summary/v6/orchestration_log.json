@@ -171,6 +171,48 @@
       "task_failure_count": 0,
       "result": "Read-only Astra review approved CPU-only registration conditional on final tests and immutable source. Fatal contract errors, complete target masks, label strata, crash-gap recovery and directory durability verified. GPU work remains pending.",
       "evidence_sha256": "ff90480f1fe96abdead8da9689d7c6f1e4069f26d993ef3c01dd60390bc4dee1"
+    },
+    {
+      "task": "Pinned native NF4 loader and exact projection coverage",
+      "agent": "/root/v6_gpu_runtime",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model and effort accepted by spawn_agent; no main chat model switch claimed",
+      "reason": "Architecture-aware training pipeline implementation",
+      "status": "SUCCEEDED",
+      "task_failure_count": 2,
+      "result": "Native CPU9passed/15subtests; core2passed/7optional-skipped. Real cached processor roundtrips and CPU PEFT gradients; no actual NF4/CUDA training executed.",
+      "failure_note": "Two unrelated command errors corrected: obsolete private inspection API and initial missing PYTHONPATH. No campaign attempt consumed."
+    },
+    {
+      "task": "Independent native 20-update smoke and fresh-process reload worker",
+      "agent": "/root/v6_gpu_smoke_worker",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model and effort accepted by spawn_agent; no main chat model switch claimed",
+      "reason": "Immutable GPU job implementation, tensor/mask integrity and durable private receipts",
+      "status": "SUCCEEDED",
+      "task_failure_count": 3,
+      "result": "Native29passed; core26passed/3optional-skipped. Actual CPU optimizer simulation20updates/320examples, real child-process reload with CPU seams and inherited lease tests. No real GPU run.",
+      "failure_notes": [
+        "Train hash validation moved before malformed JSON parsing",
+        "Torch2.14 accelerator graph probe in CPU fixture mocked explicitly",
+        "CUDNN version CUDA probe in CPU fixture mocked explicitly"
+      ]
+    },
+    {
+      "task": "Independent native GPU architecture and lifecycle review",
+      "agent": "/root/v6_gpu_review",
+      "actual_model": "gpt-6-astra",
+      "actual_reasoning_effort": "high",
+      "model_evidence": "Explicit model and effort accepted by spawn_agent; no main chat model switch claimed",
+      "reason": "Multiple native architectures, numerical parity, process leases and scientific scope",
+      "status": "SUCCEEDED",
+      "task_failure_count": 1,
+      "result": "SHA-bound final approval for source freeze and supervisor registration. Independent nativeCPU runtime9 and worker29tests passed; actual CUDA/NF4/10smoke success unverified.",
+      "evidence_sha256": "dc538f940574e39e8c76af3b782b7c351e9fbdcc8bdc0db00f394dfb747471b3",
+      "failure_note": "One independent worker CPU fixture initially hit torch2.14 accelerator probe despite CUDA masking; corrected fixture and final suite passed. No campaign attempt consumed."
     }
-  ]
+  ],
+  "updated_at": "2026-11-14T13:16:22.795184+00:00"
 }
