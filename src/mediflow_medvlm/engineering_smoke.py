@@ -22,11 +22,11 @@ def _read(path):
 
 
 def _training_code_hash():
-    root = Path(__file__).resolve().parents[2]
-    names = {str(path.relative_to(root)): file_hash(path)
-             for path in sorted((root / 'src' / 'mediflow_medvlm' / 'training').rglob('*'))
+    package = Path(__file__).resolve().parent
+    names = {"src/mediflow_medvlm/" + path.relative_to(package).as_posix(): file_hash(path)
+             for path in sorted((package / 'training').rglob('*'))
              if path.is_file() and path.suffix in {'.py', '.json', '.yaml', '.yml'}}
-    names['src/mediflow_medvlm/runtime.py'] = file_hash(root / 'src' / 'mediflow_medvlm' / 'runtime.py')
+    names['src/mediflow_medvlm/runtime.py'] = file_hash(package / 'runtime.py')
     return canonical_hash(names)
 
 
@@ -38,7 +38,8 @@ def _bound_identity(config_path, config):
         expected = os.environ.get('MEDVLM_SUPERVISOR_' + key.upper())
         if expected is not None and expected != actual:
             raise ValueError('supervisor identity mismatch: ' + key)
-    values['source_hash'] = os.environ.get('MEDVLM_SUPERVISOR_SOURCE_HASH', _training_code_hash())
+    source_hash = os.environ.get('MEDVLM_SUPERVISOR_SOURCE_HASH')
+    values['source_hash'] = _training_code_hash() if source_hash is None else source_hash
     return values
 
 

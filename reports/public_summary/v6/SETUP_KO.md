@@ -17,3 +17,7 @@ CPU 전체 검사 및 독립 launcher 생존·동시 실행 배제·복구 횟�
 71762는 제공처가 설명한 category·질환명·의도 내 random 연결 실험이다. 개별 QA의 임상 정합성·증강 lineage는 검증되지 않았다. GPU 시간 상한은 모두 unlimited/null이고, Jetson은 계획만 있으며 실행하지 않는다. 새로운 원본·V6/V7 가중치·비공개 예측은 공개하지 않는다. 최종 보고와 실제 최종 HEAD CI를 검증한 후에만 해당 campaign 예약을 중지한다.
 
 초기 등록 검증: 2026-11-14 13:39 KST, 독립 worker PID236828 및 학습 PID236836의 생존과 실제 GPU 점유를 확인했다. 실행 소스 commit은 `1602f3557c09ce4b3347362075c4088030ab368d`이며 복구0회다. 네이티브 예약은 ACTIVE, 다음 등록 시각은 2026-11-14 13:59:43 KST다. CPU298passed/7skipped/23subtests passed. 본학습·평가 완료를 기다리지 않고 예약으로 이어간다. 이 시각 이후 상태는 private supervisor receipt가 기준이다.
+
+2026-11-14 14:00 KST 첫 예약 점검: engineering smoke 20update/320예제/46,179 target tokens, 제외0·adapter 변화·fresh reload 모두 성공을 artifact SHA로 확인했다. GPU126.561초, 기술 실패0회이며 V6 본학습 성공으로 집계하지 않는다. supervisor가 prepare-T1로 진행했다. 전달 HEAD1cad6f1의 실제 CI43557824314는 일반 wheel 설치에서 source 경로를 checkout처럼 계산한 문제로 실패했다. 실행 snapshot은 보존하고 다음 source의 설치 형태별 identity 처리를 보완한다.
+
+CI 보완: 실제 import된 package bytes를 고정 logical source key로 hash하고 planner에는 명시적 checkout/snapshot 경로를 지원했다. source fallback은 필요한 경우에만 계산하며 runner/smoke hash를 일치시켰다. 일반 wheel 설치 전체303passed/7skipped/23subtests, 추가 회귀검사5개 통과. 실행 중 snapshot·공유 환경·동결 config는 변경하지 않았다. 새 commit의 원격 CI는 다음 실제 조회로 별도 확인한다.

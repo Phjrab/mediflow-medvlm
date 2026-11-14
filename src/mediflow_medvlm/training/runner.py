@@ -109,17 +109,26 @@ def save_checkpoint(output, model, processor, optimizer, scheduler, scaler, stat
 
 
 def _git_identity():
-    root = Path(__file__).resolve().parents[3]
-    files = {str(path.relative_to(root)): file_hash(path)
-             for directory in (root / "src", root / "configs")
-             for path in sorted(directory.rglob("*"))
-             if path.is_file() and path.suffix in {".py", ".json", ".yaml", ".yml"}}
+    package = Path(__file__).resolve().parents[1]
+    checkout = package.parent.name == "src"
+    root = package.parent.parent
+    if checkout:
+        files = {str(path.relative_to(root)): file_hash(path)
+                 for directory in (root / "src", root / "configs")
+                 for path in sorted(directory.rglob("*"))
+                 if path.is_file() and path.suffix in {".py", ".json", ".yaml", ".yml"}}
+    else:
+        files = {"src/mediflow_medvlm/" + path.relative_to(package).as_posix(): file_hash(path)
+                 for path in sorted(package.rglob("*"))
+                 if path.is_file() and path.suffix in {".py", ".json", ".yaml", ".yml"}}
     source = {"source_tree_sha256": canonical_hash(files), "source_files": files,
               "training_code_sha256": canonical_hash({name: digest for name, digest in files.items()
                                                        if "/training/" in name or name.endswith("/runtime.py")})}
+    if not checkout:
+        return {**source, "commit": None, "dirty": None}
     try:
-        return {**source, "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL).strip(),
-                "dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], text=True, stderr=subprocess.DEVNULL).strip())}
+        return {**source, "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True, stderr=subprocess.DEVNULL).strip(),
+                "dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True, stderr=subprocess.DEVNULL).strip())}
     except (subprocess.SubprocessError, OSError):
         return {**source, "commit": None, "dirty": None}
 

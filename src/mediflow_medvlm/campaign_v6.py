@@ -59,8 +59,14 @@ def model_key(model_id):
     return model_id.replace("/", "--")
 
 
-def source_identity(repo):
-    files = {name: file_hash(Path(repo) / name) for name in
+def source_identity(repo=None):
+    """Hash an explicit snapshot, or the package bytes this worker imported.
+
+    Logical src keys stay stable across checkout and noneditable installations.
+    An explicit repo always binds that tree and never falls back to this package.
+    """
+    package = Path(__file__).resolve().parent if repo is None else Path(repo) / "src/mediflow_medvlm"
+    files = {name: file_hash(package / Path(name).name) for name in
              ("src/mediflow_medvlm/campaign_v6.py", "src/mediflow_medvlm/campaign_supervisor.py",
               "src/mediflow_medvlm/runtime.py",
               "src/mediflow_medvlm/__init__.py", "src/mediflow_medvlm/domain.py",
@@ -71,7 +77,11 @@ def source_identity(repo):
 
 
 def build_plan(data_root, campaign_root, *, repo=None, python=None):
-    repo = Path(repo or Path(__file__).resolve().parents[2]).resolve()
+    if repo is None:
+        package = Path(__file__).resolve().parent
+        # Installed planners bind the caller's checkout; workers hash imported bytes.
+        repo = package.parent.parent if package.parent.name == "src" else Path.cwd()
+    repo = Path(repo).resolve()
     data_root, campaign_root = Path(data_root).resolve(), Path(campaign_root).resolve()
     files, source_hash = source_identity(repo)
     cells = [dict(cell_spec(c[0]), seed=SEEDS[0], status="PENDING") for c in CELLS]
@@ -254,12 +264,14 @@ def _heartbeats(path, progress):
 
 def _identity(cell, data_root):
     defaults = {"run_id": "v6-prepare-" + cell["cell_id"],
-                "source_hash": source_identity(Path(__file__).resolve().parents[2])[1],
                 "config_hash": canonical_hash({"operation": "prepare-model", "model_id": cell["model_id"],
                                                "trust_remote_code": False, "full_model_load": False}),
                 "data_hash": canonical_hash({"data_root": str(data_root), "training_data": "NOT_READ_PREPARATION"}),
                 "model_hash": canonical_hash({"model_id": cell["model_id"], "revision": "RESOLVE_AND_PIN_ONCE"})}
-    return {k: os.environ.get("MEDVLM_SUPERVISOR_" + k.upper(), value) for k, value in defaults.items()}
+    identity = {k: os.environ.get("MEDVLM_SUPERVISOR_" + k.upper(), value) for k, value in defaults.items()}
+    source_hash = os.environ.get("MEDVLM_SUPERVISOR_SOURCE_HASH")
+    identity["source_hash"] = source_identity()[1] if source_hash is None else source_hash
+    return identity
 
 
 def prepare_model(cell_id, data_root, campaign_root, receipt):
@@ -406,13 +418,14 @@ def main(argv=None):
         item.add_argument("--campaign-root", required=True)
         if name == "plan":
             item.add_argument("--output")
+            item.add_argument("--repo", help="Checkout or immutable snapshot containing src/mediflow_medvlm")
             item.add_argument("--python", default=sys.executable)
         else:
             item.add_argument("--cell", choices=[c[0] for c in CELLS], required=True)
             item.add_argument("--receipt", required=True)
     args = parser.parse_args(argv)
     if args.command == "plan":
-        plan = build_plan(args.data_root, args.campaign_root, python=args.python)
+        plan = build_plan(args.data_root, args.campaign_root, repo=args.repo, python=args.python)
         if args.output:
             atomic_json(args.output, plan)
         else:

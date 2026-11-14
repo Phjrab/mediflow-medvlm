@@ -1,0 +1,25 @@
+{
+  "trigger_ci_run": 43557824314,
+  "trigger_head": "1cad6f16ca2b210e6b314c2de2c0a5258f8ebf3d",
+  "trigger_conclusion": "failure",
+  "cause": "Noneditable installed modules assumed a src checkout path; standalone fallback eagerly evaluated even with supervisor hash.",
+  "changes": [
+    "Hash actual imported package bytes using stable logical src keys",
+    "Explicit checkout/snapshot planner binding and --repo",
+    "Keep runner and smoke training hash aligned; installed package never claims cwd Git identity",
+    "Compute fallback lazily while config/data/model verification remains strict"
+  ],
+  "verification": {
+    "type": "actual offline wheel installation, full suite via installed target",
+    "passed": 303,
+    "skipped": 7,
+    "failed": 0,
+    "subtests_passed": 23,
+    "warnings": 6,
+    "log_sha256": "bad99ceae3a7a51608aef4907b6ee1074d71e281175dbeee6bb8689f446bf90a"
+  },
+  "existing_worker_snapshot_changed": false,
+  "shared_virtualenv_changed": false,
+  "gpu_work_performed_by_repair": false,
+  "new_remote_ci": "PENDING_POST_PUSH_CHECK"
+}

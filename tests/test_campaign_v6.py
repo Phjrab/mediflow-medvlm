@@ -196,3 +196,44 @@ def test_one_blocked_model_keeps_other_families_eligible_and_barriers_terminal(t
     assert len(selected['text']) == 2
     assert 'T6' not in selected['text']
     assert len(selected['vqa']) == 2
+
+
+def test_source_identity_hashes_imported_bytes_with_stable_checkout_keys():
+    from mediflow_medvlm import campaign_v6
+    from mediflow_medvlm.runtime import canonical_hash, file_hash
+    files, digest = campaign_v6.source_identity()
+    package = Path(campaign_v6.__file__).resolve().parent
+    assert files
+    assert all(name.startswith('src/mediflow_medvlm/') for name in files)
+    assert files == {name: file_hash(package / Path(name).name) for name in files}
+    assert digest == canonical_hash(files)
+
+
+def test_plan_binds_explicit_snapshot_even_when_other_package_is_imported(tmp_path):
+    import shutil
+    from mediflow_medvlm import campaign_v6
+    from mediflow_medvlm.runtime import file_hash
+    package = Path(campaign_v6.__file__).resolve().parent
+    snapshot = tmp_path / 'snapshot'
+    files, _ = campaign_v6.source_identity()
+    for name in files:
+        target = snapshot / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(package / Path(name).name, target)
+    changed = snapshot / 'src/mediflow_medvlm/domain.py'
+    changed.write_text(changed.read_text() + '\n# snapshot fixture\n')
+    plan = build_plan(tmp_path / 'data', tmp_path / 'campaign', repo=snapshot)
+    job = plan['jobs'][0]
+    assert job['cwd'] == str(snapshot)
+    assert job['source_files']['src/mediflow_medvlm/domain.py'] == file_hash(changed)
+    assert job['source_hash'] != campaign_v6.source_identity()[1]
+    changed.unlink()
+    with pytest.raises(FileNotFoundError):
+        build_plan(tmp_path / 'data', tmp_path / 'campaign', repo=snapshot)
+
+
+def test_supervisor_source_identity_does_not_compute_standalone_fallback(monkeypatch, tmp_path):
+    from mediflow_medvlm import campaign_v6
+    monkeypatch.setenv('MEDVLM_SUPERVISOR_SOURCE_HASH', 'bound-snapshot')
+    monkeypatch.setattr(campaign_v6, 'source_identity', Mock(side_effect=AssertionError('eager fallback')))
+    assert campaign_v6._identity(campaign_v6.cell_spec('T1'), tmp_path)['source_hash'] == 'bound-snapshot'

@@ -149,3 +149,38 @@ def test_reload_must_name_final_and_be_a_fresh_process(smoke):
     with pytest.raises(ValueError, match='fresh-process'):
         run_smoke(smoke.path, smoke.receipt, invoke=bad_reload)
     assert not smoke.receipt.exists()
+
+
+def test_training_identity_matches_runner_and_changes_with_actual_imported_bytes(tmp_path, monkeypatch):
+    import shutil
+    from mediflow_medvlm import engineering_smoke
+    from mediflow_medvlm.training.runner import _git_identity
+    actual = _git_identity()
+    assert actual['training_code_sha256'] == _training_code_hash()
+    assert actual['source_files']['src/mediflow_medvlm/runtime.py']
+    package = Path(engineering_smoke.__file__).resolve().parent
+    expected_files = {'src/mediflow_medvlm/' + path.relative_to(package).as_posix(): file_hash(path)
+                      for path in (package / 'training').rglob('*')
+                      if path.is_file() and path.suffix in {'.py', '.json', '.yaml', '.yml'}}
+    expected_files['src/mediflow_medvlm/runtime.py'] = file_hash(package / 'runtime.py')
+    assert _training_code_hash() == canonical_hash(expected_files)
+    if package.parent.name != 'src':
+        assert actual['commit'] is None and actual['dirty'] is None
+    isolated = tmp_path / 'site-packages' / 'mediflow_medvlm'
+    shutil.copytree(package / 'training', isolated / 'training')
+    shutil.copyfile(package / 'runtime.py', isolated / 'runtime.py')
+    monkeypatch.setattr(engineering_smoke, '__file__', str(isolated / 'engineering_smoke.py'))
+    assert _training_code_hash() == actual['training_code_sha256']
+    runtime = isolated / 'runtime.py'
+    runtime.write_text(runtime.read_text() + '\n# changed installed bytes\n')
+    assert _training_code_hash() != actual['training_code_sha256']
+
+
+def test_bound_source_hash_fallback_is_lazy_but_config_verification_remains(smoke, monkeypatch):
+    from mediflow_medvlm import engineering_smoke
+    monkeypatch.setenv('MEDVLM_SUPERVISOR_SOURCE_HASH', 'snapshot-hash')
+    monkeypatch.setattr(engineering_smoke, '_training_code_hash', Mock(side_effect=AssertionError('eager fallback')))
+    assert engineering_smoke._bound_identity(smoke.path, smoke.config)['source_hash'] == 'snapshot-hash'
+    monkeypatch.setenv('MEDVLM_SUPERVISOR_CONFIG_HASH', 'wrong')
+    with pytest.raises(ValueError, match='supervisor identity mismatch: config_hash'):
+        engineering_smoke._bound_identity(smoke.path, smoke.config)

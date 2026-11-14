@@ -49,6 +49,18 @@
         "stale finalization receipt"
       ],
       "disposition": "terminal barriers corrected; pending exit handling and finalization binding hardened before launch"
+    },
+    {
+      "task": "repair noneditable installed-package CI source identity regression",
+      "agent": "/root/v67_ci_repair",
+      "actual_model": "gpt-6.1-sol",
+      "actual_reasoning_effort": "medium",
+      "reason": "Known file-layout error with direct traceback; bounded implementation fix while immutable worker continues",
+      "status": "SUCCEEDED",
+      "task_failure_count": 0,
+      "trigger_failure_count": 1,
+      "trigger_ci_run": 43557824314,
+      "result": "Noneditable wheel full suite 303 passed, 7 skipped, 23 subtests; five regression tests added; live snapshot and shared environment unchanged"
     }
   ]
 }
