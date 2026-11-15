@@ -22,6 +22,7 @@ import uuid
 import traceback
 import fcntl
 
+from . import telemetry as telemetry_module
 from . import campaign_preflight as cpu
 from .campaign_supervisor import atomic_json, canonical_hash, file_hash
 from .campaign_v6 import cell_spec
@@ -30,7 +31,7 @@ from .runtime import utcnow, ResourcePolicy, BudgetLedger
 SCHEMA = "medvlm.v6.native-gpu-smoke-config.v1"
 SCOPE = "NATIVE_GPU_SMOKE_ONLY"
 IDENTITY_KEYS = cpu.IDENTITY_KEYS
-SOURCE_FILES = tuple(dict.fromkeys((*cpu.SOURCE_FILES, "campaign_gpu_smoke.py", "training/v6_gpu.py")))
+SOURCE_FILES = tuple(dict.fromkeys((*cpu.SOURCE_FILES, "campaign_gpu_smoke.py", "training/v6_gpu.py", "telemetry.py", "telemetry_probe.py")))
 RECIPE = {"seed": 20261023, "optimizer_steps": 20, "examples": 320,
           "microbatch": 1, "gradient_accumulation": 16, "optimizer": "AdamW",
           "weight_decay": 0.0, "betas": [0.9, 0.999], "eps": 1e-8,
@@ -338,7 +339,12 @@ def train_checkpoint(config_path, directory, receipt_path):
             or any((directory / name).exists() for name in ("adapter", "metrics.json", "train.metrics.json"))
             or receipt_path.exists()):
         raise SmokeError("FRESH_TRAIN_STAGE_IDENTITY_REQUIRED")
-    metrics = _train(config, rows, directory)
+    writer = telemetry_module.attempt_writer(config, directory, role="training")
+    writer.start_sampler()
+    try:
+        metrics = _train(config, rows, directory, telemetry=writer) if writer.enabled else _train(config, rows, directory)
+    finally:
+        writer.close()
     if (metrics.get("training_pid") != os.getpid() or metrics.get("optimizer_steps") != 20
             or metrics.get("samples_processed") != 320 or metrics.get("excluded_count") != 0
             or metrics.get("adapter_changed") is not True):
@@ -401,7 +407,7 @@ def _progress(config, step, stage):
             "last_complete_checkpoint": None})
 
 
-def _train(config, rows, staging):
+def _train(config, rows, staging, telemetry=None):
     _inherited_supervisor_fds(config)
     import torch
     from .training.v6_gpu import (load_v6_gpu_bundle, adapter_digest,
@@ -428,7 +434,9 @@ def _train(config, rows, staging):
     losses, tokens, gradients, norms, learning_rates = [], [], [], [], []
     selected = config["data"]["selection"]["train_records"]
     sequence_tokens = 0
+    sequences = []
     for step in range(20):
+        step_started = time.monotonic()
         _progress(config, step, "native_gpu_training")
         learning_rates.append(optimizer.param_groups[0]["lr"])
         for record in selected[step * 16:(step + 1) * 16]:
@@ -438,6 +446,7 @@ def _train(config, rows, staging):
             losses.append(float(loss.detach()))
             tokens.append(count)
             sequence_tokens += metadata["sequence_tokens"]
+            sequences.append(metadata["sequence_tokens"])
         report = projection_gradient_report(model, bundle.contract["architecture"])
         gradients.append(report)
         for projection in report["projections"]:
@@ -450,6 +459,14 @@ def _train(config, rows, staging):
         optimizer.step()
         scheduler.step()
         optimizer.zero_grad(set_to_none=True)
+        if telemetry is not None:
+            start = step * 16
+            payload = telemetry_module.update_payload(step=step + 1, total=20, losses=losses[start:],
+                tokens=tokens[start:], sequences=sequences[start:], samples=len(losses), samples_total=320,
+                lr_used=learning_rates[-1], lr_next=optimizer.param_groups[0]["lr"], norm=norm,
+                wall=time.monotonic() - step_started, allocator=telemetry_module.allocator_metrics(torch))
+            payload.update(supervised_tokens_cumulative=sum(tokens), sequence_tokens_cumulative=sequence_tokens)
+            telemetry.step(payload)
     if not all(value for tensors in nonzero_seen.values() for value in tensors.values()):
         raise SmokeError("PER_PROJECTION_NONZERO_GRADIENT_NOT_OBSERVED")
     final = adapter_digest(model)
@@ -658,11 +675,15 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
         # No partial optimizer/adapter state can silently initialize this attempt.
         staging = Path(tempfile.mkdtemp(prefix=output.name + ".attempt-", dir=output.parent))
         old_umask = os.umask(0o077)
+        telemetry = telemetry_module.TelemetryWriter()
         try:
             atomic_json(staging / "attempt.json", {"status": "STARTED",
                 **{k: config[k] for k in IDENTITY_KEYS}, "attempt_id": uuid.uuid4().hex,
                 "resume_supported": False, "retry_start": "original_base", "started_at": utcnow()})
             atomic_json(staging / "config.json", config)
+            telemetry = telemetry_module.attempt_writer(config, staging)
+            telemetry.event("model_loading")
+            telemetry.observe_steps()
             _progress(config, 0, "load_native_gpu")
             _inherited_supervisor_fds(config)
             ledger = BudgetLedger(config["gpu_ledger_path"], policy=ResourcePolicy())
@@ -671,6 +692,7 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
                 metrics = _train_process(config_path, staging, config, invoke)
             finally:
                 ledger.finish()
+                telemetry.stop_observer()
             metrics["gpu_accounting"] = {"train_seconds": ledger.session_seconds,
                 "ledger_path": config["gpu_ledger_path"], "snapshot_after_train": ledger.snapshot()}
             atomic_json(staging / "metrics.json", metrics)
@@ -679,6 +701,10 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
                 raise SmokeError("INCOMPLETE_SMOKE_TRAINING")
             _validate(config)
             _checkpoint(config, staging, metrics)
+            telemetry.record_artifacts(staging)
+            telemetry.snapshot(training_succeeded=True)
+            telemetry.event("checkpoint_saved")
+            telemetry.event("reload_started")
             _progress(config, 20, "fresh_process_reload")
             reload_ledger = BudgetLedger(config["gpu_ledger_path"], policy=ResourcePolicy())
             reload_ledger.start(config["model_id"], config["run_id"], "native_smoke_reload")
@@ -693,6 +719,9 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
             if file_hash(config_path) != initial_config_bytes:
                 raise SmokeError("CONFIG_FILE_CHANGED_DURING_SMOKE")
             _verify_checkpoint(config, staging)
+            telemetry.record_artifacts(staging, reload_verified=True)
+            telemetry.event("reload_succeeded")
+            telemetry.finish(metrics, reload_succeeded=True)
             # fsync model/processor files too: save_pretrained alone is not a
             # durable checkpoint and cannot close the rename/receipt crash gap.
             for path in staging.rglob("*"):
@@ -727,6 +756,9 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
             atomic_json(receipt_path, result)
             return result
         except BaseException as exc:
+            telemetry.stop_observer()
+            if telemetry.status.get("phase") == "reloading": telemetry.snapshot(reload_succeeded=False)
+            telemetry.event("failed")
             if staging.exists():
                 atomic_json(staging / "failure.private.json", {"exception_type": type(exc).__name__,
                     "exception_message": str(exc), "traceback": traceback.format_exc()})
@@ -735,6 +767,7 @@ def run_smoke(config_path, receipt_path, *, invoke=None):
                     "resume_supported": False, "retry_start": "original_base", "finished_at": utcnow()})
             raise
         finally:
+            telemetry.close()
             os.umask(old_umask)
 
 

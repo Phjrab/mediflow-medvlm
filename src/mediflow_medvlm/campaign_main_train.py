@@ -20,6 +20,7 @@ import time
 import traceback
 import uuid
 
+from . import telemetry as telemetry_module
 from . import campaign_common_train_freeze as common
 from . import campaign_gpu_smoke as smoke
 from .campaign_supervisor import atomic_json, canonical_hash, file_hash, verify_source
@@ -28,7 +29,7 @@ from .runtime import BudgetLedger, ResourcePolicy, utcnow
 
 SCHEMA = "medvlm.v6.main-train-config.v1"
 SCOPE = "NATIVE_FIRST_SEED_ONE_PASS_FINAL_ONLY"
-SOURCE_FILES = tuple(dict.fromkeys((*common.SOURCE_FILES, "campaign_main_train.py")))
+SOURCE_FILES = tuple(dict.fromkeys((*common.SOURCE_FILES, "campaign_main_train.py", "telemetry.py", "telemetry_probe.py")))
 IDENTITY_KEYS = smoke.IDENTITY_KEYS
 MainTrainError = smoke.SmokeError
 _read, _absolute = smoke._read, smoke._absolute
@@ -252,11 +253,12 @@ def _progress(config, step, samples, stage, checkpoint=None):
             "heartbeat_at": utcnow(), "last_complete_checkpoint": checkpoint, "optimizer_rng_resume_supported": False})
 
 
-def _updates(model, optimizer, scheduler, records, config, example, gradient_report, progress=None):
+def _updates(model, optimizer, scheduler, records, config, example, gradient_report, progress=None, telemetry=None):
     """One pass; every target-token-mean example has equal weight within its update."""
     import torch
     losses, tokens, sequences, reports, norms, rates, seen, counts = [], [], [], [], [], [], [], []
     for step, start in enumerate(range(0, len(records), 16)):
+        step_started = time.monotonic()
         batch_records = records[start:start + 16]
         if progress: progress(step, len(seen))
         rates.append(optimizer.param_groups[0]["lr"])
@@ -273,6 +275,13 @@ def _updates(model, optimizer, scheduler, records, config, example, gradient_rep
         norms.append(norm)
         optimizer.step(); scheduler.step()
         counts.append(len(batch_records))
+        if telemetry is not None:
+            payload = telemetry_module.update_payload(step=step + 1, total=(len(records) + 15) // 16,
+                losses=losses[start:], tokens=tokens[start:], sequences=sequences[start:], samples=len(seen),
+                samples_total=len(records), lr_used=rates[-1], lr_next=optimizer.param_groups[0]["lr"],
+                norm=norm, wall=time.monotonic() - step_started, allocator=telemetry_module.allocator_metrics(torch))
+            payload.update(supervised_tokens_cumulative=sum(tokens), sequence_tokens_cumulative=sum(sequences))
+            telemetry.step(payload)
         if progress: progress(step + 1, len(seen))
     optimizer.zero_grad(set_to_none=True)
     return {"optimizer_steps": len(counts), "samples_processed": len(seen), "excluded_count": 0,
@@ -283,7 +292,7 @@ def _updates(model, optimizer, scheduler, records, config, example, gradient_rep
         "final_learning_rate": optimizer.param_groups[0]["lr"]}
 
 
-def _train(config, rows, records, staging):
+def _train(config, rows, records, staging, telemetry=None):
     _inherited_supervisor_fds(config)
     import torch
     from .training.v6_gpu import (load_v6_gpu_bundle, adapter_digest, projection_gradient_report,
@@ -312,7 +321,7 @@ def _train(config, rows, records, staging):
         return loss, count, metadata["sequence_tokens"]
     metrics = _updates(model, optimizer, scheduler, records, config, example,
         lambda: projection_gradient_report(model, bundle.contract["architecture"]),
-        lambda step, count: _progress(config, step, count, "one_pass_native_main_training"))
+        lambda step, count: _progress(config, step, count, "one_pass_native_main_training"), telemetry=telemetry)
     assert_frozen_base(model)
     final = adapter_digest(model)
     after = projection_adapter_digests(model, bundle.contract["architecture"])
@@ -466,7 +475,12 @@ def train_checkpoint(config_path, directory, receipt_path):
         and not receipt_path.exists() and not any((directory / n).exists() for n in
             ("adapter", "processor", "train.metrics.json", "checkpoint.json", "final_selection.json")),
         "FRESH_ORIGINAL_BASE_TRAIN_STAGE_REQUIRED")
-    metrics = _train(config, rows, records, directory)
+    writer = telemetry_module.attempt_writer(config, directory, role="training")
+    writer.start_sampler()
+    try:
+        metrics = _train(config, rows, records, directory, telemetry=writer) if writer.enabled else _train(config, rows, records, directory)
+    finally:
+        writer.close()
     _metrics_proof(config, metrics, records)
     require(metrics.get("training_pid") == os.getpid(), "TRAINING_PROCESS_IDENTITY_MISMATCH")
     atomic_json(directory / "train.metrics.json", metrics)
@@ -681,11 +695,15 @@ def run_train(config_path, receipt_path, *, invoke=None):
         require(not receipt_path.exists(), "SUCCESS_RECEIPT_WITHOUT_FINAL_OUTPUT")
         staging = Path(tempfile.mkdtemp(prefix=output.name + ".attempt-", dir=output.parent))
         old_umask = os.umask(0o077)
+        telemetry = telemetry_module.TelemetryWriter()
         try:
             atomic_json(staging / "attempt.json", {"status": "STARTED", **{k: config[k] for k in IDENTITY_KEYS},
                 "attempt_id": uuid.uuid4().hex, "retry_start": "original_base", "optimizer_rng_resume_supported": False,
                 "started_at": utcnow()})
             atomic_json(staging / "config.json", config)
+            telemetry = telemetry_module.attempt_writer(config, staging)
+            telemetry.event("model_loading")
+            telemetry.observe_steps()
             _progress(config, 0, 0, "start_original_base_train_child")
             ledger = BudgetLedger(config["gpu_ledger_path"], policy=ResourcePolicy())
             ledger.start(config["model_id"], config["run_id"], "native_main_train")
@@ -693,6 +711,7 @@ def run_train(config_path, receipt_path, *, invoke=None):
                 train, train_exit = _process("train", config_path, staging, config, invoke)
             finally:
                 ledger.finish()
+                telemetry.stop_observer()
             require(train.get("metrics_sha256") == file_hash(staging / "train.metrics.json"), "TRAIN_METRICS_HASH_MISMATCH")
             metrics = _read(staging / "train.metrics.json")
             _metrics_proof(config, metrics, records)
@@ -706,6 +725,10 @@ def run_train(config_path, receipt_path, *, invoke=None):
             _validate(config)
             _checkpoint(config, staging, metrics)
             atomic_json(staging / "final_selection.json", _final_selection(config, staging))
+            telemetry.record_artifacts(staging)
+            telemetry.snapshot(training_succeeded=True)
+            telemetry.event("checkpoint_saved")
+            telemetry.event("reload_started")
             _progress(config, config["recipe"]["optimizer_steps"], len(records), "fresh_final_reload_child", str(staging / "checkpoint.json"))
             reload_ledger = BudgetLedger(config["gpu_ledger_path"], policy=ResourcePolicy())
             reload_ledger.start(config["model_id"], config["run_id"], "native_main_reload")
@@ -719,6 +742,9 @@ def run_train(config_path, receipt_path, *, invoke=None):
             _validate(config)
             require(file_hash(config_path) == initial_bytes, "CONFIG_CHANGED_DURING_ONE_PASS")
             _verify_output(config, staging, records)
+            telemetry.record_artifacts(staging, reload_verified=True)
+            telemetry.event("reload_succeeded")
+            telemetry.finish(metrics, reload_succeeded=True)
             for path in staging.rglob("*"):
                 if path.is_file():
                     os.chmod(path, 0o600)
@@ -744,6 +770,9 @@ def run_train(config_path, receipt_path, *, invoke=None):
             atomic_json(receipt_path, result)
             return result
         except BaseException as exc:
+            telemetry.stop_observer()
+            if telemetry.status.get("phase") == "reloading": telemetry.snapshot(reload_succeeded=False)
+            telemetry.event("failed")
             if staging.exists():
                 atomic_json(staging / "failure.private.json", {"exception_type": type(exc).__name__,
                     "exception_message": str(exc), "traceback": traceback.format_exc()})
@@ -752,6 +781,7 @@ def run_train(config_path, receipt_path, *, invoke=None):
                     "retry_start": "original_base", "optimizer_rng_resume_supported": False, "finished_at": utcnow()})
             raise
         finally:
+            telemetry.close()
             os.umask(old_umask)
 
 
