@@ -230,6 +230,10 @@ from collections import Counter
 
 
 def test_model_load_failure_preserves_every_planned_row_before_failing(planned,tmp_path,monkeypatch):
+    # This branch fails before any tensor/CUDA operation. Keep its accounting
+    # assertion active in the lightweight CI install without optional torch.
+    import sys
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace())
     from mediflow_medvlm.evaluation import v6_native
     def fail(*a,**k):raise RuntimeError("synthetic loader failure")
     monkeypatch.setattr(v6_native,"load_evaluation_bundle",fail)
