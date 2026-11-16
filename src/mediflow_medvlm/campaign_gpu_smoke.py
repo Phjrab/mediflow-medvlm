@@ -296,6 +296,52 @@ def _gemma_target_loss(native, moved, supervised):
     return total / targets.numel()
 
 
+# Phi3ForCausalLM uses the native decoder output followed by an ordinary lm_head.
+# Keep this architecture-specific: other native models may transform their logits.
+_PHI3_TARGET_CHUNK = 64
+
+
+def _phi3_target_loss(native, moved, supervised):
+    """Preserve the whole native sequence; bound frozen-head CE saved buffers.
+
+    Each checkpoint returns a token SUM, so all targets (including EOS) receive
+    exactly the same 1 / global-target-count weight. Replaying only the frozen,
+    deterministic output head avoids retaining one FP32 target-by-vocabulary
+    backward buffer per chunk and never replays decoder/LoRA dropout. The native
+    decoder is invoked exactly once, with the same inputs as its CausalLM forward.
+    """
+    import torch
+    from torch.utils.checkpoint import checkpoint
+    from transformers import Phi3ForCausalLM
+
+    if type(native) is not Phi3ForCausalLM:
+        raise SmokeError("PHI3_NATIVE_CAUSAL_MODEL_REQUIRED")
+    head = native.lm_head
+    if (type(head) is not torch.nn.Linear or any(p.requires_grad for p in head.parameters())
+            or head._forward_hooks or head._forward_pre_hooks or head._backward_hooks):
+        raise SmokeError("PHI3_FROZEN_ORDINARY_OUTPUT_HEAD_REQUIRED")
+    if moved["labels"].ndim != 2 or moved["labels"].shape[0] != 1:
+        raise SmokeError("PHI3_SINGLE_EXAMPLE_LOSS_REQUIRED")
+    inputs = {k: v for k, v in moved.items() if k != "labels"}
+    output = native.model(**inputs)
+    hidden = output.last_hidden_state[:, :-1, :][supervised]
+    targets = moved["labels"][:, 1:][supervised]
+
+    def chunk_sum(features, labels):
+        return torch.nn.functional.cross_entropy(head(features).float(), labels, reduction="sum")
+
+    total = torch.zeros((), device=hidden.device, dtype=torch.float32)
+    for start in range(0, targets.numel(), _PHI3_TARGET_CHUNK):
+        features = hidden[start:start + _PHI3_TARGET_CHUNK]
+        labels = targets[start:start + _PHI3_TARGET_CHUNK]
+        if torch.is_grad_enabled() and features.requires_grad:
+            value = checkpoint(chunk_sum, features, labels, use_reentrant=False)
+        else:
+            value = chunk_sum(features, labels)
+        total = total + value
+    return total / targets.numel()
+
+
 def _target_loss(model, batch):
     import torch
     moved = {k: v.to(model.device) if hasattr(v, "to") else v for k, v in batch.items()}
@@ -306,12 +352,15 @@ def _target_loss(model, batch):
         raise SmokeError("NO_SUPERVISED_TARGET_TOKENS")
     native = model.get_base_model() if hasattr(model, "peft_config") else model
     gemma = getattr(getattr(native, "config", None), "model_type", None) == "gemma3"
+    phi3 = getattr(getattr(native, "config", None), "model_type", None) == "phi3"
     with torch.autocast(device_type=model.device.type, dtype=torch.bfloat16, enabled=model.device.type == "cuda"):
-        if gemma:
+        if phi3:
+            loss = _phi3_target_loss(native, moved, supervised)
+        elif gemma:
             loss = _gemma_target_loss(native, moved, supervised)
         else:
             output = model(**{k: v for k, v in moved.items() if k != "labels"})
-    if not gemma:
+    if not gemma and not phi3:
         logits = output.logits[:, :-1, :][supervised].float()
         loss = torch.nn.functional.cross_entropy(logits, shifted[supervised], reduction="mean")
     if not bool(torch.isfinite(loss)):
