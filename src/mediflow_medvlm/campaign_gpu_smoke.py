@@ -318,7 +318,8 @@ def _phi3_target_loss(native, moved, supervised):
         raise SmokeError("PHI3_NATIVE_CAUSAL_MODEL_REQUIRED")
     head = native.lm_head
     if (type(head) is not torch.nn.Linear or any(p.requires_grad for p in head.parameters())
-            or head._forward_hooks or head._forward_pre_hooks or head._backward_hooks):
+            or head._forward_hooks or head._forward_pre_hooks or head._backward_hooks
+            or head._backward_pre_hooks):
         raise SmokeError("PHI3_FROZEN_ORDINARY_OUTPUT_HEAD_REQUIRED")
     if moved["labels"].ndim != 2 or moved["labels"].shape[0] != 1:
         raise SmokeError("PHI3_SINGLE_EXAMPLE_LOSS_REQUIRED")

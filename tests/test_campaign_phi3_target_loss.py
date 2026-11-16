@@ -22,10 +22,11 @@ def model():
     config = Phi3Config(vocab_size=101, hidden_size=16, intermediate_size=32,
         num_hidden_layers=2, num_attention_heads=4, num_key_value_heads=2,
         max_position_embeddings=4096, original_max_position_embeddings=4096,
-        pad_token_id=0, bos_token_id=1, eos_token_id=2, use_cache=False,
+        pad_token_id=0, bos_token_id=1, eos_token_id=2, use_cache=False, tie_word_embeddings=True,
         attention_dropout=.1, resid_pdrop=.1, embd_pdrop=.1)
     config._attn_implementation = 'sdpa'
     native = Phi3ForCausalLM(config)
+    assert native.lm_head.weight is native.model.embed_tokens.weight
     native.requires_grad_(False)
     native.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
     native.enable_input_require_grads()
@@ -221,7 +222,7 @@ def test_extreme_finite_full_vocabulary_ce_and_trainable_hidden(model, dtype):
     torch.testing.assert_close(features.grad, expected_grad, rtol=1e-6, atol=1e-5)
 
 
-@pytest.mark.parametrize('failure', ['empty', 'batch-two', 'trainable-head', 'hooked-head', 'unsupported-class'])
+@pytest.mark.parametrize('failure', ['empty', 'batch-two', 'trainable-head', 'hooked-head', 'backward-pre-hook', 'unsupported-class'])
 def test_phi3_fail_closed(model, failure):
     inputs = batch(17)
     native = model.get_base_model()
@@ -229,6 +230,7 @@ def test_phi3_fail_closed(model, failure):
     elif failure == 'batch-two': inputs = {k: v.repeat(2, 1) for k, v in inputs.items()}
     elif failure == 'trainable-head': native.lm_head.weight.requires_grad_(True)
     elif failure == 'hooked-head': native.lm_head.register_forward_hook(lambda *args: None)
+    elif failure == 'backward-pre-hook': native.lm_head.register_full_backward_pre_hook(lambda *args: None)
     else:
         class Unsupported(Phi3ForCausalLM): pass
         native.__class__ = Unsupported
