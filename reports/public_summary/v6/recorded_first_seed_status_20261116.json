@@ -242,7 +242,17 @@
   "v7_started": false,
   "scope": "Ten original-Base first-seed trainings, final-only save and fresh reload; quality evaluation and complete V6/V7 remain pending.",
   "next_stage_implementation": "Independent CPU audit links immutable external common train freeze and all ten recorded terminal receipts; source/activation contract reviewed and CPU-tested.",
-  "next_stage_executed_at_publication": false,
+  "next_stage_executed_at_publication": true,
   "failed_attempt_history_preserved": true,
-  "new_weights_or_raw_records_included": false
+  "new_weights_or_raw_records_included": false,
+  "next_stage_execution": {
+    "job_id": "v6-first_seed_final",
+    "source_commit": "9474425a280346fc11244bac92f0de42316d3680",
+    "worker_exit_code": 0,
+    "worker_exited_at": "2026-11-16T03:54:11.242017+00:00",
+    "receipt_sha256": "42e3252ee71d7bae0176887974f91eaa2848ae8e9d24a046d88441b6548f8184",
+    "receipt_artifacts_verified": 3,
+    "supervisor_reconcile_pending": true,
+    "gpu_work_performed": false
+  }
 }

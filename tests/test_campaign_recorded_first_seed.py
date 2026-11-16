@@ -18,7 +18,9 @@ def write(path, value):
 
 @pytest.fixture
 def planned(tmp_path, monkeypatch):
-    source = Path(r.__file__).resolve().parents[2]
+    # CI runs against an installed wheel; __file__ on the imported package does
+    # not identify the checkout containing this test and its captured sources.
+    source = Path(__file__).resolve().parents[1]
     sup = s.Supervisor(tmp_path / "private")
     old_state = {"campaign_id": "old", "jobs": {r.main_train.common.JOB_ID:
         {"status": "SUCCEEDED", "attempts": 1, "exit_code": 0}}}
