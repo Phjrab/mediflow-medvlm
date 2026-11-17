@@ -1,0 +1,536 @@
+{
+  "schema_version": "medvlm.recorded-initial-calibration-public-results.v1",
+  "observed_at": "2026-11-17T02:42:06.083786+00:00",
+  "campaign_id": "v6-forge-recorded-20261115T062358Z",
+  "initial_conditions_completed": 20,
+  "scheduled_predictions": 4696,
+  "technical_failures": 0,
+  "source_protocol_hash": "8643dc5b2eab8fc4ee97a2294452b0842eb821ffaf14313640b47b315a79d959",
+  "scope": "Initial fixed-subset generation length calibration; not full-dev quality scores or model selection.",
+  "cells": [
+    {
+      "job_id": "v6-caps-initial-T1-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 6
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 154
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "48649fab6eeb05f157dc7cfe64cdfd7d3f41446c1dcfaeb5f4e5033519ddb550"
+    },
+    {
+      "job_id": "v6-caps-initial-T1-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 37
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "3e8fe5b87eecaaf0fcd272395e9ec7c07bd3a2155af40fd76b8dcc6b94a4f9f3"
+    },
+    {
+      "job_id": "v6-caps-initial-T2-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 5
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 1
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 184
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "d95b35fee16e82d0bb4dd2eaf88856fa623c71493f92792183becaafe42af8e2"
+    },
+    {
+      "job_id": "v6-caps-initial-T2-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 27
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "6f5aafca572cc50a6bbb708f63658e20c612c1c32be84b2e0b4f47509be7d08f"
+    },
+    {
+      "job_id": "v6-caps-initial-T3-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 179
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "487d150c06013aa5632ab6213007b2755c38b4773763dd328b93fb34eb56393b"
+    },
+    {
+      "job_id": "v6-caps-initial-T3-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 33
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "e11abbe0b0f9d0cada5c57fbb190816d0df60940261c7b72ea5b5a6dfe07ee15"
+    },
+    {
+      "job_id": "v6-caps-initial-T4-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 2
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 12
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 192
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "63230dbdebddee3b7e8318967611aa7a28a1b1251a17d6961b9c4651a042f9ba"
+    },
+    {
+      "job_id": "v6-caps-initial-T4-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 24
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "51456108a05f13dfdd2340dbaaa149c5d8014e5fd29f2dd11c13f5f4ac7fa7d4"
+    },
+    {
+      "job_id": "v6-caps-initial-T5-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 9
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 146
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "2a3f2d8ea6ae862a8c39c2467a3443746bbcd1edd3d33fd96ad8b15f8e7b0708"
+    },
+    {
+      "job_id": "v6-caps-initial-T5-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 41
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "f6b6dd4b5306615218397a667b6af5f5553a586691fce80ffbf6b621042e7948"
+    },
+    {
+      "job_id": "v6-caps-initial-T6-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 46
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 1
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 140
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "46536a18f5f1ddfca664f3e8931f5d467d7ef817d32a845ff4889ff6fbb7bd58"
+    },
+    {
+      "job_id": "v6-caps-initial-T6-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 306,
+      "technical_complete": true,
+      "task_counts": {
+        "context_qa": {
+          "scheduled": 50,
+          "successful": 50,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_mcq": {
+          "scheduled": 64,
+          "successful": 64,
+          "technical_failures": 0,
+          "length_terminated": 0
+        },
+        "medical_qa": {
+          "scheduled": 192,
+          "successful": 192,
+          "technical_failures": 0,
+          "length_terminated": 34
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "0f2bd6bf42b83f27b5ef5c1846e5b8480c87c8a050991c9b00ac0476d2af264c"
+    },
+    {
+      "job_id": "v6-caps-initial-V1-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "ed59ea5b763602b582ad3349a19e5c9248386fe97434885fa098c18138fdde93"
+    },
+    {
+      "job_id": "v6-caps-initial-V1-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "e285f02add557877697ef90d41510a1c4914d225a2051e6fe7127b172b5a3699"
+    },
+    {
+      "job_id": "v6-caps-initial-V2-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "aea72d8ab6622b57589c4c6f19737da37db112f20541ea5eb45a3f7d144f06ca"
+    },
+    {
+      "job_id": "v6-caps-initial-V2-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "df6fe1414b421858996a6e0c97869d53730faee6f8a7e3d2cf177fe7606d6164"
+    },
+    {
+      "job_id": "v6-caps-initial-V3-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 9
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "2b7c3feaa06a2d4e0460375dd1d9888fadac2d0f9d2f517d7c5f7a0a68bec88f"
+    },
+    {
+      "job_id": "v6-caps-initial-V3-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "d2598192d4c821d8730412f99612f6acfcdc3cacf4ea0ceb502d1e3174b88d36"
+    },
+    {
+      "job_id": "v6-caps-initial-V4-base",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "96e8e07b16dd1b32ba1ad0d2e4974449c403c227a3e8c2530db9ac8e90421fc4"
+    },
+    {
+      "job_id": "v6-caps-initial-V4-tuned",
+      "status": "SUCCEEDED",
+      "scheduled_count": 128,
+      "technical_complete": true,
+      "task_counts": {
+        "medical_vqa": {
+          "scheduled": 128,
+          "successful": 128,
+          "technical_failures": 0,
+          "length_terminated": 0
+        }
+      },
+      "attempts": 1,
+      "failure_count": 0,
+      "recovery_attempts": 0,
+      "receipt_sha256": "ec44a5337fb74b0f2cf975b0c99ac8194b73cd5d308ceb37391b32bf433a12f2"
+    }
+  ],
+  "once_bump_predeclared_rule_triggered_task_types": [
+    "context_qa",
+    "medical_mcq",
+    "medical_qa",
+    "medical_vqa"
+  ],
+  "planned_uniform_caps": {
+    "medical_mcq": 128,
+    "context_qa": 128,
+    "medical_qa": 512,
+    "medical_vqa": 512
+  },
+  "cap_protocol_frozen": false,
+  "raised_cap_gpu_rerun_executed": false,
+  "full_dev_executed": false,
+  "model_selection_completed": false,
+  "test_executed": false,
+  "v7_executed": false,
+  "clinical_accuracy_claimed": false,
+  "raw_text_or_weights_included": false
+}
