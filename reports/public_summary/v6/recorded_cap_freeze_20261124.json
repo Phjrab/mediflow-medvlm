@@ -1,0 +1,50 @@
+{
+  "scope": "VALIDATION_CAP_PROTOCOL_FREEZE_ONLY",
+  "source_commit": "84f345a9ff94fda6cd78760c00dc71601eede71b",
+  "caps": {
+    "medical_mcq": 128,
+    "context_qa": 128,
+    "medical_qa": 512,
+    "medical_vqa": 512
+  },
+  "bump_rounds": 1,
+  "all20_technical_complete": true,
+  "final_task_totals": {
+    "context_qa": {
+      "scheduled": 600,
+      "successful": 600,
+      "technical_failures": 0,
+      "length_terminated": 21
+    },
+    "medical_mcq": {
+      "scheduled": 768,
+      "successful": 768,
+      "technical_failures": 0,
+      "length_terminated": 18
+    },
+    "medical_qa": {
+      "scheduled": 2304,
+      "successful": 2304,
+      "technical_failures": 0,
+      "length_terminated": 865
+    },
+    "medical_vqa": {
+      "scheduled": 1024,
+      "successful": 1024,
+      "technical_failures": 0,
+      "length_terminated": 9
+    }
+  },
+  "further_bump_allowed": false,
+  "full_dev_started": false,
+  "test_started": false,
+  "family_selection_completed": false,
+  "clinical_quality_certified": false,
+  "schema_version": "medvlm.v6.cap-freeze-public-summary.v1",
+  "campaign_id": "v6-forge-recorded-20261115T062358Z",
+  "cap_gate_receipt_sha256": "f4f3dc2b1d86c68235f98d1d06dcba4477ed15368ad15a7e75a068430859e308",
+  "final_protocol_sha256": "25844d435d87b10ffee793dc7be895364316d80adc42bf4fd512aee4c60306ce",
+  "calibration_prediction_records": 4696,
+  "conditions": 20,
+  "interpretation": "Technical output-length calibration only; residual length termination retained; no clinical quality or selection result"
+}
