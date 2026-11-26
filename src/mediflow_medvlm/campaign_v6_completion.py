@@ -1149,9 +1149,10 @@ def main(argv=None):
         else:
             if not config["uses_gpu"]:os.environ["CUDA_VISIBLE_DEVICES"]=""
             result=run_job(args.config,args.receipt)
+        _require(result.get("status")=="SUCCEEDED","COMPLETION_CLI_RESULT_NOT_SUCCEEDED")
     except Exception as exc:
         print(json.dumps({"status":"FAILED","exception_type":type(exc).__name__,**({"reason_code":str(exc)} if isinstance(exc,dev.caps.initial.gate.GateError) else {})}),file=sys.stderr);return 1
-    print(json.dumps({"status":result["status"],"scope":result["scope"]}));return 0
+    print(json.dumps({"status":result["status"],"scope":config["scope"]}));return 0
 
 
 if __name__=="__main__":raise SystemExit(main())
