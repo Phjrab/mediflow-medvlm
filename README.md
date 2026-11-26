@@ -41,6 +41,16 @@ PYTHONPATH=src:tests python3 -m unittest test_domain test_validation test_workfl
 
 ## 데이터와 실행
 
+### 로컬 안구·두피 사진을 직접 학습하기
+
+최신 사진이 저장된 컴퓨터에서 `python scripts/kiosk_terminal.py menu`로
+기존 분류기 라벨 후보 생성, 검수 CSV, VQA 학습 준비·시작·재개, 결과 확인을
+수동 실행할 수 있다. 먼저 로컬 설정과 기존 모델 경로를 채운다.
+[터미널 사용 안내](docs/research/KIOSK_TERMINAL_KO.md)와
+[설정 예제](configs/kiosk_terminal.example.json)에 단계별 명령이 있다.
+
+### 기존 데이터 파이프라인
+
 core는 Python3.10 이상이며, 검증한 GPU 학습 profile은 Python3.12다. 학습 의존성은
 `configs/requirements-training.lock.txt`에 실제 설치 버전을 기록했다. Jetson에는 x86용
 환경을 복사하지 않는다. 대용량 원본·가중치·예측은 Git 밖에 둔다.

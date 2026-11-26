@@ -20,3 +20,7 @@ runtime/
 .env.*
 *.pem
 *.key
+kiosk*.local.json
+*.keras
+*.h5
+*.hdf5

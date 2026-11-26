@@ -1,0 +1,61 @@
+{
+  "schema_version": "medvlm.kiosk-terminal.v1",
+  "work_dir": "/absolute/path/to/medvlm-data/kiosk_rgb",
+  "data_root": "/absolute/path/to/medvlm-data",
+  "sources": [
+    {
+      "source_id": "eye",
+      "image_dir": "/absolute/path/to/latest-photos/eye",
+      "modality": "external_eye_rgb",
+      "groups_csv": null
+    },
+    {
+      "source_id": "scalp",
+      "image_dir": "/absolute/path/to/latest-photos/scalp",
+      "modality": "scalp_microscope",
+      "groups_csv": null
+    }
+  ],
+  "teachers": {
+    "eye": {
+      "backend": "keras",
+      "modality": "external_eye_rgb",
+      "checkpoint": "/absolute/path/to/eye_classifier.keras",
+      "class_names_file": "/absolute/path/to/eye_classes.json",
+      "input_size": [224, 224],
+      "preprocessing": null,
+      "color_order": "rgb",
+      "output_type": "probabilities",
+      "device": "cpu"
+    },
+    "scalp": {
+      "backend": "keras",
+      "modality": "scalp_microscope",
+      "checkpoint": "/absolute/path/to/scalp_classifier.keras",
+      "class_names_file": "/absolute/path/to/scalp_classes.json",
+      "input_size": [224, 224],
+      "preprocessing": null,
+      "color_order": "rgb",
+      "output_type": "probabilities",
+      "device": "cpu"
+    }
+  },
+  "split": {
+    "train": 0.8,
+    "validation": 0.1,
+    "test": 0.1,
+    "seed": 20261126
+  },
+  "pseudo_labels": {
+    "allow_train": true,
+    "allow_validation": false,
+    "min_confidence": 0.95,
+    "min_margin": 0.15,
+    "note": "실험용 예시 임계값이며 실제 정확도로 보정되지 않았습니다."
+  },
+  "training_template": "/absolute/path/to/existing-vqa-run/config.json",
+  "initialization_adapter": "/absolute/path/to/existing-vqa-checkpoint",
+  "initialization_manifest": null,
+  "start_from_base": false,
+  "_help": "이 예제를 git 저장소 밖으로 복사하고 실제 경로/클래스 순서/입력 크기/전처리를 채우세요. teacher 설정은 예시이며 실제 모델을 뜻하지 않습니다."
+}

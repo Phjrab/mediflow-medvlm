@@ -10,7 +10,11 @@ from ..runtime import canonical_hash, file_hash, resolve_resource_policy
 
 
 def load_config(path):
-    config = json.loads(Path(path).read_text())
+    return validate_config(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def validate_config(config):
+    """Validate a prepared recipe without writing files or importing a GPU runtime."""
     required = {"run_id", "pair_id", "experiment_id", "model_id", "revision", "train_file",
                 "validation_file", "freeze_manifest", "output_dir", "data_root"}
     missing = required - set(config)
@@ -84,6 +88,8 @@ def load_frozen_data(config):
             raise ValueError("KorMedMCQA is evaluation-only in v1")
         if any(not row.get("source_revision") for row in records):
             raise ValueError("source revision must be resolved")
+        for row in records:
+            validate_kiosk_supervision(row, kind, config, freeze)
         ids = [row["sample_id"] for row in records]
         if len(set(ids)) != len(ids):
             raise ValueError("duplicate sample_id in frozen split")
@@ -95,6 +101,61 @@ def load_frozen_data(config):
                                 for key, value in freeze["splits"].items() if key.endswith("/test")}
     hashes["freeze_manifest_sha256"] = file_hash(freeze_path)
     return result, hashes
+
+
+def validate_kiosk_supervision(row, split, config, freeze):
+    """Admit only explicitly reviewed or policy-approved kiosk labels.
+
+    This gate deliberately leaves historical non-kiosk datasets unchanged. A
+    teacher's output is training supervision, never independent test truth.
+    """
+    metadata = row.get("metadata", {})
+    if not (str(row.get("source_id", "")).startswith("kiosk_") or "kiosk" in metadata):
+        return
+    if row.get("task_type") != "medical_vqa" or not row.get("input", {}).get("images"):
+        raise ValueError("kiosk supervision requires medical_vqa with an image")
+    if row.get("split") != split:
+        raise ValueError("kiosk split mismatch")
+    allowed = row.get("restrictions", {}).get("sft_allowed")
+    if (split in {"train", "validation"} and allowed is not True) or (split == "test" and allowed is not False):
+        raise ValueError("kiosk sft_allowed does not match the frozen split")
+    supervision = row.get("supervision", {})
+    kind = supervision.get("supervision_kind")
+    if (kind not in {"human_reviewed", "source_supported", "teacher_pseudo"}
+            or supervision.get("annotation_provenance") != kind
+            or metadata.get("supervision_kind") != kind):
+        raise ValueError("kiosk annotation provenance is missing or inconsistent")
+    kiosk = metadata.get("kiosk") or {}
+    policy = freeze.get("identity", {}).get("selection_policy")
+    if not isinstance(policy, dict) or kiosk.get("selection_policy_sha256") != canonical_hash(policy):
+        raise ValueError("kiosk selection policy is not bound to the frozen dataset")
+    expected_review = {"human_reviewed": "reviewed", "source_supported": "source_supported",
+                       "teacher_pseudo": "policy_accepted_pseudo"}[kind]
+    if row.get("review_status") != expected_review:
+        raise ValueError("kiosk review status does not match annotation provenance")
+    if kind == "teacher_pseudo":
+        if split == "test":
+            raise ValueError("teacher pseudo-labels cannot be test references")
+        if policy.get("allow_" + split) is not True:
+            raise ValueError("kiosk frozen policy disallows pseudo-labels for " + split)
+        if split == "validation" and config.get("allow_pseudo_validation") is not True:
+            raise ValueError("pseudo validation requires explicit allow_pseudo_validation=true")
+        teacher = kiosk.get("teacher")
+        confidence = kiosk.get("teacher_confidence")
+        margin = kiosk.get("teacher_margin")
+        if (not isinstance(teacher, dict) or not teacher.get("signature")
+                or not teacher.get("class_names") or not teacher.get("modality")
+                or teacher.get("modality") != metadata.get("modality")
+                or supervision.get("answer") not in teacher["class_names"]
+                or type(confidence) not in (int, float) or not math.isfinite(confidence)
+                or not policy.get("min_confidence", 1) <= confidence <= 1
+                or type(margin) not in (int, float) or not math.isfinite(margin)
+                or not policy.get("min_margin", 1) <= margin <= 1):
+            raise ValueError("kiosk teacher provenance, confidence or margin is missing")
+    elif not kiosk.get("reviewer"):
+        raise ValueError("kiosk reviewed labels require a reviewer")
+    elif kind == "source_supported" and not kiosk.get("evidence"):
+        raise ValueError("kiosk source-supported labels require source evidence")
 
 
 def verified_checkpoint(checkpoint):

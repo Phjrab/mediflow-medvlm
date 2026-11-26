@@ -1,5 +1,6 @@
 """Immutable evaluation selection, resumable inference and paired summaries."""
 from __future__ import annotations
+from contextlib import nullcontext
 import json
 import os
 from pathlib import Path
@@ -241,11 +242,14 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
                 warmup_start = time.monotonic(); warmups = []
                 for original in balanced_validation_rows(validation["validation"], 2, config.get("seed", 20261023)):
                     sample = {k: original[k] for k in ("sample_id", "task_type", "input")}
+                    if "source_id" in original:
+                        sample["source_id"] = original["source_id"]
                     try:
                         encoded, _ = encoder(sample, processor, model.config, include_labels=False,
                                                    max_length=config.get("max_length", 2048), image_root=config.get("image_root", str(data_root)))
                         encoded = {key: value.to(model.device) if hasattr(value, "to") else value for key, value in encoded.items()}
-                        with torch.inference_mode():
+                        generation_context = torch.autocast("cuda", dtype=torch.bfloat16) if config.get("v6_native") else nullcontext()
+                        with torch.inference_mode(), generation_context:
                             model.generate(**encoded, do_sample=False, max_new_tokens=4, max_time=30,
                                            pad_token_id=tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id)
                         torch.cuda.synchronize(); warmups.append({"sample_id": original["sample_id"], "status": "SUCCEEDED"})
@@ -261,6 +265,8 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
                         break
                     # This restricted object is the only data sent to the predictor.
                     sample = {k: original[k] for k in ("sample_id", "task_type", "input")}
+                    if "source_id" in original:
+                        sample["source_id"] = original["source_id"]
                     sample["input"] = {**sample["input"], "images": protocol["image_files"][sample["sample_id"]]}
                     pred = {"sample_id": original["sample_id"], "run_id": run_id, "pair_id": identity["pair_id"],
                             "input_hash": protocol["input_digests"][sample["sample_id"]], "model_identity": identity["identity_hash"],
@@ -277,7 +283,8 @@ def evaluate(config_path, protocol_path, output_dir, *, adapter_path=None, pair_
                         pred["prompt_token_sha256"] = canonical_hash({key: encoded[key].tolist() for key in
                             ("input_ids", "attention_mask", "token_type_ids", "mm_token_type_ids") if key in encoded})
                         torch.cuda.synchronize()
-                        with torch.inference_mode():
+                        generation_context = torch.autocast("cuda", dtype=torch.bfloat16) if config.get("v6_native") else nullcontext()
+                        with torch.inference_mode(), generation_context:
                             generated = model.generate(**encoded, **pred["generation_settings"], max_time=120,
                                                        pad_token_id=tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id)
                         torch.cuda.synchronize()
