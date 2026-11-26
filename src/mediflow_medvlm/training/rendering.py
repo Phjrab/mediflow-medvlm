@@ -127,11 +127,14 @@ def encode_sample(sample, processor, model_config, *, max_length=2048, image_roo
     paths, metadata = image_paths(sample, image_root)
     opened = []
     if paths:
-        from PIL import Image
+        from PIL import Image, ImageOps
         for path, item in zip(paths, metadata):
             with Image.open(path) as original:
                 item.update({"width": original.width, "height": original.height})
-                opened.append(original.convert("RGB"))
+                # The kiosk inventory/teacher share this orientation contract.
+                # Keep historical sources byte-for-byte compatible with their renderer.
+                oriented = ImageOps.exif_transpose(original) if str(sample.get("source_id", "")).startswith("kiosk_") else original
+                opened.append(oriented.convert("RGB"))
     prompt_messages = render_messages(sample, False, image_root, history)
     prompt = native_encode(processor, prompt_messages, generation_prompt=True, images=opened)
     if not include_labels:

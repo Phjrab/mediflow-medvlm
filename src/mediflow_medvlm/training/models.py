@@ -97,16 +97,22 @@ def _common(config):
             "trust_remote_code": False, "local_files_only": config.get("local_files_only", False)}
 
 
+def _model_source(config):
+    # Keep the Hub model ID as the accounting identity while a V6 continuation
+    # loads the exact previously prepared local snapshot.
+    return config.get("native_snapshot_path") or config["model_id"]
+
+
 def load_processor(config, model_config=None):
     from transformers import AutoProcessor, AutoTokenizer
     if model_config is None:
         from transformers import AutoConfig
-        model_config = AutoConfig.from_pretrained(config["model_id"], **_common(config)).to_dict()
+        model_config = AutoConfig.from_pretrained(_model_source(config), **_common(config)).to_dict()
     elif hasattr(model_config, "to_dict"):
         model_config = model_config.to_dict()
     is_vlm = bool(model_config.get("vision_config"))
     cls = AutoProcessor if is_vlm else AutoTokenizer
-    processor = cls.from_pretrained(config["model_id"], **_common(config))
+    processor = cls.from_pretrained(_model_source(config), **_common(config))
     tokenizer = getattr(processor, "tokenizer", processor)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -127,11 +133,11 @@ def native_loader(model_config):
 
 def model_file_digests(config):
     """Hash actually cached native weights/configs without a second download."""
-    from huggingface_hub import try_to_load_from_cache
     def resolve(name):
-        if Path(config["model_id"]).is_dir():
-            path = Path(config["model_id"]) / name
+        if Path(_model_source(config)).is_dir():
+            path = Path(_model_source(config)) / name
             return path if path.is_file() else None
+        from huggingface_hub import try_to_load_from_cache
         found = try_to_load_from_cache(config["model_id"], name, cache_dir=config.get("cache_dir"), revision=config["revision"])
         return Path(found) if isinstance(found, str) else None
     names = {"config.json", "generation_config.json", "model.safetensors", "model.safetensors.index.json", "tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "preprocessor_config.json", "processor_config.json"}
@@ -156,8 +162,20 @@ def load_model(config, training=False, adapter_path=None):
         raise RuntimeError("GPU_NOT_AVAILABLE")
     if device == "cpu" and not config.get("synthetic_fixture", False):
         raise RuntimeError("large-model CPU fallback is disabled; use a training GPU")
-    model_config = AutoConfig.from_pretrained(config["model_id"], **_common(config))
+    model_config = AutoConfig.from_pretrained(_model_source(config), **_common(config))
     loader = native_loader(model_config)
+    native = config.get("v6_native")
+    audit = None
+    if native:
+        from .v6_native import audit_native_architecture
+        if (native.get("cell_id") not in {"V1", "V2", "V3", "V4"}
+                or native.get("fixed_template_date") != "2026-11-14"
+                or config.get("quantization") != "nf4" or config.get("dtype") != "bfloat16"
+                or config.get("local_files_only") is not True or device != "cuda"):
+            raise ValueError("V6 continuation requires its original VQA native recipe")
+        audit = audit_native_architecture(model_config, native["cell_id"])
+        from .v6_gpu import _cuda_guard
+        _cuda_guard(torch)
     dtype_name = config.get("dtype", "bfloat16" if device == "cuda" and torch.cuda.is_bf16_supported() else "float16")
     if device == "cpu":
         dtype_name = "float32"
@@ -168,14 +186,33 @@ def load_model(config, training=False, adapter_path=None):
     if quantization == "nf4":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                                                            bnb_4bit_use_double_quant=True,
-                                                           bnb_4bit_compute_dtype=dtype)
+                                                           bnb_4bit_compute_dtype=dtype,
+                                                           **({"llm_int8_skip_modules": ["lm_head", *audit["excluded_roots"]]} if audit else {}))
     elif quantization != "none":
         raise ValueError("quantization must be none or nf4")
-    model = loader.from_pretrained(config["model_id"], **kwargs)
+    if native:
+        kwargs["use_safetensors"] = True
+    model = loader.from_pretrained(_model_source(config), **kwargs)
     processor = load_processor(config, model_config)
+    native_metadata = {}
+    if native:
+        from .v6_native import freeze_native_template, verify_native_no_thinking
+        from .v6_gpu import _install_smolvlm_inputs_merger
+        native_metadata = {"template": freeze_native_template(processor, native["fixed_template_date"]),
+                           "architecture": audit,
+                           "thinking": verify_native_no_thinking(processor, model_config.model_type),
+                           "compatibility": _install_smolvlm_inputs_merger(model)}
+        model.requires_grad_(False)
+        # V6 also upcasts nonquantized frozen parameters during reload. Apply
+        # the same policy to both the continued adapter and its base comparator.
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training,
+                                                gradient_checkpointing_kwargs={"use_reentrant": False})
+        model.config.use_cache = False
+        if hasattr(model.config, "text_config"):
+            model.config.text_config.use_cache = False
     targets = []
     if training:
-        if quantization == "nf4":
+        if quantization == "nf4" and not native:
             model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=config.get("gradient_checkpointing", True))
         if config.get("gradient_checkpointing", True):
             model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
@@ -183,13 +220,14 @@ def load_model(config, training=False, adapter_path=None):
                 model.enable_input_require_grads()
         model.config.use_cache = False
     if adapter_path:
-        model = PeftModel.from_pretrained(model, str(adapter_path), is_trainable=training)
+        model = PeftModel.from_pretrained(model, str(adapter_path), is_trainable=training, local_files_only=True)
         targets = sorted(model.peft_config["default"].target_modules)
     elif training:
         suffixes = config.get("target_modules", ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"])
-        targets = [name for name, module in model.named_modules()
-                   if name.split(".")[-1] in suffixes and not any(marker in name.lower() for marker in VISION_MARKERS)
-                   and hasattr(module, "weight") and len(module.weight.shape) == 2]
+        targets = (audit["exact_target_modules"] if audit else
+                   [name for name, module in model.named_modules()
+                    if name.split(".")[-1] in suffixes and not any(marker in name.lower() for marker in VISION_MARKERS)
+                    and hasattr(module, "weight") and len(module.weight.shape) == 2])
         if not targets:
             raise ValueError("no language LoRA target modules matched native model")
         lora = LoraConfig(r=config.get("lora_rank", 8), lora_alpha=config.get("lora_alpha", 16),
@@ -197,6 +235,12 @@ def load_model(config, training=False, adapter_path=None):
                           task_type="CAUSAL_LM", bias="none", modules_to_save=None)
         model = get_peft_model(model, lora)
         model.peft_config["default"].revision = config["revision"]
+    if native and (training or adapter_path):
+        from .v6_gpu import audit_lora_coverage
+        native_metadata["coverage"] = audit_lora_coverage(model, audit, training=training)
+    if native:
+        from .v6_gpu import _cuda_residency
+        _cuda_residency(model)
     if training:
         for name, parameter in model.named_parameters():
             if any(marker in name.lower() for marker in VISION_MARKERS) and parameter.requires_grad:
@@ -214,6 +258,8 @@ def load_model(config, training=False, adapter_path=None):
                 "chat_template_sha256": canonical_hash(processor.chat_template or tokenizer.chat_template),
                 "native_files": model_file_digests(config),
                 "versions": versions()}
+    if native:
+        metadata["v6_native"] = native_metadata
     if training:
         model.train()
     else:

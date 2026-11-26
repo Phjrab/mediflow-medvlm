@@ -19,9 +19,11 @@ train = ["torch>=2.6", "torchvision>=0.21", "transformers>=5.3,<6", "peft>=0.18,
 quant = ["bitsandbytes>=0.45"]
 device = ["paramiko>=3"]
 report = ["matplotlib>=3.8"]
+kiosk = ["numpy>=1.26", "pillow>=10"]
 
 [project.scripts]
 medvlm = "mediflow_medvlm.cli:main"
+medvlm-kiosk = "mediflow_medvlm.kiosk.terminal:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

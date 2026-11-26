@@ -36,6 +36,15 @@ def _move(batch, model):
     return {key: value.to(model.device) if hasattr(value, "to") else value for key, value in batch.items()}
 
 
+def _example_loss(model, batch, config):
+    if config.get("v6_native"):
+        # Retain V6's BF16 autocast and memory-bounded Gemma target-token loss.
+        # This helper has no supervisor/process side effects.
+        from ..campaign_gpu_smoke import _target_loss
+        return _target_loss(model, batch)[0]
+    return model(**batch).loss
+
+
 def validation_loss(model, processor, rows, config, stop_check=None):
     import torch
     model.eval()
@@ -54,7 +63,7 @@ def validation_loss(model, processor, rows, config, stop_check=None):
                     raise
                 overflow += 1
                 continue
-            loss = float(model(**_move(batch, model)).loss.detach().float())
+            loss = float(_example_loss(model, _move(batch, model), config).detach().float())
             if not math.isfinite(loss):
                 raise ValueError("NONFINITE_VALIDATION_LOSS")
             count = metadata["supervised_tokens_after_shift"]
@@ -179,6 +188,9 @@ def train(config_path, resume=None, *, legacy_source_snapshot=None):
     try:
         rows, data_hashes = load_frozen_data(config)
         state["data"] = data_hashes
+        if config.get("initialization_adapter") or config.get("initialization_provenance"):
+            from .initialization import verify_initialization
+            state["initialization"] = verify_initialization(config)
         resume_info = verified_checkpoint(resume) if resume else None
         if resume_info:
             old_identity = resume_info["identity"]
@@ -307,7 +319,12 @@ def _train_locked(config, output, state, rows, data_hashes, ledger, resume, *, s
             train_state["budget_snapshot"] = ledger.snapshot()
     if should_stop():
         raise StopBeforeTraining("INTERRUPTED" if stop_control["requested"] else "BUDGET_OR_WALL_LIMIT")
-    model, processor, model_metadata = load_model(config, training=True, adapter_path=resume)
+    initialization = state.get("initialization")
+    adapter_path = resume or (initialization["adapter_path"] if initialization else None)
+    model, processor, model_metadata = load_model(config, training=True, adapter_path=adapter_path)
+    if initialization:
+        from .initialization import assert_initialization_model
+        assert_initialization_model(initialization, model_metadata)
     state["model"] = model_metadata
     identity = {"identity_schema_version": "medvlm.training-identity.v2",
                 "config_sha256": state["config_hash"], "data": data_hashes,
@@ -316,6 +333,12 @@ def _train_locked(config, output, state, rows, data_hashes, ledger, resume, *, s
                 "base_files_sha256": model_metadata["native_files"]["sha256"],
                 "template_sha256": model_metadata["chat_template_sha256"], "renderer_version": RENDERER_VERSION,
                 "target_modules": model_metadata["exact_target_modules"], "quantization": model_metadata["quantization"]}
+    if initialization:
+        identity["initialization"] = initialization
+    if config.get("v6_native"):
+        # V6's target-loss implementation lives outside training/, so bind it
+        # explicitly in addition to the historical training-code digest.
+        identity["native_loss_code_sha256"] = file_hash(Path(__file__).resolve().parents[1] / "campaign_gpu_smoke.py")
     state["identity"] = identity
     accumulation = int(config.get("gradient_accumulation_steps", 16))
     limits = training_limits(config, len(rows["train"]), any(row["task_type"] == "medical_vqa" for row in rows["train"]))
@@ -430,7 +453,7 @@ def _train_locked(config, output, state, rows, data_hashes, ledger, resume, *, s
                 batch = _move(batch, model)
                 use_autocast = config.get("device", "cuda") == "cuda"
                 with torch.autocast("cuda", dtype=getattr(torch, model_metadata["dtype"]), enabled=use_autocast):
-                    loss = model(**batch).loss
+                    loss = _example_loss(model, batch, config)
                 if not torch.isfinite(loss):
                     raise ValueError("NONFINITE_TRAINING_LOSS")
                 scaler.scale(loss / len(group)).backward()
@@ -567,7 +590,7 @@ def reload_checkpoint(config_path, checkpoint_path):
                 raise ValueError("BASE_FILES_DIGEST_MISMATCH: cached base differs from training")
             # The processor saved with the adapter must reproduce its parent template.
             from .models import load_processor
-            saved_config = {**config, "model_id": str(checkpoint_path), "local_files_only": True}
+            saved_config = {**config, "model_id": str(checkpoint_path), "native_snapshot_path": None, "local_files_only": True}
             processor = load_processor(saved_config, model.config)
             saved_tokenizer = getattr(processor, "tokenizer", processor)
             if canonical_hash(processor.chat_template or saved_tokenizer.chat_template) != checkpoint["identity"]["template_sha256"]:
@@ -578,7 +601,8 @@ def reload_checkpoint(config_path, checkpoint_path):
             row = rows["validation"][0]
             inputs, _ = encode_sample(row, processor, model.config, max_length=config.get("max_length", 2048),
                                       image_root=config.get("image_root"), include_labels=False)
-            with torch.no_grad():
+            generation_context = torch.autocast("cuda", dtype=torch.bfloat16) if config.get("v6_native") else nullcontext()
+            with torch.no_grad(), generation_context:
                 generated = model.generate(**_move(inputs, model), max_new_tokens=config.get("reload_max_new_tokens", 32),
                                            do_sample=False, use_cache=True)
             count = generated.shape[-1] - inputs["input_ids"].shape[-1]
