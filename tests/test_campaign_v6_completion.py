@@ -331,3 +331,326 @@ def test_diagnostic_executor_writes_real_jsonl_lines_and_warmup_measurement_matr
 def test_plot_height_preserves_every_open_closed_condition():
     svg=w._plot('OPEN/CLOSED',[(str(i),float(i),.5) for i in range(32)])
     assert 'height="686"' in svg and 'y="623"' in svg and 'y="666"' in svg
+
+
+@pytest.fixture
+def native_planning(planning,full_test,monkeypatch):
+    f=planning;selected,_=w._test_rows(full_test)
+    protocol={'protocol_hash':'sealed-protocol','ordered_test_ids':{a:[r['sample_id'] for r,_ in rows] for a,rows in selected.items()},
+              'caps':{'medical_mcq':16,'context_qa':16,'medical_qa':512,'medical_vqa':128},
+              'decode':{'do_sample':False,'num_beams':1,'use_cache':True,'max_time':None,'warmup_requests':0},
+              'diagnostic_ids':w._diagnostic_ids(selected),'grouping':{axis:w._test_grouping(rows,axis)[0] for axis,rows in selected.items()}}
+    audit_path=write(f.root/'extra-audit/config.json',{'job_id':'v6-additional_seeds','output_dir':str(f.root/'extra-audit'),'data':{'train_configs':[]}})
+    summary={'conditions':{f"v6-additional-{r['cell_id']}-{r['seed']}":{'status':'FAILED','error':'synthetic terminal failure'} for r in f.chosen['additional_seed_plan']}}
+    write(f.root/'extra-audit/summary.json',summary)
+    freeze={'kind':'test_freeze','job_id':'v6-test-freeze','output_dir':str(f.root/'freeze'),'data':{'selection':f.proof,'test_entries':full_test,
+        'additional_audit':{'config':w._reference(audit_path)}}}
+    freeze_path=write(f.root/'freeze/config.json',freeze);write(f.root/'freeze/protocol.json',protocol)
+    freeze_proof={'config':w._reference(freeze_path),'receipt':{'path':'synthetic-receipt','sha256':'synthetic'}}
+    registered={str(freeze_path):(freeze,freeze_proof,{'status':'SUCCEEDED'})}
+    monkeypatch.setattr(w,'_registered',lambda path,*a:copy.deepcopy(registered[str(path)]))
+    return SimpleNamespace(**vars(f),selected=selected,protocol=protocol,freeze=freeze,freeze_path=freeze_path,freeze_proof=freeze_proof,registered=registered)
+
+
+def test_native_test_conditions_pin_all_rows_caps_native_original_models_and_selected_first_seed(native_planning):
+    f=native_planning
+    cfg=w.prepare_evaluation_config(f.freeze_path,'T2','base',20261023,f.root/'completion/evaluation/T2/base')
+    assert cfg['split']=='test' and cfg['data']['model_ref']==f.initial['models']['T2']
+    assert len(cfg['data']['ordered_sample_ids'])==4530 and cfg['decode']==f.protocol['decode']
+    assert cfg['eval_context']==4096 and cfg['fixed_template_date']=='2026-11-14'
+    assert w.validate_config(json.loads(json.dumps(cfg)))==cfg
+    for key,value in [('ordered_sample_ids',['test-subset']),('image_root','different')]:
+        modified=copy.deepcopy(cfg);modified['data'][key]=value;w._hash_config(modified)
+        with pytest.raises(ValueError,match='SCIENTIFIC_IDENTITY_CHANGED'):w.validate_config(modified)
+    with pytest.raises(ValueError):w.prepare_evaluation_config(f.freeze_path,'T2','base',20261114,f.root/'completion/evaluation/invalid')
+    with pytest.raises(ValueError):w.prepare_likelihood_config(f.freeze_path,'V1','base',20261023,f.root/'completion/likelihood/invalid')
+
+
+def test_diagnostic_fixed_32_balances_all_task_types_and_cannot_change_after_results(native_planning):
+    f=native_planning
+    cfg=w.prepare_diagnostic_config(f.freeze_path,'T2','tuned',f.root/'completion/diagnostic/T2/tuned')
+    selected={r['sample_id']:r for r,_ in f.selected['text']}
+    counts={task:sum(selected[sid]['task_type']==task for sid in cfg['data']['diagnostic_ids']) for task in ('medical_mcq','context_qa','medical_qa')}
+    assert counts=={'medical_mcq':12,'context_qa':8,'medical_qa':12}
+    assert cfg['data']['procedure']['warmup_requests']==2 and cfg['data']['procedure']['measured_repeats']==3
+    modified=copy.deepcopy(cfg);modified['data']['diagnostic_ids'].reverse();w._hash_config(modified)
+    with pytest.raises(ValueError):w.validate_config(modified)
+    vqa=w.prepare_diagnostic_config(f.freeze_path,'V1','base',f.root/'completion/diagnostic/V1/base')
+    lookup={r['sample_id']:s for r,s in f.selected['vqa']}
+    assert dict(w.Counter(lookup[sid] for sid in vqa['data']['diagnostic_ids']))=={'slake_open':8,'slake_closed':8,'vqa_rad_open':8,'vqa_rad_closed':8}
+
+
+def test_full_test_matrix_and_anchor_dependencies_are_exact(native_planning):
+    f=native_planning;paths={kind:[] for kind in ('evaluation','diagnostic','likelihood')}
+    for cell,*_ in w.dev.CELLS:
+        for role in ('base','tuned'):
+            for kind in paths:
+                if kind=='likelihood' and w.dev.cell_spec(cell)['task']!='text':continue
+                directory=f.root/'completion'/kind/cell/role
+                cfg=(w.prepare_diagnostic_config(f.freeze_path,cell,role,directory) if kind=='diagnostic' else
+                    (w.prepare_likelihood_config if kind=='likelihood' else w.prepare_evaluation_config)(f.freeze_path,cell,role,20261023,directory))
+                paths[kind].append(write(f.root/'configs'/f'{kind}-{cell}-{role}.json',cfg))
+    kwargs={'diagnostic_config_paths':paths['diagnostic'],'likelihood_config_paths':paths['likelihood']}
+    cfg=w.prepare_test_audit_config(f.selection_path,f.freeze_path,paths['evaluation'],f.root/'completion/test_audit/all',**kwargs)
+    assert len(cfg['data']['evaluations'])==20 and len(cfg['data']['diagnostics'])==20 and len(cfg['data']['likelihoods'])==12
+    path=write(f.root/'configs/test-audit.json',cfg);job=w.job_from_config(path)
+    assert job['job_id']=='v6-test' and job['phase']=='test' and job['requires_gpu'] is False
+    assert job['dependency_policy']=='terminal' and 'v6-additional_seeds' in job['dependencies'] and 'v6-test-freeze' in job['dependencies']
+    assert len(job['dependencies'])==55  # selection + freeze + original direct additional anchor +52conditions
+    with pytest.raises(ValueError,match='EXACT_EVALUATION_MATRIX'):w.prepare_test_audit_config(f.selection_path,f.freeze_path,paths['evaluation'][:-1],f.root/'completion/test_audit/short',**kwargs)
+    with pytest.raises(ValueError,match='EXACT_DIAGNOSTIC_MATRIX'):w.prepare_test_audit_config(f.selection_path,f.freeze_path,paths['evaluation'],f.root/'completion/test_audit/no-speed',likelihood_config_paths=paths['likelihood'])
+
+
+def test_owner_ci_evidence_binds_test_protocol_report_table_and_actual_head(native_planning):
+    f=native_planning;table=[{'cell_id':'T2','normalized_em':.2}];commit='a'*40
+    proof={'schema_version':'medvlm.v6.owner-evidence.v1','kind':'code_report_ci','status':'SUCCEEDED','source_hash':'source',
+           'source_commit':commit,'pushed_commit':commit,'test_protocol_hash':f.protocol['protocol_hash'],'published_report_table_sha256':w.canonical_hash(table),
+           'cpu_tests':{'passed':100,'failed':0},'ci_runs':[{'head_sha':commit,'conclusion':'success','url':f'https://github.com/example/repo/actions/runs/{i}'} for i in range(3)]}
+    path=write(f.root/'owner-proof.json',proof);cfg={'source_hash':'source','data':{'test_freeze':f.freeze_proof,'evidence':{'code_report_ci':w._reference(path)}}}
+    assert w._report_external(cfg,table)[1]==['existing_result_preservation']
+    for field,value in [('test_protocol_hash','old-protocol'),('published_report_table_sha256','old-table'),('pushed_commit','b'*40)]:
+        modified=copy.deepcopy(proof);modified[field]=value;write(path,modified);cfg['data']['evidence']['code_report_ci']=w._reference(path)
+        with pytest.raises(ValueError):w._report_external(cfg,table)
+
+
+def test_no_image_encoder_oom_is_fatal_not_unavailable_capability(monkeypatch):
+    from mediflow_medvlm.evaluation import v2
+    monkeypatch.setitem(sys.modules,'torch',SimpleNamespace())
+    class OutOfMemoryError(RuntimeError):pass
+    def fail(*a,**kw):raise OutOfMemoryError('synthetic cuda allocator')
+    monkeypatch.setattr(v2,'encode_evaluation_sample',fail)
+    row=sample('slake',0,task='medical_vqa',answer_type='OPEN')
+    with pytest.raises(OutOfMemoryError):w._no_image(SimpleNamespace(processor=None,architecture=None),row,'slake_open',128,{'eval_context':4096,'data':{'image_root':'private'}})
+
+
+def test_signed_plot_retains_negative_quality_regression():
+    import re
+    svg=w._plot('delta',[('worse',0.,-.8),('better',1.,.1)],ylabel='Tuned minus Base')
+    assert '-0.8' in svg
+    points=[float(value) for value in re.findall(r'cy="([0-9.]+)"',svg)]
+    assert len(points)==2 and all(80<=point<=420 for point in points)
+
+
+@pytest.mark.parametrize('mutate',[
+    lambda p:p.update(generated_ids=[],generated_tokens=0,generation_scores_checked_steps=0),
+    lambda p:p.update(no_thinking_output={'explicit_nonempty_thinking_detected':True}),
+    lambda p:p.update(finish_reason='length'),lambda p:p.update(generation_scores_checked_steps=2),
+    lambda p:p.update(input_tokens=4090),lambda p:p.update(raw_forward_logits_finite_verified=True)])
+def test_no_image_success_uses_same_native_proof_guards_as_image(tmp_path,monkeypatch,mutate):
+    rows=[sample('slake',i,task='medical_vqa',answer_type='OPEN') for i in range(32)]
+    selected=[(row,'slake_open') for row in rows];ids=[r['sample_id'] for r in rows]
+    protocol=write(tmp_path/'protocol.json',{'caps':{'medical_vqa':128}})
+    cfg={'kind':'diagnostic','task':'vqa','cell_id':'V1','data':{'model_ref':{},'diagnostic_ids':ids,'procedure':copy.deepcopy(w.DIAGNOSTIC_PROCEDURE),'protocol':w._reference(protocol)}}
+    monkeypatch.setattr(w,'_rows_for',lambda config:{'vqa':selected})
+    monkeypatch.setattr(w.dev.caps,'_native_proof',lambda *a:None)
+    def prediction(row):
+        return {**w.dev.caps.initial._failure(row,'slake_open',128,None),'status':'SUCCEEDED','generated_ids':[42],'generated_tokens':1,
+            'generated_ids_sha256':w.canonical_hash([42]),'generated_text':'synthetic answer','generated_raw_text':'synthetic answer','input_tokens':10,
+            'finish_reason':'stop','eos_token_ids':42,'no_thinking_output':{'explicit_nonempty_thinking_detected':False},
+            'generation_scores_valid':True,'generation_scores_checked_steps':1,'raw_forward_logits_finite_verified':False,'pixel_tensor_keys':[],
+            'input_metadata':{'images':[]}}
+    schedule=[('warmup',0,row) for row in rows[:2]]+[('measured',repeat,row) for repeat in range(3) for row in rows]+[('no_image',0,row) for row in rows]
+    records=[{'stage':stage,'repeat':repeat,'prediction':prediction(row),'synchronized_e2e_seconds':.1,'peak_allocated_bytes':100,'peak_reserved_bytes':200} for stage,repeat,row in schedule]
+    metrics=w._diagnostic_summary(cfg,records);metrics['gpu_identity']={'name':'syntheticCPU','total_memory':1000}
+    w._gpu_metrics_proof(cfg,metrics,records)
+    mutate(records[-1]['prediction']);metrics.update(w._diagnostic_summary(cfg,records))
+    with pytest.raises(ValueError,match='CALIBRATION_'):w._gpu_metrics_proof(cfg,metrics,records)
+
+
+def test_report_failures_keep_all_rows_selected_seed_missing_and_ll_aux_separate(native_planning,monkeypatch):
+    f=native_planning
+    monkeypatch.setattr(w,'bootstrap',SimpleNamespace(**{**vars(w.bootstrap),'bootstrap_pair':lambda *a:{'synthetic_interval_fixture':True}}))
+    refs={'evaluations':[],'diagnostics':[],'likelihoods':[]}
+    for cell,*_ in w.dev.CELLS:
+        spec=w.dev.cell_spec(cell)
+        for role in ('base','tuned'):
+            for key,kind in [('evaluations','evaluation'),('diagnostics','diagnostic'),('likelihoods','likelihood')]:
+                if key=='likelihoods' and spec['task']!='text':continue
+                job=f"v6-test-{kind+'-' if kind!='evaluation' else ''}{cell}-{role}-20261023"
+                cfg={**spec,'kind':kind,'role':role,'seed':20261023,'job_id':job,'output_dir':str(f.root/'empty'/job)}
+                refs[key].append(w._reference(write(f.root/'report-inputs'/f'{job}.json',cfg)))
+    def terminal(config,ref):
+        child=w._ref(ref)
+        return child,{'status':'FAILED','error':'synthetic documented failure','error_signature':'synthetic','receipt':None},None
+    monkeypatch.setattr(w,'_terminal',terminal)
+    config={'scope':w.SCOPES['report'],'source_hash':'source','data':{'selection':f.proof,'test_freeze':f.freeze_proof,'evidence':{},**refs}}
+    monkeypatch.setattr(w,'_experiment_manifest',lambda *args:{'synthetic_only':True})
+    summary=w._report(config)
+    assert len(summary['evaluation_conditions'])==20 and len(summary['first_seed_table'])==104
+    assert all(row['technical_failure_rate']==1. for row in summary['first_seed_table'])
+    assert {r['cell_id'] for r in summary['selected_three_seed_confirmation']}=={'T2','T3','V1','V3'}
+    assert all(r['mean'] is None and r['values']['20261114'] is None and not r['all_three_evaluations_technical_complete'] for r in summary['selected_three_seed_confirmation'])
+    likelihood=next(iter(summary['likelihood_conditions'].values()))
+    assert likelihood['all_rows_unavailable'] and likelihood['metrics']['classification_scheduled']==4286
+    assert likelihood['metrics']['technical_failure_count']==4286 and likelihood['metrics']['unsupported_count']==244
+    assert not summary['v6_completed'] and not summary['clinical_quality_certified'] and summary['human_review_performed']==0
+    assert len(summary['paired_group_intervals'])==10 and summary['bootstrap_procedure']['resamples']==2000
+
+
+def test_test_likelihood_adapter_preserves_native_math_and_never_reads_gold(native_planning):
+    f=native_planning;cfg=w.prepare_likelihood_config(f.freeze_path,'T2','base',20261023,f.root/'completion/likelihood/T2/base')
+    runtime=w.likelihood_runtime(cfg)
+    assert cfg['data']['procedure']['classification_scheduled']==4286 and cfg['data']['procedure']['text_all_planned']==4530
+    for name in w.CHOICE_CLONED:
+        assert getattr(runtime,name).__code__ is getattr(w.choice,name).__code__
+        assert getattr(runtime,name).__globals__ is not getattr(w.choice,name).__globals__
+    assert w.choice.labels_for.__globals__['labels_for'] is w.choice.labels_for
+    class GoldForbidden(dict):
+        def __getitem__(self,key):
+            if key=='supervision':raise AssertionError('gold was read while constructing candidates')
+            return super().__getitem__(key)
+    row=GoldForbidden(sample('kormedmcqa',0,task='medical_mcq'));row['input']['options']={'A':'one','B':'two'}
+    assert w._test_labels_for(row)==['A','B']
+    with pytest.raises(ValueError,match='VALIDATION_ONLY'):w.choice.labels_for(row)
+    logits=[[0.,0.,0.],[0.,math.log(2.),0.],[0.,0.,math.log(4.)],[0.,0.,0.]]
+    result=runtime.conditional_log_likelihood(logits,[1,2],2)
+    assert result['conditional_log_likelihood']==pytest.approx(math.log(2/4)+math.log(4/6),abs=1e-12)
+    assert result==w.choice.conditional_log_likelihood(logits,[1,2],2)
+    assert w._test_choice_coverage(f.selected['text'])['classification_scheduled']==4286
+    with pytest.raises(ValueError,match='EXACT_TEST_DENOMINATORS'):w._test_choice_coverage(f.selected['text'][:820])
+    modified=copy.deepcopy(cfg);modified['data']['choice_function_contract']['_score_one']='changed';w._hash_config(modified)
+    with pytest.raises(ValueError):w.validate_config(modified)
+
+
+def test_experiment_manifest_counts_original_native_smokes_and_failed_new_seed(planning):
+    f=planning
+    smoke={f'v6-native-smoke-{cell[0]}':{'status':'SUCCEEDED','attempts':2,'failure_count':0,'recovery_attempts':0} for cell in w.dev.CELLS}
+    common_cfg=write(f.root/'common/config.json',{'prerequisites':{'states':smoke}})
+    common_receipt=write(f.root/'common-receipt.json',{'status':'SUCCEEDED','artifacts':[w._reference(common_cfg)]})
+    for cell,ref in f.initial['models'].items():
+        cfg=w._ref(ref['config']);cfg['data']['common_freeze']=w._reference(common_receipt);write(Path(ref['config']['path']),cfg)
+        f.initial['models'][cell]['config']=w._reference(ref['config']['path'])
+    first_summary=write(f.root/'first-aggregate/summary.json',{'cells':[{'cell_id':cell[0],'status':'SUCCEEDED','attempts':1,'failure_count':0,'recovery_attempts':0} for cell in w.dev.CELLS]})
+    first_receipt=write(f.root/'first-receipt.json',{'status':'SUCCEEDED','artifacts':[w._reference(first_summary)]})
+    f.initial['first_seed_receipt']=w._reference(first_receipt)
+    extra=w.prepare_train_config(f.selection_path,'T2',20261114,f.root/'completion/train/failed-extra')
+    path=write(f.root/'extra-config.json',extra)
+    additional={extra['job_id']:{'config':w._reference(path),'status':'FAILED','attempts':3,'failure_count':3,'recovery_attempts':1,'error':'native load OOM','error_signature':'stable'}}
+    manifest=w._experiment_manifest(f.initial,additional,{'data':{'evaluations':[],'diagnostics':[],'likelihoods':[]}})
+    assert manifest['native_smoke_conditions']==10 and manifest['native_smoke_attempts']==20
+    assert manifest['verified_original_base_main_training_conditions']==10 and manifest['first_seed_training_attempts']==10
+    assert manifest['additional_seed_training_attempts']==3 and not manifest['report_performed_new_training']
+    assert manifest['conditions'][-1]['error']=='native load OOM' and manifest['conditions'][-1]['origin']=='selected_validation_frozen_fresh_original_base'
+
+
+def test_fatal_test_likelihood_persists_allplanned_attempt_metrics_ledger_and_no_success(tmp_path,monkeypatch):
+    cfg={'kind':'likelihood','uses_gpu':True,'scope':w.SCOPES['likelihood'],'output_dir':str(tmp_path/'out'),
+         'success_receipt':str(tmp_path/'receipt.json'),'gpu_ledger_path':str(tmp_path/'ledger.json'),'model_id':'native/model','protocol_hash':'fixed',
+         **{k:'test-'+k for k in w.IDENTITY_KEYS}}
+    path=write(tmp_path/'config.json',cfg);calls=[]
+    monkeypatch.setattr(w,'validate_config',lambda config,**kw:config);monkeypatch.setattr(w.dev.caps,'_env',lambda config:None)
+    monkeypatch.setattr(w.train,'_inherited_supervisor_fds',lambda config:())
+    class Ledger:
+        session_seconds=.5
+        def __init__(self,*a,**kw):pass
+        def start(self,*a):calls.append('start')
+        def finish(self):calls.append('finish')
+        def snapshot(self):return {'resource_policy':w.ResourcePolicy().as_dict()}
+    monkeypatch.setattr(w,'BudgetLedger',Ledger)
+    def fatal(config,stream):
+        stream.write(json.dumps({'all_planned_synthetic_rows':4530})+'\n')
+        return {'classification_scheduled':4286,'technical_failure_count':4286,'unsupported_count':244}, {'native':{'fatal_reason':'CHOICE_MODEL_LOAD_OutOfMemoryError','model_load_succeeded':False,'native_contract':None}},[]
+    monkeypatch.setattr(w,'_likelihood',fatal)
+    with pytest.raises(w.dev.caps.initial.CalibrationFatal):w.run_job(path,cfg['success_receipt'])
+    assert calls==['start','finish'] and not Path(cfg['success_receipt']).exists() and not Path(cfg['output_dir']).exists()
+    attempt=next(tmp_path.glob('out.attempt-*'));metrics=w._read(attempt/'metrics.attempt.private.json')
+    assert metrics['classification_scheduled']==4286 and metrics['technical_failure_count']==4286 and metrics['unsupported_count']==244
+    assert metrics['gpu_accounting']['session_seconds']==.5 and not metrics['native']['model_load_succeeded']
+
+
+def test_final_immutable_report_cannot_register_before_required_evidence(tmp_path,monkeypatch):
+    monkeypatch.setattr(w,'_registered',lambda *a:pytest.fail('premature report must reject before reading inputs'))
+    with pytest.raises(ValueError,match='FINAL_REPORT_OWNER_EVIDENCE_REQUIRED'):
+        w.prepare_report_config('test-audit',tmp_path/'out')
+    cfg={'data':{},'kind':'report'}
+    monkeypatch.setattr(w,'_report_config',lambda *a,**kw:cfg)
+    monkeypatch.setattr(w,'_report',lambda config:{'v6_completed':False,'missing_required_evidence':['speed_unavailable']})
+    with pytest.raises(ValueError,match='FINAL_REPORT_REQUIRED_EVIDENCE_MISSING'):
+        w.prepare_report_config('test-audit',tmp_path/'out',evidence={'code_report_ci':'ci','existing_result_preservation':'preserved'})
+
+
+def test_task_resource_summaries_keep_native_units_failures_eos_and_utf8_separate():
+    selected={};records=[]
+    for i,(task,text,status,ids,eos) in enumerate([
+        ('medical_mcq','가','SUCCEEDED',[7],7),('medical_mcq','','TECHNICAL_FAILURE',[],7),
+        ('medical_qa','English','SUCCEEDED',[8],[7])]):
+        row=sample('synthetic',i,task=task);selected[row['sample_id']]=(row,'synthetic')
+        records.append({'prediction':{'sample_id':row['sample_id'],'task_type':task,'status':status,'generated_text':text,
+            'generated_ids':ids,'eos_token_ids':eos,'generated_tokens':len(ids),'input_tokens':10+i,
+            'finish_reason':'length' if i==2 else 'stop'},'synchronized_e2e_seconds':i+1.,
+            'peak_allocated_bytes':100+i,'peak_reserved_bytes':200+i})
+    mcq=w._resource_summary(records[:2],selected);qa=w._resource_summary(records[2:],selected)
+    assert mcq['scheduled']==2 and mcq['successful_requests']==1 and mcq['technical_failures']==1
+    assert mcq['eos_stops']==1 and mcq['eos_stop_rate']==.5 and mcq['output_characters']==1 and mcq['output_utf8_bytes']==3
+    assert mcq['input_native_tokens']==21 and mcq['output_native_tokens']==1 and mcq['sample_count']==2 and mcq['latency_p50_seconds']==1.5
+    assert mcq['peak_allocated_bytes']==101 and mcq['peak_reserved_bytes']==201
+    assert qa['truncation_rate']==1. and qa['eos_stops']==0 and qa['peak_reserved_bytes']==202
+    assert mcq['native_input_token_measurement_count']==2 and mcq['ttft_seconds'] is None and mcq['decode_only_seconds'] is None
+    assert mcq['input_serialized_utf8_bytes']==sum(len(json.dumps(selected[r['prediction']['sample_id']][0]['input'],ensure_ascii=False).encode()) for r in records[:2])
+
+
+def test_generation_summary_truthfully_points_to_separate_native_likelihood_job():
+    row=sample('medquad',0);selected=[(row,'medquad')]
+    predictions=[w.dev.caps.initial._failure(row,'medquad',128,'synthetic-only')]
+    original_scored,original=w.dev.score_predictions(selected,predictions)
+    scored,summary=w._generation_scores(selected,predictions)
+    assert scored==original_scored and {k:v for k,v in summary.items() if k!='likelihood_auxiliary'}=={k:v for k,v in original.items() if k!='likelihood_auxiliary'}
+    assert summary['likelihood_auxiliary']['status']=='SEPARATE_NATIVE_AUXILIARY_JOB' and not summary['likelihood_auxiliary']['generation_validity_affected']
+
+
+def test_report_completion_accepts_failed_auxiliary_ll_but_rejects_diagnostic_failure_and_unknown_gpu(native_planning,monkeypatch):
+    f=native_planning;refs={'evaluations':[],'diagnostics':[],'likelihoods':[]};table=[];diag_paths=[]
+    monkeypatch.setattr(w,'bootstrap',SimpleNamespace(**{**vars(w.bootstrap),'bootstrap_pair':lambda *a:{'synthetic_interval_fixture':True}}))
+    monkeypatch.setattr(w,'_experiment_manifest',lambda *a:{'synthetic_only':True})
+    for cell,*_ in w.dev.CELLS:
+        spec=w.dev.cell_spec(cell)
+        for role in ('base','tuned'):
+            for key,kind in [('evaluations','evaluation'),('diagnostics','diagnostic'),('likelihoods','likelihood')]:
+                if key=='likelihoods' and spec['task']!='text':continue
+                job=f"v6-test-{kind+'-' if kind!='evaluation' else ''}{cell}-{role}-20261023";out=f.root/'successful-report'/job
+                receipt=write(out/'receipt.json',{'synthetic_only':True})
+                child={**spec,'kind':kind,'role':role,'seed':20261023,'job_id':job,'output_dir':str(out),'success_receipt':str(receipt)}
+                refs[key].append(w._reference(write(out/'config.json',child)))
+                if kind=='evaluation':
+                    selected=f.selected[spec['task']];predictions=[]
+                    for row,stratum in selected:
+                        gold=row['supervision'].get('option_id') or row['supervision']['answer']
+                        predictions.append({**w.dev.caps.initial._failure(row,stratum,512,'synthetic-only'),'status':'SUCCEEDED',
+                            'generated_text':str(gold),'finish_reason':'stop'})
+                    scored,summary=w._generation_scores(selected,predictions)
+                    write(out/'metrics.json',summary);jsonl(out/'scored.private.jsonl',scored);jsonl(out/'predictions.private.jsonl',predictions)
+                    for name,value in summary['strata'].items():table.append({**{k:child[k] for k in ('cell_id','model_id','family','task','role','seed')},'stratum':name,'job_status':'SUCCEEDED',**value})
+                elif kind=='diagnostic':
+                    by_task={task:{'technical_failures':0,'latency_p50_seconds':.1,'peak_reserved_bytes':200,'sample_count':12}
+                             for task in {row['task_type'] for row,_ in f.selected[spec['task']]}}
+                    path=write(out/'metrics.json',{'technical_failures':0,'gpu_identity':{'uuid':'GPU-12345678-1234-1234-1234-123456789abc'},
+                        'by_task':by_task,'latency_p50_seconds':.1,'peak_reserved_bytes':200,'image_ablation_32':{'technical_failures':0} if spec['task']=='vqa' else None})
+                    diag_paths.append(path)
+    def terminal(config,ref):
+        child=w._ref(ref);failed=child['kind']=='likelihood'
+        return child,{'status':'FAILED' if failed else 'SUCCEEDED','error':'synthetic LL load failure' if failed else None},None if failed else {'synthetic_only':True}
+    monkeypatch.setattr(w,'_terminal',terminal)
+    commit='a'*40;common={'schema_version':'medvlm.v6.owner-evidence.v1','status':'SUCCEEDED','source_hash':'source','test_protocol_hash':f.protocol['protocol_hash']}
+    ci={**common,'kind':'code_report_ci','source_commit':commit,'pushed_commit':commit,'published_report_table_sha256':w.canonical_hash(table),
+        'cpu_tests':{'passed':1,'failed':0},'ci_runs':[{'head_sha':commit,'conclusion':'success','url':f'https://github.com/example/repo/actions/runs/{i}'} for i in range(3)]}
+    protected=write(f.root/'protected.json',{'synthetic_only':True})
+    preserve={**common,'kind':'existing_result_preservation','existing_v1_v5_preserved':True,'approved_release_preserved':True,'protected_artifacts':[w._reference(protected)]}
+    evidence={name:w._reference(write(f.root/(name+'.json'),proof)) for name,proof in [('code_report_ci',ci),('existing_result_preservation',preserve)]}
+    config={'scope':w.SCOPES['report'],'source_hash':'source','data':{'selection':f.proof,'test_freeze':f.freeze_proof,'evidence':evidence,**refs}}
+    summary=w._report(config)
+    assert summary['v6_completed'] and not summary['missing_required_evidence']
+    monkeypatch.setattr(w,'_packet',lambda *a:{'synthetic_only':True})
+    rendered=w._render_report(config,summary,{})['RESULTS_KO.md']
+    assert all(label in rendered for label in ('한국어(ko)','영어(en)','kormedmcqa','medquad','slake_open','vqa_rad_closed','관측 Pareto'))
+    assert len(summary['source_task_findings'])==52 and {r['language'] for r in summary['source_task_findings']}=={'ko','en'}
+    assert all(r['candidates'] and not r['test_based_family_or_seed_reselection'] for r in summary['usage_candidates'])
+    assert {r['metric'] for r in summary['source_task_findings']}=={'strict_all_row_accuracy','lexical_f1','normalized_em'}
+    assert all(c['metrics']['technical_failure_count']==4286 and c['metrics']['unsupported_count']==244 for c in summary['likelihood_conditions'].values())
+    original=w._read(diag_paths[0])
+    for altered,reason in [({**original,'technical_failures':1},'speed_technical_failures'),
+        ({**original,'gpu_identity':{'uuid':'GPU-87654321-1234-1234-1234-123456789abc'}},'speed_gpu_identity_mismatch'),
+        ({**original,'gpu_identity':{'uuid':None}},'same_physical_gpu_identity_unverified'),
+        ({**original,'gpu_identity':{'uuid':'None'}},'same_physical_gpu_identity_unverified')]:
+        write(diag_paths[0],altered);negative=w._report(config)
+        assert not negative['v6_completed'] and any(reason in item for item in negative['missing_required_evidence'])
+    write(diag_paths[0],original)

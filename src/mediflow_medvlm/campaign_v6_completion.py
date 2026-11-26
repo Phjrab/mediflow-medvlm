@@ -19,6 +19,7 @@ import io
 import json
 import math
 import os
+import re
 from pathlib import Path
 import statistics
 import time
@@ -51,6 +52,11 @@ TEST_SOURCES = {"text":{"kormedmcqa":3009,"aihub_71875":957,"pubmedqa_labeled":5
 CLONED = ("_progress","_updates","_train","_finite","_metrics_proof","_checkpoint","_verify_checkpoint",
           "_final_selection","_child_identity","train_checkpoint","_invoke","reload_checkpoint",
           "_reload_proof","_verify_output","_completed_output","run_train")
+CHOICE_CLONED=("_execute","_metrics","_empty","_score_one","encode_candidates","conditional_log_likelihood","select_label")
+TEST_CHOICE_PROCEDURE={**copy.deepcopy(choice.PROCEDURE),"supported":{"kormedmcqa":"medical_mcq","aihub_71875":"medical_mcq","pubmedqa_labeled":"context_qa"},
+    "classification_scheduled":4286,"classification_source_counts":{"kormedmcqa":3009,"aihub_71875":777,"pubmedqa_labeled":500},
+    "text_all_planned":4530,"unsupported_text":244,"denominator":"all4286 planned test classification rows, including technical failures;244 freeform rows separately unsupported",
+    "unsupported_vqa":{"status":"UNSUPPORTED","reason":"choice likelihood is undefined for freeform/image QA","test_rows_per_role":1512,"first_seed_model_roles":8,"selected_additional_seed_roles":"unsupported; no VQA likelihood jobs"}}
 SOURCE_FILES = tuple(dict.fromkeys((*bootstrap.SOURCE_FILES,*choice.SOURCE_FILES,*train.SOURCE_FILES,"campaign_family_selection.py","campaign_v6_completion.py","evaluation/expert_review.py","evaluation/review_v2.py")))
 _require, _read, _absolute, _equal = dev._require, dev._read, dev._absolute, dev._equal
 _reference, _ref = dev._reference, dev._ref
@@ -128,6 +134,50 @@ def source_identity(repo=None):
 def native_function_contract():
     """Path-independent source hashes; clone code-object identity is checked live."""
     return {name:hashlib.sha256(inspect.getsource(getattr(train,name)).encode()).hexdigest() for name in CLONED}
+
+
+def choice_function_contract():
+    return {name:hashlib.sha256(inspect.getsource(getattr(choice,name)).encode()).hexdigest() for name in CHOICE_CLONED}
+
+
+def _test_labels_for(row):
+    # This partition/source adapter is explicit. It never examines gold or scoring metadata.
+    _require(row.get("split")=="test","COMPLETION_CHOICE_TEST_ONLY")
+    task,source=row["task_type"],row["source_id"]
+    if task=="medical_mcq" and source in {"kormedmcqa","aihub_71875"}:
+        options=row["input"].get("options")
+        _require(isinstance(options,(dict,list)) and len(options)>=2,"CHOICE_OPTIONS_REQUIRED")
+        labels=[str(key) for key in options] if isinstance(options,dict) else [str(i) for i in range(len(options))]
+    elif task=="context_qa" and source=="pubmedqa_labeled":
+        _require(not row["input"].get("options"),"CHOICE_UNEXPECTED_CONTEXT_OPTIONS");labels=["yes","no","maybe"]
+    else:return None
+    _require(len(set(labels))==len(labels) and all(label and label.strip()==label for label in labels),"CHOICE_INVALID_LABELS")
+    return labels
+
+
+def _test_choice_coverage(selected):
+    _require(len({row["sample_id"] for row,_ in selected})==len(selected),"CHOICE_UNIQUE_IDS_REQUIRED")
+    supported=[row for row,_ in selected if _test_labels_for(row) is not None]
+    counts=dict(Counter(row["source_id"] for row in supported))
+    _require(len(selected)==4530 and len(supported)==4286 and counts==TEST_CHOICE_PROCEDURE["classification_source_counts"],"COMPLETION_CHOICE_EXACT_TEST_DENOMINATORS_REQUIRED")
+    return {"text_all_planned":4530,"classification_scheduled":4286,"classification_source_counts":counts,
+        "unsupported_text":244,"unsupported_vqa":copy.deepcopy(TEST_CHOICE_PROCEDURE["unsupported_vqa"])}
+
+
+def likelihood_runtime(config=None):
+    if config is not None:
+        _require(config["data"]["choice_function_contract"]==choice_function_contract()
+            and config["source_files"]["src/mediflow_medvlm/campaign_choice_likelihood.py"]==file_hash(choice.__file__),"COMPLETION_CHOICE_NATIVE_SOURCE_CHANGED")
+    namespace=dict(vars(choice))
+    for name in CHOICE_CLONED:
+        original=getattr(choice,name)
+        _require(isinstance(original,types.FunctionType) and original.__module__==choice.__name__,"COMPLETION_CHOICE_CLONE_ALLOWLIST_REQUIRED")
+        cloned=types.FunctionType(original.__code__,namespace,name,original.__defaults__,original.__closure__)
+        cloned.__kwdefaults__=copy.copy(original.__kwdefaults__)
+        _require(cloned.__code__ is original.__code__ and cloned.__globals__ is not original.__globals__,"COMPLETION_CHOICE_NATIVE_CODE_IDENTITY_REQUIRED")
+        namespace[name]=cloned
+    namespace.update(labels_for=_test_labels_for,_coverage=_test_choice_coverage,PROCEDURE=TEST_CHOICE_PROCEDURE)
+    return types.SimpleNamespace(**{name:namespace[name] for name in CHOICE_CLONED})
 
 
 @_memo
@@ -408,7 +458,8 @@ def _test_protocol(config):
         "input_digests":{axis:{r["sample_id"]:canonical_hash(r["input"]) for r,_ in rows} for axis,rows in selected.items()},
         "reference_digest":{axis:canonical_hash([(r["sample_id"],r["supervision"]) for r,_ in rows]) for axis,rows in selected.items()},
         "diagnostic_ids":config["data"]["diagnostic_ids"],"diagnostic_procedure":copy.deepcopy(DIAGNOSTIC_PROCEDURE),
-        "bootstrap_procedure":copy.deepcopy(bootstrap.PROCEDURE),"choice_likelihood_procedure":copy.deepcopy(choice.PROCEDURE),
+        "grouping":{axis:_test_grouping(rows,axis)[0] for axis,rows in selected.items()},
+        "bootstrap_procedure":copy.deepcopy(bootstrap.PROCEDURE),"choice_likelihood_procedure":copy.deepcopy(TEST_CHOICE_PROCEDURE),
         "all_planned_failures_in_denominator":True,
         "parser_and_scorer_source":{k:v for k,v in config["source_files"].items() if k.endswith(("evaluation/metrics.py","evaluation/v2.py"))},
         "already_observed_public_benchmarks_not_new_blind_test":True,"post_test_reselection_allowed":False}
@@ -465,7 +516,7 @@ def prepare_likelihood_config(test_freeze_config_path,cell_id,role,training_seed
     _require(dev.cell_spec(cell_id)["task"]=="text","COMPLETION_LIKELIHOOD_TEXT_ONLY")
     config=_prepare_native_config("likelihood",test_freeze_config_path,cell_id,role,training_seed,output_dir,
         train_config_path=train_config_path,repo=repo,success_receipt=success_receipt)
-    config["data"].update(procedure=copy.deepcopy(choice.PROCEDURE),native={"trained_cell":config["data"]["model_ref"]})
+    config["data"].update(procedure=copy.deepcopy(TEST_CHOICE_PROCEDURE),native={"trained_cell":config["data"]["model_ref"]},choice_function_contract=choice_function_contract())
     return _hash_config(config)
 
 
@@ -498,13 +549,29 @@ def prepare_test_audit_config(selection_config_path,test_freeze_config_path,eval
     return _base("test_audit",selection_config_path,output_dir,IDS["test_audit"],repo=repo,success_receipt=success_receipt,data=data)[0]
 
 
-@_transaction
-def prepare_report_config(test_audit_config_path,output_dir,*,evidence=None,repo=None,success_receipt=None):
+def _report_config(test_audit_config_path,output_dir,*,evidence=None,repo=None,success_receipt=None):
     audit,proof,_=_registered(test_audit_config_path,"campaign_v6_completion",verify_result)
     _require(audit["kind"]=="test_audit","COMPLETION_TEST_AUDIT_REQUIRED")
     data={**copy.deepcopy(audit["data"]),"test_audit":proof,"evidence":{k:_reference(v) for k,v in (evidence or {}).items()}}
     data.pop("selection")
     return _base("report",audit["data"]["selection"]["config"]["path"],output_dir,IDS["report"],repo=repo,success_receipt=success_receipt,data=data)[0]
+
+
+@_transaction
+def preview_report(test_audit_config_path,*,repo=None):
+    """Read-only prospective report; no native job/output/receipt is created."""
+    audit,_,_=_registered(test_audit_config_path,"campaign_v6_completion",verify_result)
+    _,_,_,initial=_selection(audit["data"]["selection"]["config"]["path"])
+    config=_report_config(test_audit_config_path,Path(initial["campaign_root"])/"completion/report/preexecution_preview",repo=repo)
+    return {**_report(config),"preview_only":True,"native_receipt_emitted":False}
+
+
+@_transaction
+def prepare_report_config(test_audit_config_path,output_dir,*,evidence=None,repo=None,success_receipt=None):
+    _require(set(evidence or {})=={"code_report_ci","existing_result_preservation"},"COMPLETION_FINAL_REPORT_OWNER_EVIDENCE_REQUIRED")
+    config=_report_config(test_audit_config_path,output_dir,evidence=evidence,repo=repo,success_receipt=success_receipt)
+    _require(_report(config)["v6_completed"] is True,"COMPLETION_FINAL_REPORT_REQUIRED_EVIDENCE_MISSING")
+    return config
 
 
 def _test_audit_summary(config):
@@ -557,6 +624,14 @@ def job_from_config(config_path,*,repo=None,python=None):
         "argv":[str(python or sys.executable),"-m","mediflow_medvlm.campaign_v6_completion","--config",str(path),"--receipt",config["success_receipt"]]}
 
 
+def _generation_scores(selected,predictions):
+    scored,summary=dev.score_predictions(selected,predictions)
+    # Generation scoring is unchanged; likelihood has its own native job and receipt.
+    summary["likelihood_auxiliary"]={"status":"SEPARATE_NATIVE_AUXILIARY_JOB","generation_scores_affected":False,"generation_validity_affected":False,
+        "state_source":"summary.json likelihood_conditions; never inferred from generated answers"}
+    return scored,summary
+
+
 def _evaluation(config,stream):
     ref=config["data"]["model_ref"];protocol=_ref(config["data"]["protocol"])
     freeze=_ref(config["data"]["test_freeze"]["config"]);selected,_=_test_rows(freeze["data"]["test_entries"]);selected=selected[config["task"]]
@@ -564,7 +639,7 @@ def _evaluation(config,stream):
     # Exact native full-dev decoder, caps and parser; test IDs are supplied explicitly.
     predictions,contract=dev._execute(config,original,selected,protocol["caps"],stream)
     dev.caps.initial._verify_rows(config,{"eval_context":4096},predictions,selected,protocol["caps"])
-    scored,summary=dev.score_predictions(selected,predictions)
+    scored,summary=_generation_scores(selected,predictions)
     return scored,summary,contract,selected
 
 
@@ -579,6 +654,7 @@ def _no_image(bundle,row,stratum,cap,config):
             max_length=config["eval_context"]-cap,image_root=config["data"]["image_root"],image_condition="no_image")
         _require(not any(any(w in k.casefold() for w in ("pixel","image","vision","video")) for k in encoded),"NO_IMAGE_TENSORS_FORBIDDEN")
     except Exception as exc:
+        if "outofmemory" in type(exc).__name__.casefold() or "cuda" in type(exc).__name__.casefold():raise
         unsupported=isinstance(exc,(ValueError,NotImplementedError)) and any(token in str(exc).casefold() for token in ("image is required", "image inputs are required", "requires an image", "at least one image"))
         return {**result,"status":"UNSUPPORTED_NATIVE_NO_IMAGE" if unsupported else "TECHNICAL_FAILURE","reason_code":type(exc).__name__+":"+str(exc)}
     ids=encoded["input_ids"][0].tolist();moved={k:v.to(bundle.model.device) if hasattr(v,"to") else v for k,v in encoded.items()}
@@ -633,19 +709,41 @@ def _diagnostic_summary(config,rows):
             "paired_cases":[{"sample_id":item["prediction"]["sample_id"],"image":dev.score_predictions([selected[item["prediction"]["sample_id"]]],[baseline[item["prediction"]["sample_id"]]])[0][0],
                 "no_image":dev.score_predictions([selected[item["prediction"]["sample_id"]]],[item["prediction"]])[0][0]} for item in supported],
             "clinical_correctness_verified":False}
-    return {"procedure":procedure,"scheduled_measured_requests":len(expected),"successful_requests":sum(r["prediction"]["status"]=="SUCCEEDED" for r in measured),
-        "technical_failures":sum(r["prediction"]["status"]!="SUCCEEDED" for r in measured),"latency_p50_seconds":bootstrap._quantile(durations,.5),
-        "latency_p95_seconds":bootstrap._quantile(durations,.95),"sample_count":len(durations),"by_task":{task:{"scheduled":len(items),"p50_seconds":bootstrap._quantile([r["synchronized_e2e_seconds"] for r in items],.5),
-        "p95_seconds":bootstrap._quantile([r["synchronized_e2e_seconds"] for r in items],.95)} for task in sorted({r["prediction"]["task_type"] for r in measured})
-        for items in [[r for r in measured if r["prediction"]["task_type"]==task]]},"ttft_seconds":None,"decode_only_seconds":None,
-        "input_native_tokens":sum(r["prediction"].get("input_tokens",0) for r in measured),"output_native_tokens":sum(r["prediction"]["generated_tokens"] for r in measured),
-        "output_characters":sum(len(r["prediction"].get("generated_text","")) for r in measured),
-        "output_utf8_bytes":sum(len(r["prediction"].get("generated_text","").encode()) for r in measured),
-        "input_serialized_utf8_bytes":sum(len(json.dumps(selected[r["prediction"]["sample_id"]][0]["input"],ensure_ascii=False).encode()) for r in measured),
-        "input_characters":sum(len(json.dumps(selected[r["prediction"]["sample_id"]][0]["input"],ensure_ascii=False)) for r in measured),
-        "eos_stops":sum(r["prediction"]["finish_reason"]=="stop" for r in measured),"truncated":sum(r["prediction"]["finish_reason"]=="length" for r in measured),
+    return {"procedure":procedure,**_resource_summary(measured,selected),
+        "by_task":{task:_resource_summary([r for r in measured if r["prediction"]["task_type"]==task],selected)
+            for task in sorted({r["prediction"]["task_type"] for r in measured})},"image_ablation_32":scores}
+
+
+def _resource_summary(measured,selected):
+    """One fixed request population, with the same resource definitions at every task level."""
+    n=len(measured);durations=[r["synchronized_e2e_seconds"] for r in measured]
+    predictions=[r["prediction"] for r in measured]
+    eos=0
+    for prediction in predictions:
+        ids=prediction.get("generated_ids",[]);ends=prediction.get("eos_token_ids",[])
+        ends=[ends] if isinstance(ends,int) else (ends or [])
+        eos+=bool(ids and ids[-1] in ends)
+    truncated=sum(p.get("finish_reason")=="length" for p in predictions)
+    serialized=[json.dumps(selected[p["sample_id"]][0]["input"],ensure_ascii=False) for p in predictions]
+    successful=sum(p["status"]=="SUCCEEDED" for p in predictions)
+    return {"scheduled":n,"scheduled_measured_requests":n,"successful_requests":successful,"technical_failures":n-successful,
+        "latency_p50_seconds":bootstrap._quantile(durations,.5),"latency_p95_seconds":bootstrap._quantile(durations,.95),
+        "p50_seconds":bootstrap._quantile(durations,.5),"p95_seconds":bootstrap._quantile(durations,.95),"sample_count":n,
+        "latency_population":"all scheduled measured requests, including technical failures; warmup excluded",
+        "ttft_seconds":None,"decode_only_seconds":None,"input_native_tokens":sum(p.get("input_tokens",0) for p in predictions),
+        "output_native_tokens":sum(p.get("generated_tokens",0) for p in predictions),
+        "output_characters":sum(len(p.get("generated_text","")) for p in predictions),
+        "output_utf8_bytes":sum(len(p.get("generated_text","").encode()) for p in predictions),
+        "input_serialized_utf8_bytes":sum(len(value.encode()) for value in serialized),"input_characters":sum(map(len,serialized)),
+        "input_character_measurement":"row input JSON with ensure_ascii=False; native template length is reported separately as input_native_tokens",
+        "eos_stops":eos,"eos_stop_rate":eos/n,"truncated":truncated,"truncation_rate":truncated/n,
+        "termination_rate_denominator":"all scheduled measured requests; EOS requires an observed final native EOS token",
+        "native_input_token_measurement_count":sum("input_tokens" in p for p in predictions),
+        "native_output_token_measurement_count":sum("generated_tokens" in p for p in predictions),
         "peak_allocated_bytes":max(r["peak_allocated_bytes"] for r in measured),"peak_reserved_bytes":max(r["peak_reserved_bytes"] for r in measured),
-        "image_ablation_32":scores,"whole_generation_tokens_per_second_is_not_decode_only":True}
+        "memory_measurement":"torch.cuda reset_peak_memory_stats before each synchronized request; maximum of per-request allocated/reserved peaks",
+        "whole_generation_tokens_per_second_is_not_decode_only":True}
+
 
 
 def _diagnostic(config,stream):
@@ -669,16 +767,15 @@ def _diagnostic(config,stream):
         if prediction.get("model_fatal"):raise dev.caps.initial.CalibrationFatal(prediction["reason_code"])
     stream.flush();os.fsync(stream.fileno());properties=torch.cuda.get_device_properties(0)
     return _diagnostic_summary(config,rows),{"native_contract":bundle.contract,"gpu_identity":{"name":properties.name,
-        "total_memory":properties.total_memory,"uuid":str(getattr(properties,"uuid","")),"compute_capability":list(torch.cuda.get_device_capability(0))}}
+        "total_memory":properties.total_memory,"uuid":str(getattr(properties,"uuid",None) or ""),"compute_capability":list(torch.cuda.get_device_capability(0))}}
 
 
 def _likelihood(config,stream):
     selected=_rows_for(config)["text"]
-    rows,native=choice._execute(config,{"models":{config["cell_id"]:config["data"]["model_ref"]}},selected,stream)
-    summary=choice._metrics(selected,rows)
-    summary.update(procedure=copy.deepcopy(choice.PROCEDURE),test_files_read=True)
+    rows,native=likelihood_runtime(config)._execute(config,{"models":{config["cell_id"]:config["data"]["model_ref"]}},selected,stream)
+    summary=likelihood_runtime(config)._metrics(selected,rows)
+    summary.update(procedure=copy.deepcopy(TEST_CHOICE_PROCEDURE),test_files_read=True)
     choice._native_proof(config,native)
-    if native["fatal_reason"]:raise dev.caps.initial.CalibrationFatal(native["fatal_reason"])
     return summary,{"native":native},rows
 
 
@@ -702,7 +799,7 @@ def _rows_for(config):
 def _failure_scores(selected,protocol,reason):
     predictions=[dev.caps.initial._failure(row,stratum,protocol["caps"][row["task_type"]],reason) for row,stratum in selected]
     for prediction in predictions:prediction["attempted"]=False
-    return dev.score_predictions(selected,predictions)
+    return _generation_scores(selected,predictions)
 
 
 def _test_grouping(selected, axis):
@@ -784,7 +881,7 @@ def _test_grouping(selected, axis):
             "patient_or_study_independence_certified": False}, units, list(profiles.values()), evidence
 
 
-def _report_external(config):
+def _report_external(config,first_seed_table=None):
     # Owner attestations are identified as such. A generation receipt cannot stand in for a CI/preservation proof.
     expected={"code_report_ci","existing_result_preservation"};supplied=config["data"]["evidence"]
     _require(set(supplied)<=expected,"COMPLETION_UNKNOWN_EXTERNAL_EVIDENCE")
@@ -795,7 +892,12 @@ def _report_external(config):
         value=_ref(ref)
         _require(value.get("schema_version")=="medvlm.v6.owner-evidence.v1" and value.get("kind")==name
             and value.get("status")=="SUCCEEDED" and value.get("source_hash")==config["source_hash"],"COMPLETION_TYPED_OWNER_EVIDENCE_REQUIRED")
+        freeze=_ref(config["data"]["test_freeze"]["config"])
+        protocol=_ref(_reference(Path(freeze["output_dir"])/"protocol.json"))
+        _require(value.get("test_protocol_hash")==protocol["protocol_hash"],"COMPLETION_OWNER_EVIDENCE_TEST_PROTOCOL_CHANGED")
         if name=="code_report_ci":
+            _require(first_seed_table is not None and value.get("published_report_table_sha256")==canonical_hash(first_seed_table),
+                "COMPLETION_OWNER_EVIDENCE_REPORT_TABLE_CHANGED")
             commit=value.get("source_commit","");runs=value.get("ci_runs",[])
             _require(len(commit)==40 and all(c in "0123456789abcdef" for c in commit) and len(runs)>=3
                 and value.get("pushed_commit")==commit and value.get("cpu_tests",{}).get("failed")==0
@@ -810,7 +912,49 @@ def _report_external(config):
     return proof,missing
 
 
+def _receipt_artifact(reference,name):
+    receipt=_ref(reference)
+    _require(receipt.get("status")=="SUCCEEDED","COMPLETION_SUCCESSFUL_ARCHIVED_RECEIPT_REQUIRED")
+    refs=[item for item in receipt["artifacts"] if Path(item["path"]).name==name]
+    _require(len(refs)==1,"COMPLETION_EXACT_ARCHIVED_ARTIFACT_REQUIRED")
+    return refs[0],_ref(refs[0])
+
+
+def _experiment_manifest(initial,additional,config):
+    _,first=_receipt_artifact(initial["first_seed_receipt"],"summary.json")
+    first_cfg=_ref(next(iter(initial["models"].values()))["config"])
+    _,common=_receipt_artifact(first_cfg["data"]["common_freeze"],"config.json")
+    smoke={key:record for key,record in common["prerequisites"]["states"].items() if key.startswith("v6-native-smoke-")}
+    _require(set(smoke)=={"v6-native-smoke-"+cell[0] for cell in dev.CELLS},"COMPLETION_TEN_NATIVE_SMOKE_RECORDS_REQUIRED")
+    rows=[]
+    for cell,ref in initial["models"].items():
+        original=_ref(ref["config"]);record=next(r for r in first["cells"] if r["cell_id"]==cell)
+        rows.append({**dev.cell_spec(cell),"phase":"main_train","seed":20261023,"role":"tuned","status":record["status"],
+            "origin":"existing_verified_first_seed_final_reused_for_this_report","config":ref["config"],"revision":original["model"]["revision"],
+            "dataset_freeze":original["data"]["common_freeze"],"recipe":original["recipe"],"attempts":record["attempts"],
+            "failure_count":record["failure_count"],"recovery_attempts":record["recovery_attempts"]})
+    for job,entry in additional.items():
+        original=_ref(entry["config"])
+        rows.append({**dev.cell_spec(original["cell_id"]),"phase":"main_train","seed":original["seed"],"role":"tuned","status":entry["status"],
+            "origin":"selected_validation_frozen_fresh_original_base","config":entry["config"],"revision":original["model"]["revision"],
+            "dataset_freeze":original["data"]["common_freeze"],"recipe":original["recipe"],"attempts":entry["attempts"],
+            "failure_count":entry["failure_count"],"recovery_attempts":entry["recovery_attempts"],"error":entry["error"],"error_signature":entry["error_signature"]})
+    for key in ("evaluations","diagnostics","likelihoods"):
+        for ref in config["data"][key]:
+            child,condition,_=_terminal(config,ref)
+            rows.append({**{k:child[k] for k in ("cell_id","model_id","family","task","role","seed","kind","job_id")},
+                "config":ref,**condition,"revision":child["model"]["revision"],"protocol_hash":child["protocol_hash"]})
+    return {"conditions":rows,"smoke_records":smoke,"first_seed_aggregate":initial["first_seed_receipt"],
+        "first_seed_final_conditions_reused_by_report":len(initial["models"]),
+        "verified_original_base_main_training_conditions":sum(r["status"]=="SUCCEEDED" for r in first["cells"])+sum(e["status"]=="SUCCEEDED" for e in additional.values()),
+        "first_seed_training_attempts":sum(r["attempts"] for r in first["cells"]),"additional_seed_training_attempts":sum(e["attempts"] for e in additional.values()),
+        "native_smoke_conditions":len(smoke),"native_smoke_attempts":sum(r["attempts"] for r in smoke.values()),
+        "report_performed_new_training":False,"same_example_count_implies_same_flops":False,
+        "reuse_interpretation":"Existing final receipts preserve their original native training/reload evidence; this CPU report performs no new GPU work. Attempts are separate from unique conditions."}
+
+
 @_transaction
+@_memo
 def _report(config):
     selected=_rows_for(config);protocol=_ref(_reference(Path(_ref(config["data"]["test_freeze"]["config"])["output_dir"])/"protocol.json"))
     _,_,chosen,initial=_selection(config["data"]["selection"]["config"]["path"])
@@ -839,21 +983,29 @@ def _report(config):
         for ref in config["data"][key]:
             child,condition,result=_terminal(config,ref)
             if result:condition["metrics"]=_read(Path(child["output_dir"])/"metrics.json")
+            elif key=="likelihoods":
+                unavailable=[likelihood_runtime()._empty(row,stratum,"TEST_LIKELIHOOD_ROLE_JOB_UNAVAILABLE") for row,stratum in selected["text"]]
+                condition["metrics"]={**likelihood_runtime()._metrics(selected["text"],unavailable),"procedure":copy.deepcopy(TEST_CHOICE_PROCEDURE),"test_files_read":True}
+                condition["all_rows_unavailable"]=True
             target[child["job_id"]]=condition
     paired={};grouping={};transitions={}
     for axis in ("text","vqa"):
         grouping[axis],units,profiles,_=_test_grouping(selected[axis],axis)
+        _require(_equal(grouping[axis],protocol["grouping"][axis]),"COMPLETION_FROZEN_TEST_GROUPING_CHANGED")
         for cell,*_ in dev.CELLS:
             if dev.cell_spec(cell)["task"]!=axis:continue
             left=by_condition[(cell,"base",20261023)];right=by_condition[(cell,"tuned",20261023)]
-            paired[cell]=bootstrap.bootstrap_pair(selected[axis],left,right,units,profiles)
+            paired[cell]={"strata":bootstrap.bootstrap_pair(selected[axis],left,right,units,profiles),
+                "base_role_available":conditions[f"v6-test-{cell}-base-20261023"]["status"]=="SUCCEEDED",
+                "tuned_role_available":conditions[f"v6-test-{cell}-tuned-20261023"]["status"]=="SUCCEEDED",
+                "unavailable_rows_coded_as_technical_failure":True,"within_training_seed_item_uncertainty_only":True}
             grouped={}
             for a,b in zip(left,right):
                 item=grouped.setdefault(a["stratum"],{"scheduled":0,"correct_transitions":{},"valid_transitions":{}});item["scheduled"]+=1
                 for name,x,y in (("correct_transitions",a["exact_match"]==1.,b["exact_match"]==1.),("valid_transitions",a["valid"],b["valid"])):
                     label=f"{int(x)}->{int(y)}";item[name][label]=item[name].get(label,0)+1
             transitions[cell]=grouped
-    external,missing=_report_external(config)
+    external,missing=_report_external(config,[row for row in rows if row["seed"]==20261023])
     identities=[]
     for job,condition in resources.items():
         metrics=condition.get("metrics")
@@ -862,7 +1014,7 @@ def _report(config):
         identities.append(metrics.get("gpu_identity",{}).get("uuid"))
         ablation=metrics.get("image_ablation_32")
         if ablation and ablation.get("technical_failures",0):missing.append("image_ablation_technical_failures:"+job)
-    if not identities or any(not identity for identity in identities):missing.append("same_physical_gpu_identity_unverified")
+    if not identities or any(not isinstance(identity,str) or re.fullmatch(r"(?:GPU-)?[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}",identity) is None for identity in identities):missing.append("same_physical_gpu_identity_unverified")
     elif len(set(identities))!=1:missing.append("speed_gpu_identity_mismatch")
     additional=_read(Path(_ref(_ref(config["data"]["test_freeze"]["config"])["data"]["additional_audit"]["config"])["output_dir"])/"summary.json")
     training={cell:{"model_id":dev.cell_spec(cell)["model_id"],"checkpoint":ref["checkpoint"],"reload":ref["reload"],"config":ref["config"],
@@ -875,7 +1027,7 @@ def _report(config):
             entry.update(checkpoint=_reference(output/"checkpoint.json"),reload=_reference(output/"reload.json"),
                 final_selection=_reference(output/"final_selection.json"),metrics=_read(output/"metrics.json"))
         additional_training[child["job_id"]]=entry
-    return {"scope":SCOPES["report"],"report_aggregation_completed":True,"evaluation_conditions":conditions,
+    summary={"scope":SCOPES["report"],"report_aggregation_completed":True,"evaluation_conditions":conditions,
         "first_seed_table":[r for r in rows if r["seed"]==20261023],"all_seed_table":rows,
         "selected_three_seed_confirmation":[{"cell_id":cell,"stratum":name,"metric":metric,**seed_statistics(values),
             "evaluation_status_by_seed":{str(seed):conditions.get(f"v6-test-{cell}-tuned-{seed}",{"status":"UNAVAILABLE_TRAINING_FAILED_OR_MISSING","technical_complete":False})
@@ -883,12 +1035,49 @@ def _report(config):
             for (cell,name,metric),values in sorted(scores.items())],
         "paired_transitions":transitions,"paired_group_intervals":paired,"grouping":grouping,"bootstrap_procedure":copy.deepcopy(bootstrap.PROCEDURE),
         "diagnostic_conditions":resources,"likelihood_conditions":likelihood,"additional_seed_audit":additional,"training_artifacts":training,"additional_training_artifacts":additional_training,
+        "experiment_manifest":_experiment_manifest(initial,additional_training,config),
         "manifest_counts":{"first_seed_task_cells":10,"first_seed_unique_models":len({s["model_id"] for s in training.values()}),
                            "selected_additional_training_conditions":len(chosen["additional_seed_plan"]),"test_conditions":len(conditions)},
         "required_external_evidence":external,"missing_required_evidence":missing,"v6_completed":not missing,
         "v6_terminal":not missing,"v7_ready":not missing,"human_review_performed":0,"clinical_quality_certified":False,
         "anonymous_packet_prepared":True,"jetson_status":"USER_DEFERRED","limitations":LIMITATIONS,
         "test_files_read":True,"post_test_reselection_allowed":False,"training_seed_selection_from_test":False}
+    summary["source_task_findings"],summary["usage_candidates"]=_source_task_findings(summary)
+    return summary
+
+
+def _source_task_findings(summary):
+    """Descriptive test findings, never a replacement for frozen validation selection."""
+    table=summary["first_seed_table"];lookup={(r["cell_id"],r["role"],r["stratum"]):r for r in table};findings=[];eligible=defaultdict(list)
+    for row in table:
+        if row["role"]!="tuned":continue
+        base=lookup[(row["cell_id"],"base",row["stratum"])];name=row["stratum"]
+        task=("medical_vqa" if row["task"]=="vqa" else "medical_mcq" if name in {"71875_mcq","kormedmcqa"}
+              else "context_qa" if name=="pubmedqa_labeled" else "medical_qa")
+        metric="normalized_em" if row["task"]=="vqa" else "strict_all_row_accuracy" if row["strict_all_row_accuracy"] is not None else "lexical_f1"
+        language="ko" if name.startswith("71875_") or name=="kormedmcqa" else "en"
+        entry={"cell_id":row["cell_id"],"source_stratum":name,"task_type":task,"language":language,"scheduled":row["scheduled"],
+            "metric":metric,"base":base[metric],"tuned":row[metric],"difference":row[metric]-base[metric],
+            "base_valid_format_rate":base["valid_format_rate"],"tuned_valid_format_rate":row["valid_format_rate"],
+            "base_technical_failure_rate":base["technical_failure_rate"],"tuned_technical_failure_rate":row["technical_failure_rate"],
+            "base_truncated_rate":base["truncated_rate"],"tuned_truncated_rate":row["truncated_rate"],
+            "statistical_superiority_claimed":False,"clinical_correctness_verified":False}
+        findings.append(entry)
+        condition=summary["diagnostic_conditions"].get(f"v6-test-diagnostic-{row['cell_id']}-tuned-20261023",{})
+        resource=condition.get("metrics",{}).get("by_task",{}).get(task)
+        if (row["job_status"]=="SUCCEEDED" and row["technical_failure_count"]==0 and condition.get("status")=="SUCCEEDED"
+            and resource and resource["technical_failures"]==0 and not any("gpu_identity" in item for item in summary["missing_required_evidence"])):
+            eligible[name].append({"cell_id":row["cell_id"],"model_id":row["model_id"],"quality_metric":metric,"quality":row[metric],
+                "p50_seconds":resource["latency_p50_seconds"],"peak_reserved_bytes":resource["peak_reserved_bytes"],"measured_requests":resource["sample_count"]})
+    candidates=[]
+    for name in sorted({r["stratum"] for r in table}):
+        items=eligible[name]
+        nondominated=[a for a in items if not any(b["quality"]>=a["quality"] and b["p50_seconds"]<=a["p50_seconds"] and b["peak_reserved_bytes"]<=a["peak_reserved_bytes"]
+            and (b["quality"]>a["quality"] or b["p50_seconds"]<a["p50_seconds"] or b["peak_reserved_bytes"]<a["peak_reserved_bytes"]) for b in items)]
+        candidates.append({"source_stratum":name,"status":"OBSERVED_TRADEOFF_CANDIDATES" if nondominated else "UNAVAILABLE_REQUIRED_MEASUREMENTS",
+            "candidates":nondominated,"basis":"Tuned first-seed source/task score and same-GPU task-specific synchronized p50/peak reserved memory; Pareto non-dominated observed points",
+            "test_based_family_or_seed_reselection":False,"clinical_deployment_recommendation":False})
+    return findings,candidates
 
 
 REPORT_NAMES=("RESULTS_KO.md","READOUT_KO.md","INDEX_KO.md","HANDOFF.md","WORKLOG.md","comparison.csv","seed_confirmation.csv",
@@ -911,10 +1100,18 @@ def _plot(title,points,xlabel="condition",ylabel="rate"):
     for i,(label,x,y) in enumerate(points):
         parts.append(f'<text x="30" y="{65+i*18}">{escape(str(label))}: {x:.6g}, {y:.6g}</text>')
     # Table-like point labels remain legible for all20 conditions; dots show the same coordinates.
-    xmax=max([abs(x) for _,x,_ in points]+[1.]);ymax=max([abs(y) for _,_,y in points]+[1.])
+    xs=[x for _,x,_ in points]+[0.];ys=[y for _,_,y in points]+[0.]
+    xmin,xmax=min(xs),max(xs);ymin,ymax=min(ys),max(ys)
+    if xmin==xmax:xmax=xmin+1.
+    if ymin==ymax:ymax=ymin+1.
+    def px(x):return 650+350*(x-xmin)/(xmax-xmin)
+    def py(y):return height-80-(height-160)*(y-ymin)/(ymax-ymin)
+    parts.append(f'<path d="M650 80 V{height-80} H1000" stroke="black" fill="none"/>')
+    parts.append(f'<path d="M650 {py(0.):.4f} H1000" stroke="#888" fill="none"/>')
+    parts.append(f'<text x="650" y="{height-50}">{xmin:.6g}</text><text x="950" y="{height-50}">{xmax:.6g}</text>')
+    parts.append(f'<text x="1010" y="{height-80}">{ymin:.6g}</text><text x="1010" y="80">{ymax:.6g}</text>')
     for label,x,y in points:
-        px=650+350*x/xmax;py=430-350*y/ymax
-        parts.append(f'<circle cx="{px:.4f}" cy="{py:.4f}" r="4" fill="#2563eb"><title>{escape(str(label))}</title></circle>')
+        parts.append(f'<circle cx="{px(x):.4f}" cy="{py(y):.4f}" r="4" fill="#2563eb"><title>{escape(str(label))}</title></circle>')
     parts.append('</svg>');return "".join(parts)
 
 
@@ -958,13 +1155,21 @@ def _render_report(config,summary,key):
     for row in table:
         if row["task"]=="vqa":openclosed.append((row["cell_id"]+"/"+row["role"]+"/"+row["stratum"],float(len(openclosed)),row["normalized_em"]))
     for job,condition in summary["diagnostic_conditions"].items():
-        if "metrics" not in condition:continue
+        if "metrics" not in condition or condition["metrics"]["technical_failures"]:continue
         child=next(_ref(r) for r in config["data"]["diagnostics"] if _ref(r)["job_id"]==job);m=condition["metrics"]
         c,_,n=by_cell[(child["cell_id"],child["role"])];label=child["cell_id"]+"/"+child["role"]
         speed.append((label,m["latency_p50_seconds"],c/n));vram.append((label,m["peak_reserved_bytes"]/2**30,c/n))
     findings=[]
-    for cell,*_ in dev.CELLS:
-        a=by_cell[(cell,"base")];b=by_cell[(cell,"tuned")];findings.append(f"- {cell}: scheduled normalized EM {a[0]/a[2]:.4f} → {b[0]/b[2]:.4f} (Δ {b[0]/b[2]-a[0]/a[2]:+.4f}); valid format {a[1]/a[2]:.4f} → {b[1]/b[2]:.4f}.")
+    for item in summary["source_task_findings"]:
+        findings.append(f"- {item['cell_id']} / {'한국어(ko)' if item['language']=='ko' else '영어(en)'} / {item['source_stratum']} / {item['task_type']} (n={item['scheduled']}): "
+            f"{item['metric']} {item['base']:.4f} → {item['tuned']:.4f} (Δ {item['difference']:+.4f}); "
+            f"형식 {item['base_valid_format_rate']:.4f} → {item['tuned_valid_format_rate']:.4f}; "
+            f"기술 실패 {item['base_technical_failure_rate']:.4f} → {item['tuned_technical_failure_rate']:.4f}; "
+            f"잘림 {item['base_truncated_rate']:.4f} → {item['tuned_truncated_rate']:.4f}.")
+    candidates=[]
+    for entry in summary["usage_candidates"]:
+        observed="; ".join(f"{v['cell_id']} ({v['quality_metric']}={v['quality']:.4f}, p50={v['p50_seconds']:.4f}s, reserved={v['peak_reserved_bytes']/2**30:.3f}GiB, 측정 n={v['measured_requests']})" for v in entry["candidates"])
+        candidates.append("- "+entry["source_stratum"]+": "+(observed or "필수 성공 측정 증거가 없어 용도 후보를 정하지 못함"))
     status="증거 확인 완료" if summary["v6_completed"] else "미완료: "+", ".join(summary["missing_required_evidence"])
     body=("# V6 결과\n\nA. 완료 범위: "+json.dumps(summary["manifest_counts"],ensure_ascii=False)+"\n\n"
         "B. 동일 seed 20261023의 Base/Tuned 전체 예정 분모 비교는 comparison.csv에 있습니다. 실패도 분모에 포함됩니다. "
@@ -973,7 +1178,8 @@ def _render_report(config,summary,key):
         "악화 및 형식 준수 변화는 accuracy_change.svg, format_compliance.svg와 paired_transitions에 보존됩니다.\n\n"
         "D. 같은 장비의 고정 32문항, warmup 2회, 3회 반복으로 속도/VRAM을 측정합니다. "
         "TTFT와 decode-only는 미측정입니다. 성공 측정 조건만 speed_quality.svg/vram_quality.svg에 있습니다. "
-        "용도 후보는 필요한 source/형식/지연 조건별 표로 판단하며 모든 면의 단일 최고 모델을 지정하지 않습니다.\n\n"
+        "아래 용도 후보는 각 source/task의 Tuned 점수·동일 GPU task별 p50·reserved 메모리의 관측 Pareto 비교입니다. "
+        "검증에서 고정된 계열/seed 선택은 바꾸지 않으며 임상 배포를 권하지 않습니다.\n\n"+"\n".join(candidates)+"\n\n"
         "E. 현재 판정: "+status+". 사람 검토는 0건이며 점수를 채우지 않았습니다. Jetson USER_DEFERRED. "
         "실패/미실행은 summary.json의 조건별 상태와 원래 native terminal record에 있습니다.\n\n"
         "F. config.json, summary.json, checkpoint/reload 참조, inference_examples.json, HANDOFF.md를 사용합니다. "
@@ -1014,7 +1220,7 @@ def _gpu_metrics_proof(config,metrics,records):
     kind=config["kind"];selected=_rows_for(config)[config["task"]];protocol=_ref(config["data"]["protocol"])
     if kind=="evaluation":
         dev.caps.initial._verify_rows(config,{"eval_context":4096},records,selected,protocol["caps"])
-        scored,expected=dev.score_predictions(selected,records)
+        scored,expected=_generation_scores(selected,records)
         _require(all(_equal(metrics.get(k),v) for k,v in expected.items()),"COMPLETION_TEST_METRICS_CHANGED")
     elif kind=="diagnostic":
         expected=_diagnostic_summary(config,records)
@@ -1032,7 +1238,7 @@ def _gpu_metrics_proof(config,metrics,records):
         selected=subset
         _require(metrics.get("gpu_identity",{}).get("name") and type(metrics["gpu_identity"].get("total_memory")) is int,"COMPLETION_DIAGNOSTIC_GPU_IDENTITY_REQUIRED")
     else:
-        expected=choice._metrics(selected,records);expected.update(procedure=choice.PROCEDURE,test_files_read=True)
+        expected=likelihood_runtime(config)._metrics(selected,records);expected.update(procedure=TEST_CHOICE_PROCEDURE,test_files_read=True)
         _require(all(_equal(metrics.get(k),v) for k,v in expected.items()),"COMPLETION_LIKELIHOOD_METRICS_CHANGED")
         choice._native_proof(config,metrics["native"])
         _require(metrics["native"]["model_load_succeeded"] is True and metrics["native"]["fatal_reason"] is None,"COMPLETION_FATAL_LIKELIHOOD_CANNOT_SUCCEED")
@@ -1103,6 +1309,9 @@ def run_job(config_path,receipt_path):
                             else:summary,native,_=_likelihood(config,stream)
                     finally:ledger.finish()
                     summary.update(**native,protocol_hash=config["protocol_hash"],gpu_accounting={"ledger_path":config["gpu_ledger_path"],"session_seconds":ledger.session_seconds,"snapshot":ledger.snapshot()})
+                    if kind=="likelihood" and summary["native"].get("fatal_reason"):
+                        atomic_json(staging/"metrics.attempt.private.json",summary)
+                        raise dev.caps.initial.CalibrationFatal(summary["native"]["fatal_reason"])
                     records=[json.loads(line) for line in (staging/filename).read_text().splitlines()]
                     _gpu_metrics_proof(config,summary,records)
                     if kind=="evaluation":
