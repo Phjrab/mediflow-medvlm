@@ -114,7 +114,7 @@ class CompletionMixin:
         env = {key: os.environ[key] for key in ('HOME', 'PATH', 'LANG', 'LC_ALL', 'TMPDIR') if key in os.environ}
         env.update(CUDA_VISIBLE_DEVICES='', HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
                    PYTHONDONTWRITEBYTECODE='1', HF_HUB_DISABLE_TELEMETRY='1')
-        process = subprocess.run([sys.executable, '-I', '-c', code],
+        process = subprocess.run([sys.executable, '-I', '-B', '-c', code],
             input=json.dumps({'module': job['argv'][2], 'repo': job['cwd'], 'config': config_ref['path']}),
             capture_output=True, text=True, env=env, cwd=job['cwd'], timeout=600)
         require(process.returncode == 0, 'pinned scientific worker validation failed: ' + process.stderr[-1200:])
@@ -335,7 +335,8 @@ def install_supervisor(control):
     control.supervisor.__class__ = CompletionSupervisor
 
 
-def build_control(*, deployment, deployment_sha256, completion_binding, completion_binding_sha256):
+def build_control(*, deployment, deployment_sha256, completion_binding, completion_binding_sha256, scope='auto'):
+    require(scope == 'auto', 'completion owner retains V6-only automatic scope')
     saved_ref = {'path': str(absolute(deployment)), 'sha256': deployment_sha256}
     saved = pinned(saved_ref)
     require(saved['status_argv'][-1] == 'status' and saved['tick_argv'][-1] == 'tick'
@@ -386,6 +387,7 @@ def main(argv=None):
     parser.add_argument('--deployment-sha256', required=True)
     parser.add_argument('--completion-binding', required=True)
     parser.add_argument('--completion-binding-sha256', required=True)
+    parser.add_argument('--scope', choices=['auto'], default='auto')
     parser.add_argument('command', choices=['status', 'tick', 'refine-completion'])
     parser.add_argument('--manifest')
     args = vars(parser.parse_args(argv))
