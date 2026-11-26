@@ -74,17 +74,16 @@ def bundle(processor): return SimpleNamespace(processor=processor, architecture=
 
 def success(sample, stratum="71875_mcq", *, tie=False):
     result = c._empty(sample, stratum, attempted=True)
+    candidates, metadata = c.encode_candidates(sample, bundle(Processor()), {"eval_context":4096})
     scores = []
-    for index,label in enumerate(result["labels"]):
+    for index,(_,evidence) in enumerate(candidates):
+        label = evidence["label"]
         values = [-.5]*len(label) if tie else [-float(index+1)]*len(label)
-        scores.append({"label":label,"token_ids":list(map(ord,label)),"token_count":len(label),
-                       "token_log_probabilities":values,"conditional_log_likelihood":math.fsum(values),
-                       "prefix_verified":True,"label_decode_verified":True,"eos_included":False})
+        scores.append({**evidence,"token_log_probabilities":values,"conditional_log_likelihood":math.fsum(values)})
     selected,ties = c.select_label(scores)
     gold = sample["supervision"]["option_id"] if sample["task_type"] == "medical_mcq" else sample["supervision"]["answer"]
     result.update(status="SUCCEEDED",reason_code=None,label_scores=scores,selected_label=selected,tied_labels=ties,
-                  exact_match=float(selected == gold),input_tokens=10,input_metadata={"input_hash":c.canonical_hash(sample["input"])},
-                  native_prefix={"assistant_prefix_verified":True})
+                  exact_match=float(selected == gold),**metadata)
     return result
 
 
@@ -195,6 +194,59 @@ def test_all_planned_failure_denominators_and_semantic_tamper():
     assert metrics["strata"]["pubmedqa_labeled"]["technical_failure_rate"] == 1.
     rows[0]["label_scores"][0]["token_log_probabilities"][0] -= .1
     with pytest.raises(ValueError,match="TOKEN_SUM_OR_BOUNDARY"): c._metrics(selected,rows)
+
+
+@pytest.mark.parametrize("task,source,index", [("medical_mcq","aihub_71875",0),
+                                               ("context_qa","pubmedqa_labeled",587)])
+@pytest.mark.parametrize("question", ["Which option?", "합성 질문: café 🧪?"])
+def test_real_encoder_metadata_round_trip_through_metrics(task,source,index,question):
+    from mediflow_medvlm.runtime import canonical_hash as encoder_input_hash
+    selected = selected_rows()
+    sample = row(task=task,source=source)
+    sample["input"]["question"] = question
+    sample["input"]["context"] = ["Synthetic context", question]
+    stratum = selected[index][1]
+    selected[index] = sample,stratum
+    rows = [c._empty(r,s,"SYNTHETIC_FAILURE") for r,s in selected]
+    # Real encode_candidates -> encode_evaluation_sample/native prefix verifier;
+    # only likelihood numbers are synthetic. No model forward or weights needed.
+    rows[index] = success(sample,stratum)
+    result = rows[index]
+    assert result["input_metadata"]["input_hash"] == encoder_input_hash(sample["input"])
+    assert result["native_prefix"]["assistant_prefix_verified"] is True
+    assert result["input_metadata"]["renderer_version"] == "medvlm.eval-native.v2"
+    metrics = c._metrics(selected,rows)
+    assert metrics["succeeded"] == 1 and metrics["technical_failure_count"] == 636
+    assert metrics["unsupported_count"] == 879
+
+
+@pytest.mark.parametrize("tamper", ["input", "encoder_hash", "supervisor_hash", "missing_metadata",
+                                   "prefix_false", "missing_prefix", "input_tokens"])
+def test_encoder_metadata_tampering_still_fails_closed(tamper):
+    selected = selected_rows()
+    sample,stratum = selected[0]
+    sample["input"]["question"] = "합성 질문: café 🧪?"
+    rows = [c._empty(r,s,"SYNTHETIC_FAILURE") for r,s in selected]
+    result = rows[0] = success(sample,stratum)
+    if tamper == "input":
+        sample["input"]["question"] += " changed"
+        # Even with the separate campaign row identity recomputed, stale encoder
+        # evidence cannot be made valid by using the campaign hash convention.
+        result["input_hash"] = c.canonical_hash(sample["input"])
+    elif tamper == "encoder_hash":
+        result["input_metadata"]["input_hash"] = "0"*64
+    elif tamper == "supervisor_hash":
+        result["input_metadata"]["input_hash"] = c.canonical_hash(sample["input"])
+    elif tamper == "missing_metadata":
+        del result["input_metadata"]
+    elif tamper == "prefix_false":
+        result["native_prefix"]["assistant_prefix_verified"] = False
+    elif tamper == "missing_prefix":
+        del result["native_prefix"]
+    elif tamper == "input_tokens":
+        result["input_tokens"] = 0
+    with pytest.raises(ValueError,match="CHOICE_NATIVE_INPUT_EVIDENCE_CHANGED"):
+        c._metrics(selected,rows)
 
 
 @pytest.fixture

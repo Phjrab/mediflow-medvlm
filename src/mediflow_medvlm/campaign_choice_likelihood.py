@@ -22,7 +22,7 @@ import traceback
 
 from . import campaign_full_dev as dev
 from .campaign_supervisor import HASH_FIELDS, atomic_json, canonical_hash, file_hash
-from .runtime import BudgetLedger, ResourcePolicy, utcnow
+from .runtime import BudgetLedger, ResourcePolicy, utcnow, canonical_hash as encoder_input_hash
 
 SCHEMA = "medvlm.v6.choice-likelihood-config.v1"
 SCOPES = {"role": "VALIDATION_ONLY_NATIVE_CHOICE_LIKELIHOOD_AUXILIARY",
@@ -358,7 +358,9 @@ def _metrics(selected, rows):
             scores = row["label_scores"]
             _require([s["label"] for s in scores] == labels and row.get("attempted") is True and row.get("reason_code") is None, "CHOICE_LABEL_ORDER_CHANGED")
             _require(type(row.get("input_tokens")) is int and row["input_tokens"] > 0
-                     and row.get("input_metadata",{}).get("input_hash") == canonical_hash(sample["input"])
+                     # evaluation.v2 emits runtime's UTF-8 JSON input hash; the
+                     # campaign hash escapes Unicode and binds other artifacts.
+                     and row.get("input_metadata",{}).get("input_hash") == encoder_input_hash(sample["input"])
                      and row.get("native_prefix",{}).get("assistant_prefix_verified") is True, "CHOICE_NATIVE_INPUT_EVIDENCE_CHANGED")
             for score in scores:
                 ids, values = score["token_ids"], score["token_log_probabilities"]
