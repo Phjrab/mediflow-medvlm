@@ -47,7 +47,7 @@ PYTHONPATH=src:tests python3 -m unittest test_domain test_validation test_workfl
 기존 분류기 라벨 후보 생성, 검수 CSV, VQA 학습 준비·시작·재개, 결과 확인을
 수동 실행할 수 있다. 먼저 로컬 설정과 기존 모델 경로를 채운다.
 [실제 안구·두피 모델 다운로드와 로컬 사진 시작 안내](docs/research/LOCAL_PHOTO_START_KO.md),
-[자동 라벨링 후 연속 학습 안내](docs/research/KIOSK_UNATTENDED_KO.md),
+[사용자가 한 번 시작하는 자동 라벨링·연속 학습 안내](docs/research/KIOSK_UNATTENDED_KO.md),
 [터미널 사용 안내](docs/research/KIOSK_TERMINAL_KO.md)와
 [설정 예제](configs/kiosk_terminal.example.json)에 단계별 명령이 있다.
 

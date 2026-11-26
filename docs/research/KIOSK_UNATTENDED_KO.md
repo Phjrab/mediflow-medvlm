@@ -1,10 +1,12 @@
 # 로컬 사진 자동 라벨링 후 VLM 연속 학습
 
-사용자가 자동 라벨링부터 학습 시작까지 승인한 경우의 실행 방법이다. 사진이 있는 컴퓨터에서 실행한다. 안구는 일반 카메라의 외부 눈 사진이며 안저 사진은 포함하지 않는다.
+사용자가 터미널에서 직접 한 번 시작하면 자동 라벨링부터 학습·결과 저장까지 이어지는 실행 방법이다. **Codex는 환경·설정·실행 스크립트를 준비하고 점검하며, 전체 라벨링과 학습 시작은 사용자가 직접 한다.** 사진이 있는 컴퓨터에서 실행한다. 안구는 일반 카메라의 외부 눈 사진이며 안저 사진은 포함하지 않는다.
 
 ## Codex에 맡길 작업
 
-[로컬 Codex 작업 프롬프트](KIOSK_LOCAL_CODEX_PROMPT_KO.txt)를 사진이 저장된 PC의 Codex에 전달한다. Codex는 실제 사진 폴더·가상환경·기존 VLM 체크포인트를 확인하고, 필요하면 단안 crop을 준비한 뒤 아래 실행기를 시작한다. 이 저장소를 내려받았다는 사실만으로 학습이 시작되지는 않는다.
+[로컬 Codex 작업 프롬프트](KIOSK_LOCAL_CODEX_PROMPT_KO.txt)를 사진이 저장된 PC의 Codex에 전달한다. Codex는 실제 사진 폴더·가상환경·기존 VLM 체크포인트를 확인하고, 필요하면 단안 crop 준비 절차를 연결한다. 그런 다음 실제 경로가 채워진 로컬 실행 파일을 만들고 준비 상태를 보고한다. 전체 라벨링이나 학습을 대신 시작하지 않는다.
+
+사용자가 받게 할 로컬 실행 파일은 `run_all.sh`(전체 시작), `status.sh`(진행 조회), `results.sh`(결과 조회), `predict.sh`(새 사진 추론), `resume.sh`(지원되는 체크포인트 재개)다. 이 이름들은 **로컬 Codex가 해당 PC의 실제 경로를 채워 생성할 파일**이며 저장소에 이미 들어 있는 공통 스크립트 이름은 아니다. 공통 실행기는 `scripts/kiosk_autorun.py`, 조회·추론 엔진은 `scripts/kiosk_terminal.py`다.
 
 실행기는 `scan → label → review → export → prepare → train → reload → results`를 순서대로 실행한다. `review`는 나중에 확인할 빈 검수 양식을 만드는 단계이며, 사람의 입력을 기다리거나 자동 예측을 검수 정답으로 바꾸지 않는다. 분류기와 VLM은 별도의 Python 환경을 사용할 수 있다.
 
@@ -26,7 +28,7 @@
 
 ## 한 번에 실행
 
-아래는 Bash 예시다. Python 두 경로와 설정 경로를 실제 컴퓨터의 값으로 바꾼다. 가상환경의 `bin/python` 심볼릭 링크를 `readlink -f`로 풀지 않는다. 가상환경을 선택하는 경로 자체를 사용한다.
+아래는 사용자가 직접 시작하는 Bash 예시다. 로컬 Codex가 Python 두 경로와 설정 경로를 실제 값으로 채운 `run_all.sh`를 만들어 두면 사용자는 그 파일만 실행하면 된다. 가상환경의 `bin/python` 심볼릭 링크를 `readlink -f`로 풀지 않는다. 가상환경을 선택하는 경로 자체를 사용한다.
 
 ```bash
 python scripts/kiosk_autorun.py \
@@ -43,7 +45,7 @@ python scripts/kiosk_autorun.py \
 
 ## 터미널을 닫아도 계속 실행하기
 
-먼저 모델·설정·환경 준비를 마친다. 저장소 루트에서 다음과 같이 실행할 수 있다.
+먼저 모델·설정·환경 준비를 마친다. 백그라운드 실행도 사용자가 명령을 입력해 시작한다. 저장소 루트에서 다음과 같이 실행할 수 있다.
 
 ```bash
 LABEL_PYTHON="$PWD/.venv-label/bin/python"
@@ -80,7 +82,7 @@ Ubuntu에서 `systemd-inhibit`가 지원되고 실행 권한이 확인되면 `no
 | `autoruns/<이름>/<단계>.log` | preflight/scan/label/review/export/prepare/train/reload/results 로그 |
 | `runs/<이름>/report/` | 학습 결과 JSON, 실제 loss CSV와 PNG |
 
-`RUNNING` 기록만으로 프로세스 생존을 단정하지 않는다. 로컬 Codex가 시작 직후 실행기 PID와 단계 로그의 실제 갱신을 확인하고, **실행 중**인지 **완료**인지 구분해서 보고하게 한다. `SUCCEEDED`는 모든 단계가 성공했을 때만 기록한다.
+`RUNNING` 기록만으로 프로세스 생존을 단정하지 않는다. 사용자가 실행한 뒤 진행 조회 스크립트에서 실행기 PID와 단계 로그의 실제 갱신을 확인한다. Codex의 준비 완료 상태는 `READY_NOT_STARTED`로 구분하고 존재하지 않는 실행 PID를 보고하지 않는다. 실행기의 `SUCCEEDED`는 모든 단계가 성공했을 때만 기록한다.
 
 추가 결과 조회에는 원본 설정 대신 해당 실행의 설정 복사본을 사용한다.
 
