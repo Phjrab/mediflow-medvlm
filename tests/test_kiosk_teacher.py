@@ -321,3 +321,161 @@ def test_label_workspace_lock_prevents_competing_processes(tmp_path):
         with pytest.raises(RuntimeError, match="Another label process"):
             with teacher._label_lock(tmp_path / "label.lock"):
                 pytest.fail("second label process acquired the same workspace")
+
+
+def test_pinned_checkpoint_is_checked_before_runtime_import(environment, monkeypatch):
+    config, _ = environment
+    configured = config["teachers"]["eye"]
+    configured["expected_checkpoint_sha256"] = file_hash(configured["checkpoint"])
+    spec, identity = teacher._specification(config["sources"][0], configured)
+    assert identity["expected_checkpoint_sha256"] == configured["expected_checkpoint_sha256"]
+    Path(configured["checkpoint"]).write_bytes(b"unexpected replacement")
+    monkeypatch.setitem(sys.modules, "tensorflow", None)
+    assert teacher.inspect_teachers(config)["status"] == "BLOCKED_CONFIGURATION"
+    with pytest.raises(ValueError, match="changed before model loading"):
+        teacher._load_predictor(spec)
+
+
+@pytest.mark.parametrize("change", [
+    {"backend": "torchscript"}, {"preprocessing": "zero_one"},
+    {"color_order": "bgr"}, {"resize_method": "bicubic"}, {"resize_mode": "center_crop"},
+])
+def test_tensorflow_legacy_contract_cannot_silently_change(environment, change):
+    config, _ = deepcopy(environment)
+    config["teachers"]["eye"].update(image_processor="tensorflow_legacy", **change)
+    result = teacher.inspect_teachers(config)
+    assert result["status"] == "BLOCKED_CONFIGURATION"
+    assert "tensorflow_legacy requires" in result["teachers"][0]["errors"][0]
+
+
+def test_tensorflow_legacy_keeps_decoded_orientation_and_uses_tf_resize(environment, monkeypatch):
+    config, images = environment
+    old, old_identity = teacher._specification(config["sources"][0], config["teachers"]["eye"])
+    spec, identity = teacher._specification(config["sources"][0], {**config["teachers"]["eye"],
+                                                                 "image_processor": "tensorflow_legacy"})
+    assert "image_processor" not in old_identity
+    assert identity["image_processor"] == "tensorflow_legacy"
+    assert identity["signature"] != old_identity["signature"]
+    decoded = np.arange(36, dtype=np.uint8).reshape(3, 4, 3)
+    resized = np.arange(18, dtype=np.float32).reshape(2, 3, 3)
+    decode, resize = Mock(return_value=decoded), Mock(return_value=resized)
+    tf = SimpleNamespace(io=SimpleNamespace(decode_image=decode),
+                         image=SimpleNamespace(resize=resize), float32=np.float32,
+                         cast=lambda values, dtype: np.asarray(values, dtype=dtype))
+    monkeypatch.setitem(sys.modules, "tensorflow", tf)
+    from PIL import ImageOps
+    monkeypatch.setattr(ImageOps, "exif_transpose", Mock(side_effect=AssertionError("EXIF must not be applied")))
+    actual = teacher._prepare_image(images[0]["path"], spec, images[0]["sha256"])
+    decode.assert_called_once_with(Path(images[0]["path"]).read_bytes(), channels=3, expand_animations=False)
+    assert resize.call_args.args[0] is decoded
+    assert resize.call_args.args[1] == (2, 3)
+    assert resize.call_args.kwargs == {"method": "bilinear", "antialias": False}
+    np.testing.assert_array_equal(actual, resized)
+    assert actual.dtype == np.float32 and actual.flags.c_contiguous
+
+
+def eye_fixture(environment, monkeypatch):
+    config, images = deepcopy(environment)
+    configured = config["teachers"]["eye"]
+    # Only the file digest is replaced for this synthetic, non-loadable fixture.
+    # The production adapter always pins the original repository checkpoint.
+    monkeypatch.setattr(teacher, "EYE_CHECKPOINT_SHA256", file_hash(configured["checkpoint"]))
+    configured.update(backend="mediflow_eye", input_scope="single_eye_crop", input_size=[224, 224],
+                      class_names=list(teacher.EYE_CLASS_NAMES), preprocessing="imagenet", output_type="logits")
+    return config, images
+
+
+@pytest.mark.parametrize("change", [
+    {"input_scope": None}, {"input_scope": "full_face"}, {"input_size": [256, 256]},
+    {"preprocessing": "raw_0_255"}, {"color_order": "bgr"}, {"output_type": "probabilities"},
+    {"resize_mode": "center_crop"}, {"resize_method": "bicubic"},
+    {"class_names": list(reversed(teacher.EYE_CLASS_NAMES))}, {"expected_checkpoint_sha256": "0" * 64},
+])
+def test_eye_contract_requires_crop_scope_and_verified_five_class_model(environment, monkeypatch, change):
+    config, _ = eye_fixture(environment, monkeypatch)
+    config["teachers"]["eye"].update(change)
+    assert teacher.inspect_teachers(config)["status"] == "BLOCKED_CONFIGURATION"
+
+
+def test_eye_source_scope_is_explicit_and_cannot_conflict(environment, monkeypatch):
+    config, _ = eye_fixture(environment, monkeypatch)
+    config["sources"][0]["input_scope"] = "single_eye_crop"
+    config["teachers"]["eye"].pop("input_scope")
+    result = teacher.inspect_teachers(config)
+    identity = result["teachers"][0]["teacher"]
+    assert identity["input_scope"] == "single_eye_crop"
+    assert identity["expected_checkpoint_sha256"] == teacher.EYE_CHECKPOINT_SHA256
+    config["teachers"]["eye"]["input_scope"] = "single_eye_crop"
+    config["sources"][0]["input_scope"] = "full_face"
+    assert teacher.inspect_teachers(config)["status"] == "BLOCKED_CONFIGURATION"
+
+
+def eye_runtime(monkeypatch, state):
+    class Tensor:
+        def __init__(self, values):
+            self.data = np.asarray(values)
+            self.shape = self.data.shape
+        def unsqueeze(self, axis): return Tensor(np.expand_dims(self.data, axis))
+        def detach(self): return self
+        float = cpu = detach
+        def numpy(self): return self.data
+    model = Mock(return_value=Tensor([[1., 2., 3., 4., 5.]]))
+    model.classifier = [None, SimpleNamespace(in_features=1280)]
+    factory, linear, load = Mock(return_value=model), Mock(return_value="five-class-head"), Mock(return_value=state)
+    torch = SimpleNamespace(load=load, Tensor=Tensor, from_numpy=Tensor, inference_mode=nullcontext,
+                            nn=SimpleNamespace(Linear=linear))
+    vision_models = SimpleNamespace(efficientnet_b0=factory)
+    monkeypatch.setitem(sys.modules, "torch", torch)
+    monkeypatch.setitem(sys.modules, "torchvision", SimpleNamespace(models=vision_models))
+    monkeypatch.setitem(sys.modules, "torchvision.models", vision_models)
+    return model, factory, linear, load
+
+
+@pytest.mark.parametrize("wrapper", [None, "state_dict", "model_state_dict", "module_prefix"])
+def test_eye_loads_only_safe_state_dict_into_exact_architecture(environment, monkeypatch, tmp_path, wrapper):
+    config, images = eye_fixture(environment, monkeypatch)
+    parameter = object()
+    state = {"features.0.weight": parameter}
+    stored = {"module.features.0.weight": parameter} if wrapper == "module_prefix" else (
+        {wrapper: state, "epoch": 1} if wrapper else state)
+    model, factory, linear, load = eye_runtime(monkeypatch, stored)
+    # A class-map file remains supported after specification normalization.
+    classes = tmp_path / "eye_classes.json"
+    classes.write_text(json.dumps(teacher.EYE_CLASS_NAMES), encoding="utf-8")
+    configured = config["teachers"]["eye"]
+    configured.pop("class_names")
+    configured["class_names_file"] = str(classes)
+    spec, identity = teacher._specification(config["sources"][0], configured)
+    result = teacher._load_predictor(spec)(images[0]["path"], images[0]["sha256"])
+    factory.assert_called_once_with(weights=None)
+    linear.assert_called_once_with(1280, 5)
+    load.assert_called_once_with(spec["checkpoint"], map_location="cpu", weights_only=True)
+    model.load_state_dict.assert_called_once_with(state, strict=True)
+    model.to.assert_called_once_with("cpu")
+    model.eval.assert_called_once_with()
+    assert model.call_args.args[0].shape == (1, 3, 224, 224)
+    assert list(result) == teacher.EYE_CLASS_NAMES
+    assert max(result, key=result.get) == teacher.EYE_CLASS_NAMES[-1]
+    assert sum(result.values()) == pytest.approx(1.0)
+    assert identity["image_processor"] == "pillow"
+
+
+@pytest.mark.parametrize("state", [None, {}, {"state_dict": {}, "model_state_dict": {}},
+                                    {"module.one": 1, "two": 2}, {"state_dict": []}, {1: 0}])
+def test_eye_rejects_ambiguous_or_non_state_dict_payloads(environment, monkeypatch, state):
+    config, _ = eye_fixture(environment, monkeypatch)
+    model, _, _, _ = eye_runtime(monkeypatch, state)
+    spec, _ = teacher._specification(config["sources"][0], config["teachers"]["eye"])
+    with pytest.raises(ValueError):
+        teacher._load_predictor(spec)
+    model.load_state_dict.assert_not_called()
+
+
+def test_eye_does_not_accept_unpinned_weights(environment, monkeypatch):
+    config, _ = deepcopy(environment)
+    config["teachers"]["eye"].update(backend="mediflow_eye", input_scope="single_eye_crop", input_size=[224, 224],
+                                     class_names=list(teacher.EYE_CLASS_NAMES), preprocessing="imagenet", output_type="logits")
+    monkeypatch.setitem(sys.modules, "torch", None)
+    result = teacher.inspect_teachers(config)
+    assert result["status"] == "BLOCKED_CONFIGURATION"
+    assert "SHA-256" in result["teachers"][0]["errors"][0]

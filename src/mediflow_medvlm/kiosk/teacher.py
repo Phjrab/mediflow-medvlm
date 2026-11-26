@@ -15,6 +15,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import time
@@ -26,6 +27,9 @@ from ..runtime import atomic_json, canonical_hash, file_hash, utcnow
 PREDICTION_SCHEMA = "medvlm.kiosk-predictions.v1"
 PREPROCESSING = {"raw_0_255", "zero_one", "minus_one_one", "imagenet"}
 RESAMPLING = {"nearest", "bilinear", "bicubic", "lanczos"}
+EYE_CHECKPOINT_SHA256 = "68c52d0b1f4848484e9546109ef9eb836bb56004fa9cd8f05ed87c3126ad5c15"
+EYE_CLASS_NAMES = ["결막염 (Conjunctivitis)", "다래끼 (Eyelid)", "백내장 (Cataract)",
+                   "일반 (Normal)", "포도막염 (Uveitis)"]
 
 
 def _class_names(spec):
@@ -45,8 +49,8 @@ def _specification(source, configured):
     if not isinstance(configured, dict) or not configured:
         raise ValueError("No teacher is configured for this source.")
     backend = configured.get("backend")
-    if backend not in {"keras", "torchscript", "predictions"}:
-        raise ValueError("backend must be keras, torchscript, or predictions.")
+    if backend not in {"keras", "torchscript", "predictions", "mediflow_eye"}:
+        raise ValueError("backend must be keras, torchscript, predictions, or mediflow_eye.")
     if configured.get("modality") != source["modality"]:
         raise ValueError("Teacher modality must explicitly match the image source modality.")
     if configured.get("device", "cpu") != "cpu":
@@ -82,6 +86,31 @@ def _specification(source, configured):
         suffix = Path(str(spec.get("checkpoint", ""))).suffix.lower()
         if backend == "keras" and suffix not in {".keras", ".h5", ".hdf5"}:
             raise ValueError("Keras teacher must be a complete local .keras/.h5 model, not weights-only.")
+    processor = spec.get("image_processor", "pillow")
+    if processor not in {"pillow", "tensorflow_legacy"}:
+        raise ValueError("image_processor must be pillow or tensorflow_legacy.")
+    if processor == "tensorflow_legacy" and (
+            backend != "keras" or spec.get("preprocessing") != "raw_0_255"
+            or spec.get("color_order") != "rgb" or spec.get("resize_method") != "bilinear"
+            or spec.get("resize_mode") != "stretch"):
+        raise ValueError("tensorflow_legacy requires Keras, raw_0_255, rgb, bilinear and stretch.")
+    if backend == "mediflow_eye":
+        scope = spec.get("input_scope", source.get("input_scope"))
+        if (scope != "single_eye_crop" or source.get("input_scope") not in {None, "single_eye_crop"}):
+            raise ValueError("mediflow_eye requires explicit input_scope=single_eye_crop; no automatic face/eye crop is performed.")
+        if (source["modality"] != "external_eye_rgb" or names != EYE_CLASS_NAMES
+                or spec["input_size"] != [224, 224] or spec["preprocessing"] != "imagenet"
+                or spec["color_order"] != "rgb" or spec["output_type"] != "logits"
+                or spec["resize_method"] != "bilinear" or spec["resize_mode"] != "stretch"
+                or processor != "pillow"):
+            raise ValueError("mediflow_eye requires the pinned five-class RGB/ImageNet 224px single-eye classifier contract.")
+        if spec.get("expected_checkpoint_sha256", EYE_CHECKPOINT_SHA256) != EYE_CHECKPOINT_SHA256:
+            raise ValueError("mediflow_eye only supports its pinned checkpoint SHA-256.")
+        spec.update(input_scope=scope, image_processor="pillow", expected_checkpoint_sha256=EYE_CHECKPOINT_SHA256)
+    expected = spec.get("expected_checkpoint_sha256")
+    if expected is not None and (backend == "predictions" or not isinstance(expected, str)
+                                 or not re.fullmatch(r"[0-9a-f]{64}", expected)):
+        raise ValueError("expected_checkpoint_sha256 must be a lowercase SHA-256 for a local checkpoint backend.")
     hashes = {"checkpoint_sha256": None, "class_names_file_sha256": None,
               "predictions_file_sha256": None}
     for field, digest_name in file_fields.items():
@@ -93,10 +122,16 @@ def _specification(source, configured):
             if not path.is_file():
                 raise ValueError("Teacher " + field + " is not an existing local file.")
             hashes[digest_name] = file_hash(path)
+    if expected is not None and hashes["checkpoint_sha256"] != expected:
+        raise ValueError("Teacher checkpoint SHA-256 does not match expected_checkpoint_sha256.")
     identity = {"backend": backend, "modality": source["modality"], "class_names": names,
                 "device": "cpu", "output_type": spec["output_type"], **hashes}
     for key in ("input_size", "preprocessing", "color_order", "resize_method", "resize_mode", "input_layout"):
         identity[key] = spec.get(key)
+    # Preserve old default signatures while binding every explicit new contract.
+    for key in ("image_processor", "input_scope", "expected_checkpoint_sha256"):
+        if key in spec:
+            identity[key] = spec[key]
     if spec.get("upstream_model"):
         identity["upstream_model"] = str(spec["upstream_model"])
     identity["signature"] = canonical_hash(identity)
@@ -152,6 +187,13 @@ def _prepare_image(path, spec, expected_sha256=None):
     if expected_sha256 and hashlib.sha256(raw).hexdigest() != expected_sha256:
         raise ValueError("IMAGE_BYTES_CHANGED")
     height, width = spec["input_size"]
+    if spec.get("image_processor") == "tensorflow_legacy":
+        import tensorflow as tf
+        # Match mediflow-datasets' frozen classifier input: decoded pixels are
+        # not EXIF-transposed, and TensorFlow bilinear differs from Pillow.
+        image = tf.io.decode_image(raw, channels=3, expand_animations=False)
+        resized = tf.image.resize(image, (height, width), method="bilinear", antialias=False)
+        return np.ascontiguousarray(tf.cast(resized, tf.float32), dtype=np.float32)
     resampling = getattr(Image.Resampling, spec.get("resize_method", "bilinear").upper())
     with Image.open(io.BytesIO(raw)) as original:
         image = ImageOps.exif_transpose(original).convert("RGB")
@@ -195,6 +237,8 @@ def _validate_keras_shape(model, spec):
 
 def _load_predictor(spec):
     """Return a per-image callable, loading only a trusted local model file."""
+    if spec.get("expected_checkpoint_sha256") and file_hash(spec["checkpoint"]) != spec["expected_checkpoint_sha256"]:
+        raise ValueError("Teacher checkpoint changed before model loading.")
     if spec["backend"] == "keras":
         previous = os.environ.get("CUDA_VISIBLE_DEVICES")
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -229,9 +273,38 @@ def _load_predictor(spec):
                 raise ValueError("Classifier must return a [1, number_of_classes] tensor.")
             return _probabilities(output[0], spec["class_names"], spec["output_type"])
         return predict
-    if spec["backend"] == "torchscript":
+    if spec["backend"] in {"torchscript", "mediflow_eye"}:
+        if spec["backend"] == "mediflow_eye":
+            # This adapter supports one verified repository model, not arbitrary
+            # pickled architectures. Never fall back to weights_only=False.
+            configured = dict(spec)
+            if configured.get("class_names_file"):
+                configured.pop("class_names", None)
+            spec, _ = _specification({"modality": "external_eye_rgb"}, configured)
         import torch
-        model = torch.jit.load(spec["checkpoint"], map_location="cpu")
+        if spec["backend"] == "mediflow_eye":
+            from torchvision.models import efficientnet_b0
+            model = efficientnet_b0(weights=None)
+            model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, len(EYE_CLASS_NAMES))
+            state = torch.load(spec["checkpoint"], map_location="cpu", weights_only=True)
+            if not isinstance(state, dict) or not state:
+                raise ValueError("mediflow_eye checkpoint must contain a state dict.")
+            wrappers = [key for key in ("state_dict", "model_state_dict") if key in state]
+            if len(wrappers) > 1:
+                raise ValueError("mediflow_eye checkpoint has ambiguous state dict wrappers.")
+            if wrappers:
+                state = state[wrappers[0]]
+            if not isinstance(state, dict) or not state or any(not isinstance(key, str) for key in state):
+                raise ValueError("mediflow_eye checkpoint must contain named parameter tensors.")
+            prefixed = [key.startswith("module.") for key in state]
+            if any(prefixed):
+                if not all(prefixed):
+                    raise ValueError("mediflow_eye checkpoint has mixed module. prefixes.")
+                state = {key.removeprefix("module."): value for key, value in state.items()}
+            model.load_state_dict(state, strict=True)
+            model.to("cpu")
+        else:
+            model = torch.jit.load(spec["checkpoint"], map_location="cpu")
         model.eval()
 
         def predict(path, image_sha256):
@@ -240,7 +313,7 @@ def _load_predictor(spec):
             with torch.inference_mode():
                 output = model(batch)
             if not isinstance(output, torch.Tensor) or tuple(output.shape) != (1, len(spec["class_names"])):
-                raise ValueError("TorchScript classifier must return a [1, number_of_classes] tensor.")
+                raise ValueError("Torch classifier must return a [1, number_of_classes] tensor.")
             return _probabilities(output.detach().float().cpu().numpy()[0], spec["class_names"], spec["output_type"])
         return predict
     raise ValueError("The predictions backend does not load a model.")

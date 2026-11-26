@@ -4,6 +4,8 @@
 
 스크립트는 명령을 입력할 때만 동작한다. 메뉴 열기·환경 점검·결과 조회는 학습이나 모델 다운로드를 시작하지 않는다. GPU 실행은 기존 엔진의 Linux/WSL 환경과 공용 GPU 잠금·사용량 기록을 사용한다.
 
+**MediFlow 저장소의 실제 안구·두피 모델을 쓸 때는 [로컬 사진 시작 안내](LOCAL_PHOTO_START_KO.md)를 먼저 따른다.** 해당 모델만 다운로드하고 원본 클래스·전처리를 채운 설정을 만드는 `scripts/kiosk_setup_models.py`가 있다. 안구 `.pth`는 전용 `mediflow_eye` backend, 두피 `.keras`는 `tensorflow_legacy` 전처리 옵션으로 연결한다.
+
 ## 1. 준비할 로컬 파일
 
 | 설정 | 넣을 값 |
@@ -58,8 +60,8 @@ EfficientNet-B0 같은 모델 이름만으로 클래스 순서나 전처리를 �
 
 | 항목 | 계약 |
 | --- | --- |
-| `backend` | 전체 Keras 모델은 `keras`, TorchScript export는 `torchscript`, 기존 score JSONL은 `predictions`. |
-| `checkpoint` | 신뢰하는 로컬 `.keras`/`.h5`/`.hdf5` 또는 TorchScript `.pt`. 임의 state dict는 지원하지 않는다. |
+| `backend` | 전체 Keras 모델은 `keras`, TorchScript export는 `torchscript`, 기존 score JSONL은 `predictions`. 검증한 MediFlow 안구 state dict는 전용 `mediflow_eye`. |
+| `checkpoint` | 신뢰하는 로컬 `.keras`/`.h5`/`.hdf5`, TorchScript `.pt`, 또는 `mediflow_eye` 전용의 검증한 `.pth`. 그 밖의 임의 state dict는 지원하지 않는다. |
 | `class_names_file` | 모델 출력 인덱스 순서대로 된 JSON 문자열 배열. `class_names` 배열을 설정에 직접 넣어도 된다. |
 | `input_size` | `[height, width]`. 모델 학습·추론 때 사용한 크기. |
 | `preprocessing` | `raw_0_255`, `zero_one`, `minus_one_one`, `imagenet` 중 실제 모델 계약. 모델 안에 rescaling이 있으면 중복 적용하지 않는다. |
@@ -69,7 +71,7 @@ EfficientNet-B0 같은 모델 이름만으로 클래스 순서나 전처리를 �
 
 현재 teacher는 한 이미지의 단일 `[1, C]` 클래스 벡터를 지원한다. 두피 모델이 여러 증상별 head, multilabel 또는 sigmoid 구조이면 그 구조에 맞는 별도 adapter가 필요하다. 여러 증상의 확률을 단일 질환 softmax처럼 해석해 import하면 안 된다. 안저용 모델을 눈 외부 사진용 teacher로 등록하지 않는다.
 
-입력은 EXIF 방향 적용 → RGB 변환 → 지정 크기 resize → 지정 색 순서·전처리 순서다. 자동 YOLO/MediaPipe 검출·ROI crop은 이 스크립트에 포함되어 있지 않다. 기존 모델이 crop을 요구한다면 동일 crop 과정을 거친 사진이나 기존 추론 파이프라인의 score를 사용한다.
+기본 Pillow 입력은 EXIF 방향 적용 → RGB 변환 → 지정 크기 resize → 지정 색 순서·전처리 순서다. 두피 원본 계약용 `image_processor: tensorflow_legacy`는 TensorFlow decode·bilinear resize를 사용하고 EXIF 회전 및 외부 정규화를 하지 않는다. 자동 YOLO/MediaPipe 검출·ROI crop은 이 스크립트에 포함되어 있지 않다. 기존 모델이 crop을 요구한다면 동일 crop 과정을 거친 사진이나 기존 추론 파이프라인의 score를 사용한다.
 
 ### 다른 환경에서 계산한 분류 score 가져오기
 
