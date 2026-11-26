@@ -183,7 +183,8 @@ def test_current_unimplemented_draft_reports_all_blockers_without_success(f):
     assert all("V7_STAGE_MISSING:"+condition+":evaluation" in output["reasons"] for condition in t.CONDITIONS)
     assert [a for a,_,_ in f.calls]==["status"]
     f.calls.clear(); f.output.clear()
-    assert f.client().execute("watch",max_updates=2)==3
+    client=f.client()
+    assert client.execute("watch",max_updates=2)==3
     assert [a for a,_,_ in f.calls]==["status"]
     views=[value for value in f.output if value.get("event")=="STATUS"]
     assert len(views)==2 and all(not value["v7_completed"] and value["reasons"] for value in views)
@@ -227,6 +228,74 @@ def test_live_worker_monitoring_reads_local_state_without_status_poll_or_tick(f)
     f.live=True; f.persist()
     assert f.client().execute("run",scope_token=f.token,max_updates=4)==3
     assert [a for a,_,_ in f.calls]==["status"]
+
+
+@pytest.mark.parametrize("exit_code",[0,1])
+def test_dead_worker_bound_exit_is_awaiting_verification_and_displays_row_progress(f,exit_code):
+    key="v6-report"; job=next(j for j in f.jobs if j["job_id"]==key)
+    native=f.root/"attempts"/key/"0001"
+    f.records[key].update(status="RUNNING",attempts=1,attempt_dir=str(native),launch_token="launch",worker_identity={"worker_pid":123})
+    save(native/"launch.json",{"launch_token":"launch","attempt":1,"campaign_id":f.root.name,"job":job,"job_hash":t.digest(job)})
+    save(native/"exit.json",{"status":"EXITED","launch_token":"launch","exit_code":exit_code,"error":"PRIVATE ERROR"})
+    save(native/"progress.json",{**{k:job[k] for k in ("job_id","run_id",*t.HASH_FIELDS)},
+        "rows_completed":601,"scheduled_text_rows":1516,"technical_failures":3,"answer":"PRIVATE ANSWER"})
+    f.persist(); before=(f.root/"state.json").read_bytes()
+    client=f.client()
+    assert client.execute("watch",max_updates=2)==3
+    views=[v for v in f.output if v.get("event")=="STATUS"]
+    active=views[-1]["active"][0]
+    assert active["status"]=="EXITED_AWAITING_VERIFICATION" and active["native_state"]=="RUNNING"
+    assert active["exit_code"]==exit_code and active["scope"]=="V6_READ_ONLY"
+    assert {k:v["value"] for k,v in active["row_progress"].items()}=={"rows_completed":601,"scheduled_text_rows":1516,"technical_failures":3}
+    rendered=t.render_text(views[-1])
+    assert "EXITED_AWAITING_VERIFICATION native_state=RUNNING exit_code="+str(exit_code) in rendered
+    assert "rows_completed=601" in rendered and "technical_failures=3" in rendered
+    assert "PRIVATE" not in json.dumps(f.output)+rendered
+    assert [a for a,_,_ in f.calls]==["status"] and (f.root/"state.json").read_bytes()==before
+    assert not client._worker_state(f.snapshot({}),key)
+
+
+@pytest.mark.parametrize("change",["exit_token","launch_job","launch_attempt","live_child","unsafe_exit_code","bad_progress"])
+def test_exit_and_row_progress_display_require_current_identity(f,change):
+    key=f.ids[0]; job=next(j for j in f.jobs if j["job_id"]==key); native=f.root/"attempts"/key/"0001"
+    f.records[key].update(status="RUNNING",attempts=1,attempt_dir=str(native),launch_token="launch",worker_identity={"worker_pid":123})
+    launch={"launch_token":"launch","attempt":1,"campaign_id":f.root.name,"job":job,"job_hash":t.digest(job)}
+    exited={"status":"EXITED","launch_token":"launch","exit_code":0}
+    progress={**{k:job[k] for k in ("job_id","run_id",*t.HASH_FIELDS)},"rows_completed":9,"scheduled_text_rows":10,"technical_failures":False}
+    if change=="exit_token": exited["launch_token"]="forged"
+    if change=="launch_job": launch["job_hash"]="forged"
+    if change=="launch_attempt": launch["attempt"]=2
+    if change=="live_child":
+        f.live=True; save(native/"heartbeat.json",{"child_identity":{"worker_pid":234}})
+    if change=="unsafe_exit_code": exited["exit_code"]="PRIVATE ERROR"
+    if change=="bad_progress": progress["config_hash"]="forged"
+    save(native/"launch.json",launch); save(native/"exit.json",exited); save(native/"progress.json",progress)
+    client=f.client(); client._canonical("status")
+    active=client.metrics(f.snapshot({}))[0]
+    expected="RUNNING" if change=="live_child" else "ACTIVITY_UNVERIFIED" if change in {"exit_token","launch_job","launch_attempt"} else "EXITED_AWAITING_VERIFICATION"
+    assert active["status"]==expected and active["native_state"]=="RUNNING"
+    assert active["exit_code"] is None if change in {"exit_token","launch_job","launch_attempt","live_child","unsafe_exit_code"} else active["exit_code"]==0
+    assert active["row_progress"]["technical_failures"]["value"] is None
+    if change=="bad_progress": assert all(v["value"] is None for v in active["row_progress"].values())
+    assert "PRIVATE" not in json.dumps(active) and [a for a,_,_ in f.calls]==["status"]
+
+
+def test_dead_worker_without_exit_delegates_reconciliation_to_canonical_tick(f):
+    key=f.ids[0]; native=f.root/"attempts"/key/"0001"
+    f.records[key].update(status="RUNNING",attempts=1,attempt_dir=str(native),launch_token="launch",worker_identity={"worker_pid":123})
+    f.persist(); client=f.client()
+    def canonical(argv,env,**kwargs):
+        if argv[-1]=="tick":
+            f.calls.append(("tick",copy.deepcopy(env),copy.deepcopy(argv)))
+            f.records[key]["status"]="SOURCE_REPAIR_REQUIRED"; f.persist()
+            return f.snapshot(env)
+        return f.invoke(argv,env,**kwargs)
+    client.transport=SimpleNamespace(invoke=canonical)
+    assert client.execute("run",scope_token=f.token,max_updates=3)==2
+    assert [a for a,_,_ in f.calls]==["status","tick"]
+    views=[v for v in f.output if v.get("event")=="STATUS"]
+    assert views[0]["active"][0]["status"]=="ACTIVITY_UNVERIFIED"
+    assert "V7_REPAIR_REQUIRED:"+key in views[-1]["reasons"]
 
 
 def test_scalar_telemetry_exact_attempt_binding_null_reasons_and_no_private_text(f):

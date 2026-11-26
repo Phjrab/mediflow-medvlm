@@ -32,6 +32,10 @@ Ctrl-C는 클라이언트를 분리하며 worker에 신호를 보내지 않는�
 
 표시 항목은 step/total, loss, learning rate, gradient norm, 처리량, GPU 사용량·메모리, RAM, ETA다. 값이 없거나 센서를 지원하지 않으면 null과 이유를 표시한다. ETA를 계산할 수 있는 경우 최신 실측 sample rate와 남은 sample 수로 만든 추정치임을 명시한다. GPU 센서를 새로 실행하거나 모델을 로드하지 않는다.
 
+현재 attempt의 worker/child가 종료되고 launch identity와 일치하는 exit 증거가 있으면 `EXITED_AWAITING_VERIFICATION`과 exit code를 표시한다. 원래 `native_state=RUNNING`은 유지되며, exit code 0만으로 성공을 선언하지 않는다. 종료 증거가 없거나 identity가 다르면 `ACTIVITY_UNVERIFIED`로 표시한다. likelihood처럼 학습이 아닌 작업은 identity가 일치하는 progress의 `rows_completed`, `scheduled_text_rows`, `technical_failures`를 표시하며 학습 지표를 만들어 내지 않는다.
+
+`run`에서 살아 있는 worker identity가 없으면 exit 파일이 없어도 canonical tick에 reconcile을 요청한다. launch race와 worker/GPU lease는 기존 supervisor가 판단한다. `watch`는 이 경우에도 tick을 호출하지 않는다.
+
 Telemetry는 native launch identity와 scientific producer의 `attempt.json` UUID를 연결한 경우에만 사용한다. 이전 attempt나 중복된 producer 증거는 현재 실측값으로 표시하지 않는다. LF로 완료된 최신 stream record만 읽고, 의료 질문·정답·생성문·traceback·원시 로그를 출력하지 않는다. 이 화면은 telemetry 원본을 수정하거나 Forge cache를 새로 만들지 않는다.
 
 클라이언트 subprocess 환경은 문서화된 최소 host 환경(`PATH`, `HOME`, 사용자/locale/terminal/runtime 경로)과 저장된 배포의 명시적 환경을 합친다. 주변 `PYTHONPATH`, `PYTHONHOME`, GPU 선택, preload, thread 설정은 저장된 배포에 명시된 경우에만 전달한다. 저장된 cwd와 Forge 경로는 그대로 유지하며, `run`의 명시적 scope token만 추가한다.

@@ -39,6 +39,7 @@ METRIC_FIELDS = {
     "gpu_total_bytes":"gpu_memory_total_bytes", "ram_used_bytes":"host_ram_used_bytes",
     "ram_total_bytes":"host_ram_total_bytes", "eta_seconds":"eta_seconds",
 }
+ROW_PROGRESS_FIELDS = ("rows_completed", "scheduled_text_rows", "technical_failures")
 
 
 class TerminalError(ValueError):
@@ -324,7 +325,7 @@ class TerminalClient:
         if for_run and snapshot.get("manual_handoff_verified") is not True: reasons.append("MANUAL_HANDOFF_NOT_AUTHORIZED")
         return sorted(set(reasons))
 
-    def _worker_state(self,snapshot,key):
+    def _worker_observation(self,snapshot,key):
         record=snapshot["jobs"][key]; health={}; exited=None
         if record.get("attempt_dir"):
             attempt=absolute(record["attempt_dir"]); require(attempt.is_relative_to(self.root/"attempts"),"ATTEMPT_OUTSIDE_CAMPAIGN")
@@ -334,12 +335,23 @@ class TerminalClient:
                     if filename=="heartbeat.json": health=read_json(path)
                     else: exited=read_json(path)
         identities=(record.get("worker_identity"),health.get("worker_identity"),health.get("child_identity"))
-        if any(self.is_alive(identity) for identity in identities): return True
-        if record.get("status") in {"STARTING","RUNNING"}:
-            # An absent identity/exit can be a launch race. Only a correctly
-            # bound exit permits the terminal loop to request reconciliation.
-            return not (exited and exited.get("launch_token")==record.get("launch_token"))
-        return False
+        live=any(self.is_alive(identity) for identity in identities)
+        if live: return True,None
+        token=record.get("launch_token")
+        bound_exit=None
+        if token and exited and exited.get("launch_token")==token and (attempt/"launch.json").exists():
+            launch=read_json(attempt/"launch.json")
+            job=next(job for job in self.manifest["jobs"] if job["job_id"]==key)
+            if (launch.get("launch_token")==token and launch.get("attempt")==record.get("attempts")
+                    and launch.get("campaign_id")==snapshot.get("campaign_id")
+                    and launch.get("job_hash")==digest(job) and digest(launch.get("job"))==digest(job)):
+                bound_exit=exited
+        return live,bound_exit
+
+    def _worker_state(self,snapshot,key):
+        # The canonical tick arbitrates absent exit records and launch races
+        # under its worker/GPU leases. A stale RUNNING row is not live evidence.
+        return self._worker_observation(snapshot,key)[0]
 
     def _progress(self,job,record):
         if not record.get("attempt_dir"): return {},None
@@ -404,9 +416,19 @@ class TerminalClient:
         for key,record in snapshot["jobs"].items():
             if record.get("status") not in {"STARTING","RUNNING"}: continue
             values={name:_metric(None,None) for name in METRIC_FIELDS}; reason=None
+            row_progress={name:_metric(None,None) for name in ROW_PROGRESS_FIELDS}
+            status="ACTIVITY_UNVERIFIED"; exit_code=None
             try:
+                live,exited=self._worker_observation(snapshot,key)
+                if live: status=record["status"]
+                elif exited is not None:
+                    status="EXITED_AWAITING_VERIFICATION"
+                    if type(exited.get("exit_code")) is int: exit_code=exited["exit_code"]
                 progress,attempt=self._progress(jobs[key],record)
                 for name,field in METRIC_FIELDS.items(): values[name]=_metric(progress.get(field),"native_progress")
+                for name in ROW_PROGRESS_FIELDS:
+                    count=progress.get(name)
+                    row_progress[name]=_metric(count if type(count) is int and count>=0 else None,"native_progress")
                 steps,resources,reason=self._telemetry(jobs[key],record,progress,attempt)
                 for name,field in METRIC_FIELDS.items():
                     source=resources if name.startswith(("gpu_","ram_")) else steps
@@ -417,7 +439,8 @@ class TerminalClient:
                     for item in values.values():
                         if item["value"] is None: item["reason"]=reason
             except (TerminalError,OSError,ValueError,KeyError,TypeError): reason="metrics_unavailable_or_identity_changed"
-            result.append({"job_id":key,"scope":"V7" if v7_job(jobs[key]) else "V6_READ_ONLY","status":record["status"],
+            result.append({"job_id":key,"scope":"V7" if v7_job(jobs[key]) else "V6_READ_ONLY","status":status,
+                           "native_state":record["status"],"exit_code":exit_code,"row_progress":row_progress,
                            "metrics":values,"telemetry_reason":reason})
         return result
 
@@ -479,7 +502,12 @@ def render_text(value):
             text=str(round(item["value"],5)) if item["value"] is not None else "unavailable("+str(item["reason"])+")"
             if str(item.get("source","")).startswith("estimate_"): text+="(estimated from measured sample rate)"
             fields.append(name+"="+text)
-        parts.append(active["job_id"]+" "+active["scope"]+" "+active["status"]+" | "+" ".join(fields))
+        for name,item in active.get("row_progress",{}).items():
+            if item["value"] is not None: fields.append(name+"="+str(item["value"]))
+        parts.append(active["job_id"]+" "+active["scope"]+" "+active["status"]
+                     +" native_state="+active.get("native_state",active["status"])
+                     +(" exit_code="+str(active["exit_code"]) if active.get("exit_code") is not None else "")
+                     +" | "+" ".join(fields))
     if value.get("reasons"): parts.append("Blocked: "+", ".join(value["reasons"]))
     return "\n".join(parts)
 
