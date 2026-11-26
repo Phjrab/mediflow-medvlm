@@ -335,17 +335,20 @@ def test_plot_height_preserves_every_open_closed_condition():
 
 @pytest.fixture
 def native_planning(planning,full_test,monkeypatch):
-    f=planning;selected,_=w._test_rows(full_test)
+    f=planning;selected,sources=w._test_rows(full_test)
     protocol={'protocol_hash':'sealed-protocol','ordered_test_ids':{a:[r['sample_id'] for r,_ in rows] for a,rows in selected.items()},
               'caps':{'medical_mcq':16,'context_qa':16,'medical_qa':512,'medical_vqa':128},
               'decode':{'do_sample':False,'num_beams':1,'use_cache':True,'max_time':None,'warmup_requests':0},
-              'diagnostic_ids':w._diagnostic_ids(selected),'grouping':{axis:w._test_grouping(rows,axis)[0] for axis,rows in selected.items()}}
+              'input_digests':{axis:{row['sample_id']:w.canonical_hash(row['input']) for row,_ in rows} for axis,rows in selected.items()},
+              'reference_digest':{axis:w.canonical_hash([(row['sample_id'],row['supervision']) for row,_ in rows]) for axis,rows in selected.items()},
+              'fixed_template_date':'2026-11-14','diagnostic_ids':w._diagnostic_ids(selected),'grouping':{axis:w._test_grouping(rows,axis)[0] for axis,rows in selected.items()}}
     audit_path=write(f.root/'extra-audit/config.json',{'job_id':'v6-additional_seeds','output_dir':str(f.root/'extra-audit'),'data':{'train_configs':[]}})
     summary={'conditions':{f"v6-additional-{r['cell_id']}-{r['seed']}":{'status':'FAILED','error':'synthetic terminal failure'} for r in f.chosen['additional_seed_plan']}}
     write(f.root/'extra-audit/summary.json',summary)
-    freeze={'kind':'test_freeze','job_id':'v6-test-freeze','output_dir':str(f.root/'freeze'),'data':{'selection':f.proof,'test_entries':full_test,
-        'additional_audit':{'config':w._reference(audit_path)}}}
+    freeze={'kind':'test_freeze','job_id':'v6-test-freeze','config_hash':'synthetic-freeze-config','output_dir':str(f.root/'freeze'),'data':{'selection':f.proof,'test_entries':full_test,
+        'additional_audit':{'config':w._reference(audit_path)},'test_sources':sources,'forge':{'data_root':str(f.root/'data'),'output_root':str(f.root.parent/'forge'),'campaign_id':f.root.name}}}
     freeze_path=write(f.root/'freeze/config.json',freeze);write(f.root/'freeze/protocol.json',protocol)
+    for axis in ('text','vqa'):w.atomic_json(f.root/'freeze'/f'evaluation_protocol.{axis}.json',w._axis_protocol(freeze,protocol,axis))
     freeze_proof={'config':w._reference(freeze_path),'receipt':{'path':'synthetic-receipt','sha256':'synthetic'}}
     registered={str(freeze_path):(freeze,freeze_proof,{'status':'SUCCEEDED'})}
     monkeypatch.setattr(w,'_registered',lambda path,*a:copy.deepcopy(registered[str(path)]))
@@ -637,6 +640,7 @@ def test_report_completion_accepts_failed_auxiliary_ll_but_rejects_diagnostic_fa
     preserve={**common,'kind':'existing_result_preservation','existing_v1_v5_preserved':True,'approved_release_preserved':True,'protected_artifacts':[w._reference(protected)]}
     evidence={name:w._reference(write(f.root/(name+'.json'),proof)) for name,proof in [('code_report_ci',ci),('existing_result_preservation',preserve)]}
     config={'scope':w.SCOPES['report'],'source_hash':'source','data':{'selection':f.proof,'test_freeze':f.freeze_proof,'evidence':evidence,**refs}}
+    monkeypatch.setattr(w,'_telemetry_dispositions',lambda *a:{'conditions':{},'all_required_cpu_dispositions_recorded':True,'telemetry_all_evaluations_imported':True,'user_attention_required':False})
     summary=w._report(config)
     assert summary['v6_completed'] and not summary['missing_required_evidence']
     monkeypatch.setattr(w,'_packet',lambda *a:{'synthetic_only':True})
@@ -646,6 +650,13 @@ def test_report_completion_accepts_failed_auxiliary_ll_but_rejects_diagnostic_fa
     assert all(r['candidates'] and not r['test_based_family_or_seed_reselection'] for r in summary['usage_candidates'])
     assert {r['metric'] for r in summary['source_task_findings']}=={'strict_all_row_accuracy','lexical_f1','normalized_em'}
     assert all(c['metrics']['technical_failure_count']==4286 and c['metrics']['unsupported_count']==244 for c in summary['likelihood_conditions'].values())
+    monkeypatch.setattr(w,'_telemetry_dispositions',lambda *a:{'conditions':{'synthetic':{'status':'UNAVAILABLE','reason':'SYNTHETIC_IMPORT_FAILURE'}},'all_required_cpu_dispositions_recorded':True,'telemetry_all_evaluations_imported':False,'user_attention_required':True})
+    unavailable=w._report(config)
+    assert unavailable['scientific_v6_completed'] and unavailable['v6_completed'] and not unavailable['telemetry_all_evaluations_imported'] and unavailable['user_attention_required']
+    assert '중요: telemetry 가져오기 미완료/불명확' in w._render_report(config,unavailable,{})['RESULTS_KO.md']
+    monkeypatch.setattr(w,'_telemetry_dispositions',lambda *a:{'conditions':{},'all_required_cpu_dispositions_recorded':False,'telemetry_all_evaluations_imported':False,'user_attention_required':True})
+    incomplete=w._report(config)
+    assert incomplete['scientific_v6_completed'] and not incomplete['v6_completed']
     original=w._read(diag_paths[0])
     for altered,reason in [({**original,'technical_failures':1},'speed_technical_failures'),
         ({**original,'gpu_identity':{'uuid':'GPU-87654321-1234-1234-1234-123456789abc'}},'speed_gpu_identity_mismatch'),
@@ -654,3 +665,285 @@ def test_report_completion_accepts_failed_auxiliary_ll_but_rejects_diagnostic_fa
         write(diag_paths[0],altered);negative=w._report(config)
         assert not negative['v6_completed'] and any(reason in item for item in negative['missing_required_evidence'])
     write(diag_paths[0],original)
+
+
+@pytest.fixture
+def telemetry_native(native_planning,monkeypatch):
+    f=native_planning
+    protocols={axis:w._axis_protocol(f.freeze,f.protocol,axis) for axis in ('text','vqa')}
+    publication=w._catalog_publication(f.freeze,protocols,publish=True)
+    w.atomic_json(f.root/'freeze/catalog_publication.json',publication)
+    cfg=w.prepare_evaluation_config(f.freeze_path,'T2','tuned',20261023,f.root/'completion/evaluation/T2/tuned')
+    out=Path(cfg['output_dir']);out.mkdir(parents=True,exist_ok=True);w.atomic_json(out/'config.json',cfg)
+    predictions=[]
+    for row,stratum in f.selected['text']:
+        predictions.append({**w.dev.caps.initial._failure(row,stratum,512,'synthetic-only'),'status':'SUCCEEDED',
+            'generated_text':str(row['supervision'].get('option_id') or row['supervision']['answer']),'finish_reason':'stop'})
+    scored,metrics=w._generation_scores(f.selected['text'],predictions);metrics['protocol_hash']=cfg['protocol_hash']
+    jsonl(out/'predictions.private.jsonl',predictions);jsonl(out/'scored.private.jsonl',scored);w.atomic_json(out/'metrics.json',metrics)
+    w.atomic_json(out/'run_manifest.json',w._native_run_manifest(cfg,out));w.atomic_json(out/'completion.json',{'status':'SUCCEEDED','synthetic_only':True})
+    receipt=write(Path(cfg['success_receipt']),{'synthetic_only':True,'artifacts':[w._reference(out/name) for name in (*w._artifact_names('evaluation'),'completion.json')]})
+    cfgpath=write(f.root/'evaluation-input.json',cfg)
+    proof={'config':w._reference(cfgpath),'receipt':w._reference(receipt)};f.registered[str(cfgpath)]=(cfg,proof,w._read(receipt))
+    original_registered=w._registered
+    def verified_registered(path,*args):
+        value=original_registered(path,*args)
+        if str(path)==str(cfgpath):
+            assert all(w._reference(item['path'])==item for item in value[2]['artifacts']), 'REGISTERED_NATIVE_ARTIFACT_CHANGED'
+        return value
+    monkeypatch.setattr(w,'_registered',verified_registered)
+    import_cfg=w.prepare_telemetry_import_config(cfgpath,f.root/'completion/telemetry_import/T2/tuned')
+    monkeypatch.setenv('CUDA_VISIBLE_DEVICES','')
+    return SimpleNamespace(**vars(f),native_config=cfg,native_path=cfgpath,import_config=import_cfg,protocols=protocols,publication=publication)
+
+
+def test_native_axis_catalog_is_discovered_exact4530_1512_and_immutable(telemetry_native):
+    f=telemetry_native;catalog=w.telemetry_import.load_protocol_catalog(f.freeze['data']['forge']['data_root'])
+    for axis,n in [('text',4530),('vqa',1512)]:
+        protocol=f.protocols[axis];entry=catalog[protocol['protocol_hash']]
+        assert len(protocol['sample_ids'])==n and len(protocol['input_digests'])==n
+        assert entry=={'split':'test','protocol_version':w.AXIS_PROTOCOL_VERSION,'data_hash':w.dev._dataset_hash(protocol),'sha256':f.publication['protocols'][axis]['sha256']}
+    assert f.native_config['protocol_hash']==f.protocols['text']['protocol_hash']!=f.protocols['vqa']['protocol_hash']
+    assert w._catalog_publication(f.freeze,f.protocols,publish=True)==f.publication
+    path=Path(f.publication['protocols']['text']['path']);before=path.read_bytes();path.write_bytes(before+b' ')
+    with pytest.raises(ValueError,match='IMMUTABLE_CATALOG'):w._catalog_publication(f.freeze,f.protocols,publish=True)
+    assert path.read_bytes()==before+b' '
+
+
+def test_actual_importer_once_native_hashes_historical_provenance_and_training_null_unchanged(telemetry_native,monkeypatch):
+    f=telemetry_native;cfg=f.import_config;native=f.native_config;native_out=Path(native['output_dir']);calls=[]
+    training=Path(f.freeze['data']['forge']['output_root'])/'training-before-evaluation';training.mkdir(parents=True)
+    write(training/'config.json',{'run_id':'v6-additional-T2-20261114','status':'SUCCEEDED','model_id':'original/base'})
+    write(training/'metrics.json',{'example_losses':[1.], 'update_example_counts':[1],'optimizer_steps':1,'samples_processed':1,'loss_mean':1.,
+        'example_supervised_tokens':[2],'supervised_tokens':2,'learning_rates':[.1],'gradient_norms_before_clip':[.2],'final_learning_rate':0.})
+    train_import=w.telemetry_import.import_directory(training,f.freeze['data']['forge']['output_root'],f.root.name)
+    train_status=Path(f.freeze['data']['forge']['output_root'])/train_import['campaign_id']/train_import['run_id']/train_import['attempt_id']/'status.json'
+    before_training=train_status.read_bytes();assert json.loads(before_training)['evaluation_completed'] is None
+    original=w.telemetry_import.import_directory
+    def importing(*args,**kwargs):
+        assert 'torch' not in sys.modules and os.environ['CUDA_VISIBLE_DEVICES']==''
+        assert kwargs['protocol_catalog']==w.telemetry_import.load_protocol_catalog(f.freeze['data']['forge']['data_root'])
+        assert set(kwargs['expected_hashes'])=={'config.json','metrics.json','run_manifest.json','completion.json'}
+        calls.append(args[0]);return original(*args,**kwargs)
+    monkeypatch.setattr(w.telemetry_import,'import_directory',importing)
+    hashes={p.name:w.file_hash(p) for p in native_out.iterdir()};receipt_before=Path(native['success_receipt']).read_bytes()
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=2) as executor:first,second=list(executor.map(w._telemetry_import_once,[cfg,cfg]))
+    assert first==second and first['status']=='IMPORTED' and len(calls)==1
+    assert first['evaluation_receipt']['path']==cfg['data']['evaluation']['success_receipt'] and not first['training_evaluation_state_modified']
+    imported=w._ref(first['imported_artifacts'][1])['evaluations']
+    assert imported and all(row['provenance']=='historical_reconstructed' and row['receipt_verified'] is True and row['status']=='final' for row in imported)
+    assert w._ref(first['imported_artifacts'][3])['evaluation_completed'] is True
+    assert w._ref(first['imported_artifacts'][3])['training_succeeded'] is None
+    assert hashes=={p.name:w.file_hash(p) for p in native_out.iterdir()} and receipt_before==Path(native['success_receipt']).read_bytes()
+    assert before_training==train_status.read_bytes() and json.loads(train_status.read_text())['evaluation_completed'] is None
+    manifest=w._read(native_out/'run_manifest.json')
+    assert manifest['scheduled']==4530 and manifest['ordered_sample_ids_sha256']==w.canonical_hash(f.protocols['text']['sample_ids'])
+    assert manifest['artifact_hashes']['metrics.json']==w.file_hash(native_out/'metrics.json')
+    path=write(f.root/'telemetry-config.json',cfg);job=w.job_from_config(path)
+    assert job['requires_gpu'] is False and job['dependency_policy']=='success' and native['job_id'] in job['dependencies']
+    assert w.validate_config(json.loads(json.dumps(cfg)))==cfg
+
+
+@pytest.mark.parametrize('name',['metrics.json','run_manifest.json','config.json','completion.json'])
+def test_import_native_source_tamper_fails_before_sole_call(telemetry_native,monkeypatch,name):
+    f=telemetry_native;path=Path(f.native_config['output_dir'])/name;path.write_text(path.read_text()+' ')
+    monkeypatch.setattr(w.telemetry_import,'import_directory',lambda *a,**kw:pytest.fail('tampered native output reached importer'))
+    with pytest.raises(AssertionError,match='REGISTERED_NATIVE_ARTIFACT_CHANGED'):w._telemetry_import_once(f.import_config)
+    assert not w._import_intent_path(f.import_config).exists()
+
+
+def test_durable_started_or_failed_import_never_retries_and_does_not_change_native_success(telemetry_native,monkeypatch):
+    f=telemetry_native;cfg=f.import_config;calls=[]
+    def interrupted(*a,**kw):calls.append('called');raise KeyboardInterrupt('synthetic process interruption')
+    monkeypatch.setattr(w.telemetry_import,'import_directory',interrupted)
+    with pytest.raises(KeyboardInterrupt):w._telemetry_import_once(cfg)
+    assert w._read(w._import_intent_path(cfg))['status']=='STARTED'
+    second=w._telemetry_import_once(cfg)
+    assert calls==['called'] and second['status']=='INDETERMINATE' and second['user_attention_required']
+    assert second['scientific_evaluation_status']=='SUCCEEDED' and Path(f.native_config['success_receipt']).exists()
+    # An independent native CPU failure record is audited, never reset or claimed successful.
+    w._import_intent_path(cfg).unlink();calls.clear()
+    def unavailable(*a,**kw):calls.append('called');raise OSError('synthetic import-only failure')
+    monkeypatch.setattr(w.telemetry_import,'import_directory',unavailable)
+    first=w._telemetry_import_once(cfg);second=w._telemetry_import_once(cfg)
+    assert first==second and calls==['called'] and first['status']=='UNAVAILABLE' and first['user_attention_required']
+    assert first['scientific_evaluation_status']=='SUCCEEDED' and not first['telemetry_all_evaluations_imported']
+
+
+def test_terminal_failed_cpu_job_reports_started_intent_without_mutation_or_import(telemetry_native,monkeypatch):
+    f=telemetry_native;cfg=f.import_config;child,base=w._import_base(cfg);intent=w._import_intent_path(cfg)
+    w.atomic_json(intent,{**base,'status':'STARTED','reason':'SOLE_CPU_IMPORT_CALL_INTENT'});before=intent.read_bytes()
+    ref=w._reference(write(f.root/'telemetry-config.json',cfg))
+    monkeypatch.setattr(w,'_terminal',lambda *a:(cfg,{'status':'FAILED','error':'synthetic CPU process death','attempts':3},None))
+    monkeypatch.setattr(w.telemetry_import,'import_directory',lambda *a,**kw:pytest.fail('read-only failed audit cannot import'))
+    coverage=w._telemetry_dispositions({'data':{'telemetry_imports':[ref]}},{child['job_id']:{'status':'SUCCEEDED'}})
+    condition=coverage['conditions'][child['job_id']]
+    assert condition['status']=='INDETERMINATE' and condition['cpu_completion']['status']=='FAILED' and condition['cpu_completion']['attempts']==3
+    assert coverage['all_required_cpu_dispositions_recorded'] and not coverage['telemetry_all_evaluations_imported'] and coverage['user_attention_required']
+    assert before==intent.read_bytes()
+    missing=w._telemetry_dispositions({'data':{}},{child['job_id']:{'status':'SUCCEEDED'}})
+    assert not missing['all_required_cpu_dispositions_recorded'] and missing['conditions'][child['job_id']]['status']=='NOT_RECORDED'
+    empty=w._telemetry_dispositions({'data':{}},{child['job_id']:{'status':'FAILED'}})
+    assert empty['required_evaluations']==0 and empty['all_required_cpu_dispositions_recorded'] and not empty['telemetry_all_evaluations_imported']
+
+
+def test_import_rejects_torch_loaded_process_without_intent(telemetry_native,monkeypatch):
+    monkeypatch.setitem(sys.modules,'torch',SimpleNamespace())
+    with pytest.raises(ValueError,match='FRESH_CPU_REQUIRED'):w._telemetry_import_once(telemetry_native.import_config)
+    assert not w._import_intent_path(telemetry_native.import_config).exists()
+
+
+def test_prepared_import_pins_future_native_config_without_fabricated_receipt(telemetry_native,monkeypatch):
+    f=telemetry_native;native=f.native_config;Path(native['success_receipt']).unlink()
+    original=w._registered
+    def only_frozen_prerequisites(path,*a):
+        if str(path)==str(f.native_path):raise ValueError('SYNTHETIC_NATIVE_NOT_YET_SUCCEEDED')
+        return original(path,*a)
+    monkeypatch.setattr(w,'_registered',only_frozen_prerequisites)
+    cfg=w.prepare_telemetry_import_config(f.native_path,f.root/'completion/telemetry_import/prepared-before-native')
+    assert cfg['data']['evaluation']=={'config':w._reference(f.native_path),'success_receipt':native['success_receipt']}
+    assert 'native_source_hashes' not in cfg['data'] and 'receipt' not in cfg['data']['evaluation']
+    assert w.validate_config(cfg)==cfg
+    monkeypatch.setattr(w.telemetry_import,'import_directory',lambda *a,**kw:pytest.fail('future native proof reached importer'))
+    with pytest.raises(ValueError,match='NOT_YET_SUCCEEDED'):w._telemetry_import_once(cfg)
+    assert not w._import_intent_path(cfg).exists()
+
+
+def test_imported_telemetry_artifact_tamper_is_rejected_without_duplicate_call(telemetry_native,monkeypatch):
+    f=telemetry_native;calls=[];original=w.telemetry_import.import_directory
+    def importing(*a,**kw):calls.append(1);return original(*a,**kw)
+    monkeypatch.setattr(w.telemetry_import,'import_directory',importing)
+    first=w._telemetry_import_once(f.import_config);path=Path(first['imported_artifacts'][1]['path']);path.write_text(path.read_text()+' ')
+    with pytest.raises(ValueError,match='IMPORTED_ARTIFACT_CHANGED'):w._telemetry_import_once(f.import_config)
+    assert calls==[1]
+
+
+def test_cpu_telemetry_worker_lifecycle_receipt_exposes_honest_coverage_and_reuse(telemetry_native,monkeypatch):
+    f=telemetry_native;cfg=f.import_config;path=write(f.root/'telemetry-config.json',cfg)
+    monkeypatch.setattr(w.dev.caps,'_env',lambda config:None)
+    calls=[];original=w.telemetry_import.import_directory
+    def importing(*a,**kw):calls.append(1);return original(*a,**kw)
+    monkeypatch.setattr(w.telemetry_import,'import_directory',importing)
+    first=w.run_job(path,cfg['success_receipt']);second=w.run_job(path,cfg['success_receipt'])
+    assert first==second and calls==[1] and first['status']=='SUCCEEDED' and first['telemetry_coverage']=='IMPORTED'
+    assert first['scientific_evaluation_status']=='SUCCEEDED' and first['telemetry_all_evaluations_imported'] and not first['user_attention_required']
+    assert not first['v6_completed'] and not first['clinical_quality_certified']
+    assert w.verify_result(cfg)==first
+
+
+def test_failed_native_eval_with_blocked_prepared_import_is_explicit_not_importable(telemetry_native,monkeypatch):
+    f=telemetry_native;cfg=f.import_config;ref=w._reference(write(f.root/'telemetry-config.json',cfg))
+    condition={'status':'BLOCKED_PREREQUISITE','error':'required dependency failed','attempts':0,'failure_count':0,'recovery_attempts':0}
+    monkeypatch.setattr(w,'_terminal',lambda *a:(cfg,condition,None))
+    monkeypatch.setattr(w,'_import_base',lambda *a:pytest.fail('failed native eval cannot require a fabricated success proof'))
+    monkeypatch.setattr(w.telemetry_import,'import_directory',lambda *a,**kw:pytest.fail('blocked import cannot execute'))
+    result=w._telemetry_dispositions({'data':{'telemetry_imports':[ref]}},{f.native_config['job_id']:{'status':'FAILED'}})
+    row=result['conditions'][f.native_config['job_id']]
+    assert row['status']=='NOT_APPLICABLE_NATIVE_EVALUATION_UNSUCCESSFUL' and row['scientific_evaluation_status']=='FAILED'
+    assert row['cpu_completion']==condition and result['required_evaluations']==0 and result['all_required_cpu_dispositions_recorded']
+    assert not result['telemetry_all_evaluations_imported'] and not w._import_intent_path(cfg).exists()
+
+
+def test_real_terminal_projection_preserves_owner_telemetry_failure_domain_history(telemetry_native,monkeypatch):
+    f=telemetry_native;cfg=f.import_config;ref=w._reference(write(f.root/'telemetry-config.json',cfg))
+    record={'status':'FAILED','attempts':1,'failure_count':1,'recovery_attempts':0,'error':'worker exited137','error_signature':'native137',
+        'failure_domain':'telemetry_reconstruction','telemetry_coverage':'INDETERMINATE','scientific_failure':False,
+        'history':[{'event':'worker_failed','returncode':137,'preserved':True}]}
+    manifest_path=write(f.root/'active-manifest.json',{'synthetic_only':True})
+    state={'jobs':{cfg['job_id']:record},'manifest_path':str(manifest_path)};write(Path(cfg['state_path']),state)
+    manifest={'jobs':[{'job_id':cfg['job_id'],'success_receipt':cfg['success_receipt']}]}
+    monkeypatch.setattr(w.dev.caps,'_active',lambda path:(manifest,state))
+    monkeypatch.setattr(w.dev.caps,'_child_config',lambda *a:(cfg,ref))
+    child,condition,result=w._terminal(cfg,ref)
+    assert result is None and condition['status']=='FAILED' and condition['native_telemetry_record']==record
+    assert condition['failure_domain']=='telemetry_reconstruction' and condition['telemetry_coverage']=='INDETERMINATE' and condition['scientific_failure'] is False
+    coverage=w._telemetry_dispositions({'state_path':cfg['state_path'],'data':{'telemetry_imports':[ref]}},{f.native_config['job_id']:{'status':'SUCCEEDED'}})
+    exported=coverage['conditions'][f.native_config['job_id']]
+    assert exported['status']=='UNAVAILABLE' and exported['cpu_completion']['native_telemetry_record']['history']==record['history']
+    assert exported['scientific_evaluation_status']=='SUCCEEDED' and exported['user_attention_required'] and state['jobs'][cfg['job_id']]==record
+
+
+def test_cpu_test_audit_shares_bounded_proofs_reaudits_next_call_and_rehashes_mutation(tmp_path,monkeypatch):
+    shared=write(tmp_path/'shared-native-proof.json',{'version':1});calls=[];mutate={'enabled':False}
+    @w._memo
+    def selection(path):
+        calls.append(path)
+        return w._ref(w._reference(shared))
+    monkeypatch.setattr(w,'_selection',selection)
+    refs={kind:[w._reference(write(tmp_path/(kind+'.json'),{'job_id':kind}))] for kind in ('evaluations','diagnostics','likelihoods')}
+    def terminal(config,ref):
+        proof=w._selection('same-immutable-prerequisite');child=w._ref(ref)
+        if mutate['enabled'] and child['job_id']=='diagnostics':write(shared,{'version':3})
+        return child,{'status':'FAILED','synthetic_verified_version':proof['version']},None
+    monkeypatch.setattr(w,'_terminal',terminal)
+    config={'data':{**refs,'telemetry_imports':[]}}
+    first=w._test_audit_summary(config)
+    assert calls==['same-immutable-prerequisite'] and all(v['synthetic_verified_version']==1 for group in first['conditions'].values() for v in group.values())
+    write(shared,{'version':2});second=w._test_audit_summary(config)
+    assert len(calls)==2 and all(v['synthetic_verified_version']==2 for group in second['conditions'].values() for v in group.values())
+    mutate['enabled']=True
+    with pytest.raises(ValueError,match='REFERENCE_CHANGED_DURING_AUDIT'):w._test_audit_summary(config)
+    assert len(calls)==3
+
+
+@pytest.mark.parametrize('mode',['reload-child','train-child','main-train','main-cpu','reload-proof-error','reload-non-success'])
+def test_actual_cli_subprocess_projects_declared_scope_without_mutating_native_receipts(tmp_path,mode):
+    cfg={key:'a'*64 for key in w.IDENTITY_KEYS}
+    cfg.update(kind='additional_audit' if mode=='main-cpu' else 'train',uses_gpu=mode!='main-cpu',
+        scope=w.SCOPES['additional_audit'] if mode=='main-cpu' else w.TRAIN_SCOPE)
+    path=write(tmp_path/'config.json',cfg);receipt=tmp_path/'native-receipt.json';directory=tmp_path/'stage';directory.mkdir()
+    code=r'''
+import json,os,sys
+from pathlib import Path
+from types import SimpleNamespace
+from mediflow_medvlm import campaign_v6_completion as w
+mode,config_path,receipt_path,directory=sys.argv[1:]
+config=json.loads(Path(config_path).read_text())
+identity={key:config[key] for key in w.IDENTITY_KEYS}
+# Native reload_checkpoint returns probe_scope and identity fields, never scope.
+reload_result={"status":"SUCCEEDED",**identity,"pid":123,"process_identity":{"pid":123,"boot_id":"synthetic","start_ticks":1},
+    "probe_scope":"TRAINING_EXAMPLE_SANITY_CHECK","fresh_process_required":True,"adapter_weights_verified":True,
+    "adapter_sha256":"b"*64,"trained_example_sample_id":"synthetic/training-only","trained_example_loss":.5,"target_tokens":4,
+    "finite_forward":True,"base_dtype_signature":[],"generated_tokens":1,"generation_max_new_tokens":32,
+    "generated_ids_sha256":"c"*64,"no_thinking_output":{"explicit_nonempty_thinking_detected":False},
+    "dev_test_read":False,"runtime_versions":{},"finished_at":"synthetic"}
+assert "scope" not in reload_result
+train_result={"status":"SUCCEEDED","scope":"NATIVE_MAIN_ONE_PASS_TRAIN_ONLY",**identity,"training_pid":123,
+    "process_identity":{"pid":123,"boot_id":"synthetic","start_ticks":1},"optimizer_steps":500,"samples_processed":7997,
+    "metrics_sha256":"d"*64,"retry_start":"original_base","finished_at":"synthetic"}
+def child(which,*args):
+    assert [str(value) for value in args]==[config_path,directory,receipt_path]
+    if mode=="reload-proof-error":raise w.dev.caps.initial.gate.GateError("SYNTHETIC_RELOAD_PROOF_FAILED")
+    assert which==("train" if mode=="train-child" else "reload")
+    result=dict(train_result if which=="train" else reload_result)
+    if mode=="reload-non-success":result["status"]="FAILED"
+    Path(receipt_path).write_text(json.dumps(result))
+    return result
+w.training_runtime=lambda actual:(config==actual and SimpleNamespace(train_checkpoint=lambda *a:child("train",*a),reload_checkpoint=lambda *a:child("reload",*a)))
+def run_job(*args):
+    assert list(args)==[config_path,receipt_path]
+    if mode=="main-cpu":assert os.environ["CUDA_VISIBLE_DEVICES"]=="" and "torch" not in sys.modules
+    result={"status":"SUCCEEDED","scope":config["scope"],**identity,"clinical_quality_certified":False}
+    Path(receipt_path).write_text(json.dumps(result))
+    return result
+w.run_job=run_job
+argv=["--config",config_path,"--receipt",receipt_path]
+if mode in {"reload-child","reload-proof-error","reload-non-success"}:argv += ["--reload-checkpoint",directory]
+elif mode=="train-child":argv += ["--train-checkpoint",directory]
+raise SystemExit(w.main(argv))
+'''
+    result=subprocess.run([sys.executable,'-B','-c',code,mode,str(path),str(receipt),str(directory)],capture_output=True,text=True,
+        env={key:value for key,value in os.environ.items() if key!='CUDA_VISIBLE_DEVICES'})
+    if mode in {'reload-proof-error','reload-non-success'}:
+        assert result.returncode==1 and not result.stdout and 'Traceback' not in result.stderr
+        error=json.loads(result.stderr)
+        assert error['reason_code']==('SYNTHETIC_RELOAD_PROOF_FAILED' if mode=='reload-proof-error' else 'COMPLETION_CLI_RESULT_NOT_SUCCEEDED')
+        assert receipt.exists() is (mode=='reload-non-success')
+    else:
+        assert result.returncode==0,result.stderr
+        assert json.loads(result.stdout)=={'status':'SUCCEEDED','scope':cfg['scope']}
+        original=json.loads(receipt.read_text())
+        if mode=='reload-child':assert 'scope' not in original and original['probe_scope']=='TRAINING_EXAMPLE_SANITY_CHECK' and original['dev_test_read'] is False
+        if mode=='train-child':assert original['scope']=='NATIVE_MAIN_ONE_PASS_TRAIN_ONLY' and original['samples_processed']==7997 and original['optimizer_steps']==500
+        assert not result.stderr

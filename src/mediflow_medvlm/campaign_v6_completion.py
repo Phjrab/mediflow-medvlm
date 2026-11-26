@@ -33,6 +33,7 @@ from . import campaign_main_train as train
 from . import campaign_full_dev as dev
 from . import campaign_bootstrap as bootstrap
 from . import campaign_choice_likelihood as choice
+from . import telemetry_import
 from .campaign_supervisor import HASH_FIELDS, atomic_json, canonical_hash, file_hash
 from .runtime import BudgetLedger, ResourcePolicy, utcnow
 
@@ -44,6 +45,7 @@ SCOPES = {"train":TRAIN_SCOPE,"additional_audit":"SELECTED_EXTRA_SEEDS_TERMINAL_
           "evaluation":"V6_FROZEN_TEST_NATIVE_GENERATION",
           "diagnostic":"V6_FIXED_SUBSET_SPEED_AND_IMAGE_DIAGNOSTIC",
           "likelihood":"V6_FROZEN_TEST_CHOICE_LIKELIHOOD_AUXILIARY",
+          "telemetry_import":"V6_VERIFIED_NATIVE_EVALUATION_CPU_TELEMETRY_COMPLETION",
           "test_audit":"V6_ALL_FROZEN_TEST_CONDITIONS_TERMINAL_AUDIT","report":"V6_TERMINAL_EVIDENCE_REPORT"}
 IDS = {"additional_audit":"v6-additional_seeds","test_freeze":"v6-test-freeze","test_audit":"v6-test","report":"v6-report"}
 EXPECTED = {"text":4530,"vqa":1512}
@@ -340,7 +342,8 @@ def _terminal(config,reference):
     else:_track_pins([reference,_reference(config["state_path"]),_reference(state["manifest_path"])])
     return child,{"status":record["status"],"state_sha256":canonical_hash(record),"receipt":_reference(job["success_receipt"]) if result else None,
         "error":record.get("error"),"error_signature":record.get("error_signature"),
-        "attempts":record["attempts"],"failure_count":record["failure_count"],"recovery_attempts":record["recovery_attempts"]},result
+        "attempts":record["attempts"],"failure_count":record["failure_count"],"recovery_attempts":record["recovery_attempts"],
+        **({"native_telemetry_record":copy.deepcopy(record),**{key:copy.deepcopy(record[key]) for key in ("failure_domain","telemetry_coverage","scientific_failure") if key in record}} if child.get("kind")=="telemetry_import" else {})},result
 
 
 def _additional_summary(config):
@@ -430,6 +433,15 @@ def _diagnostic_ids(selected):
     return result
 
 
+def _forge_route(selection_path):
+    selection,_,_,initial=_selection(selection_path)
+    aggregate=_ref(selection["data"]["full_dev"]["config"])
+    original=_ref(aggregate["data"]["roles"][0]);route={k:original["forge"][k] for k in ("output_root","data_root","campaign_id")}
+    root=_absolute(initial["campaign_root"]);data=_absolute(route["data_root"]);output=_absolute(route["output_root"])
+    _require(route["campaign_id"]==root.name and not output.is_relative_to(data) and not data.is_relative_to(output),"COMPLETION_INHERITED_FORGE_NAMESPACE_REQUIRED")
+    return route
+
+
 @_transaction
 def prepare_test_freeze_config(selection_config_path,additional_audit_config_path,output_dir,*,repo=None,success_receipt=None):
     additional,proof,_=_registered(additional_audit_config_path,"campaign_v6_completion",verify_result)
@@ -440,7 +452,8 @@ def prepare_test_freeze_config(selection_config_path,additional_audit_config_pat
     entries=_test_lineage(selection_config_path);selected,refs=_test_rows(entries)
     data={"additional_audit":proof,"test_entries":entries,"test_sources":refs,
         "ordered_test_ids":{axis:[r["sample_id"] for r,_ in rows] for axis,rows in selected.items()},
-        "counts":{axis:len(rows) for axis,rows in selected.items()},"diagnostic_ids":_diagnostic_ids(selected)}
+        "counts":{axis:len(rows) for axis,rows in selected.items()},"diagnostic_ids":_diagnostic_ids(selected),
+        "forge":_forge_route(selection_config_path)}
     return _base("test_freeze",selection_config_path,output_dir,IDS["test_freeze"],repo=repo,success_receipt=success_receipt,data=data)[0]
 
 
@@ -467,6 +480,66 @@ def _test_protocol(config):
     return value
 
 
+AXIS_PROTOCOL_VERSION="medvlm.v6.full-test-axis.v1"
+
+
+def _axis_protocol(config,parent,axis):
+    keys=("kormedmcqa","text","pubmedqa","medquad") if axis=="text" else ("slake","vqa_rad")
+    files={key:config["data"]["test_sources"][key]["sha256"] for key in keys}
+    if axis=="text":files["medquad_original64_selection"]=config["data"]["test_entries"]["medquad"]["selection_metadata"]["sha256"]
+    protocol={"schema_version":"medvlm.v6.native-axis-evaluation-protocol.v1","protocol_version":AXIS_PROTOCOL_VERSION,
+        "split":"test","task_axis":axis,"test_protocol_hash":parent["protocol_hash"],"test_freeze_config_hash":config["config_hash"],
+        "sample_ids":parent["ordered_test_ids"][axis],"input_digests":parent["input_digests"][axis],
+        "reference_digest":parent["reference_digest"][axis],"files":files,"caps":parent["caps"],"decode":parent["decode"],
+        "fixed_template_date":parent["fixed_template_date"],"all_planned_failures_in_denominator":True}
+    protocol["protocol_hash"]=canonical_hash(protocol)
+    return protocol
+
+
+def _catalog_path(config,axis,protocol):
+    route=config["data"]["forge"];root=_absolute(route["data_root"])/"manifests/evaluation"
+    _require(re.fullmatch(r"[A-Za-z0-9_-]+",route["campaign_id"]) is not None,"COMPLETION_CATALOG_CAMPAIGN_REQUIRED")
+    return root/f"v6-{route['campaign_id']}-test-{axis}-{protocol['protocol_hash']}.json"
+
+
+def _catalog_publication(config,protocols,*,publish=False):
+    refs={}
+    for axis in ("text","vqa"):
+        protocol=protocols[axis];path=_catalog_path(config,axis,protocol)
+        _require(not path.is_symlink() and not any(parent.is_symlink() for parent in path.parents),"COMPLETION_CATALOG_SYMLINK_FORBIDDEN")
+        content=(json.dumps(protocol,ensure_ascii=False,indent=2)+"\n").encode()
+        if publish:
+            path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+            try:fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+            except FileExistsError:pass
+            else:
+                with os.fdopen(fd,"wb") as stream:stream.write(content);stream.flush();os.fsync(stream.fileno())
+                descriptor=os.open(path.parent,os.O_DIRECTORY)
+                try:os.fsync(descriptor)
+                finally:os.close(descriptor)
+        _require(path.is_file() and file_hash(path)==hashlib.sha256(content).hexdigest(),"COMPLETION_IMMUTABLE_CATALOG_PROTOCOL_CHANGED")
+        refs[axis]=_reference(path)
+    _track_pins(list(refs.values()))
+    catalog=telemetry_import.load_protocol_catalog(config["data"]["forge"]["data_root"])
+    for axis,protocol in protocols.items():
+        expected={"split":"test","protocol_version":AXIS_PROTOCOL_VERSION,"data_hash":dev._dataset_hash(protocol),"sha256":refs[axis]["sha256"]}
+        _require(catalog.get(protocol["protocol_hash"])==expected,"COMPLETION_CATALOG_PROTOCOL_UNRECOGNIZED")
+    return {"schema_version":"medvlm.v6.native-test-catalog-publication.v1","protocols":refs,"existing_protocols_overwritten":False}
+
+
+def _native_run_manifest(config,output):
+    protocol=_ref(config["data"]["evaluation_protocol"])
+    return {"schema_version":"medvlm.v6.native-test-run.v1","status":"SUCCEEDED","run_id":config["run_id"],"job_id":config["job_id"],
+        "model_id":config["model_id"],"role":config["role"],"seed":config["seed"],"task":config["task"],"split":"test",
+        "protocol_hash":config["protocol_hash"],"protocol_version":AXIS_PROTOCOL_VERSION,"precision":config["precision"],
+        "test_protocol_hash":_ref(config["data"]["protocol"])["protocol_hash"],"data_hash":dev._dataset_hash(protocol),
+        "evaluation_protocol":config["data"]["evaluation_protocol"],"source_hash":config["source_hash"],"config_hash":config["config_hash"],
+        "scheduled":len(protocol["sample_ids"]),"ordered_sample_ids_sha256":canonical_hash(protocol["sample_ids"]),
+        "generation_technical_complete":_read(Path(output)/"metrics.json")["technical_failure_count"]==0,
+        "clinical_quality_certified":False,"artifact_hashes":{name:file_hash(Path(output)/name) for name in
+            ("config.json","metrics.json","predictions.private.jsonl","scored.private.jsonl")}}
+
+
 def _model_ref(selection_path,cell_id,seed,train_config_path=None):
     _,_,_,initial=_selection(selection_path)
     if seed==20261023:
@@ -488,12 +561,14 @@ def _prepare_native_config(kind,test_freeze_config_path,cell_id,role,training_se
     reference=_model_ref(selection_path,cell_id,training_seed,train_config_path)
     native=_ref(reference["config"]);protocol_ref=_reference(Path(freeze["output_dir"])/"protocol.json");protocol=_ref(protocol_ref)
     axis=dev.cell_spec(cell_id)["task"]
-    data={"test_freeze":proof,"protocol":protocol_ref,"model_ref":reference,"training_config":_reference(train_config_path) if train_config_path else None,
+    axis_protocol_ref=_reference(Path(freeze["output_dir"])/f"evaluation_protocol.{axis}.json");axis_protocol=_ref(axis_protocol_ref)
+    _require(axis_protocol==_axis_protocol(freeze,protocol,axis),"COMPLETION_FROZEN_AXIS_PROTOCOL_CHANGED")
+    data={"test_freeze":proof,"protocol":protocol_ref,"evaluation_protocol":axis_protocol_ref,"model_ref":reference,"training_config":_reference(train_config_path) if train_config_path else None,
         "ordered_sample_ids":protocol["ordered_test_ids"][axis],"image_root":native["data"]["image_root"]}
     config,_,_=_base(kind,selection_path,output_dir,f"v6-test-{kind+'-' if kind!='evaluation' else ''}{cell_id}-{role}-{training_seed}",repo=repo,success_receipt=success_receipt,data=data,seed=training_seed,cell=cell_id)
     config.update(**dev.cell_spec(cell_id),local_files_only=True,trust_remote_code=False,precision="nf4_double_quant_bfloat16",role=role,model=native["model"],model_hash=canonical_hash({"model":native["model"],"role":role,"checkpoint":reference["checkpoint"] if role=="tuned" else None}),
         eval_context=4096,split="test",decode=protocol["decode"],fixed_template_date="2026-11-14",gpu_ledger_path=native["gpu_ledger_path"],
-        supervisor_lock_paths=native["supervisor_lock_paths"],protocol_hash=protocol["protocol_hash"])
+        supervisor_lock_paths=native["supervisor_lock_paths"],protocol_hash=axis_protocol["protocol_hash"])
     return _hash_config(config)
 
 
@@ -520,6 +595,110 @@ def prepare_likelihood_config(test_freeze_config_path,cell_id,role,training_seed
     return _hash_config(config)
 
 
+def _import_inputs(evaluation_path):
+    child,proof,result=_registered(evaluation_path,"campaign_v6_completion",verify_result)
+    _require(child["kind"]=="evaluation","COMPLETION_NATIVE_GENERATION_IMPORT_REQUIRED")
+    output=Path(child["output_dir"]);freeze=_ref(child["data"]["test_freeze"]["config"])
+    route=freeze["data"]["forge"];protocol=_ref(child["data"]["evaluation_protocol"])
+    public=_ref(_reference(Path(freeze["output_dir"])/"catalog_publication.json"))["protocols"][child["task"]]
+    _require(_ref(public)==protocol and child["protocol_hash"]==protocol["protocol_hash"],"COMPLETION_IMPORT_AXIS_PROTOCOL_CHANGED")
+    hashes={name:file_hash(output/name) for name in ("config.json","metrics.json","run_manifest.json","completion.json","predictions.private.jsonl","scored.private.jsonl")}
+    return child,proof,route,public,hashes
+
+
+@_transaction
+def prepare_telemetry_import_config(evaluation_config_path,output_dir,*,repo=None,success_receipt=None):
+    reference=_reference(evaluation_config_path);child=_ref(reference);validate_config(child,repo=repo)
+    _require(child["kind"]=="evaluation","COMPLETION_NATIVE_GENERATION_IMPORT_REQUIRED")
+    freeze=_ref(child["data"]["test_freeze"]["config"]);route=freeze["data"]["forge"]
+    public=_ref(_reference(Path(freeze["output_dir"])/"catalog_publication.json"))["protocols"][child["task"]]
+    _require(_ref(public)==_ref(child["data"]["evaluation_protocol"]),"COMPLETION_IMPORT_AXIS_PROTOCOL_CHANGED")
+    # Future success is a dependency, never a fabricated receipt or artifact hash.
+    data={"test_freeze":child["data"]["test_freeze"],"evaluation":{"config":reference,"success_receipt":child["success_receipt"]},
+        "forge":route,"catalog_protocol":public}
+    config,_,_=_base("telemetry_import",_ref(child["data"]["test_freeze"]["config"])["data"]["selection"]["config"]["path"],output_dir,
+        f"v6-test-telemetry-{child['cell_id']}-{child['role']}-{child['seed']}",repo=repo,success_receipt=success_receipt,data=data,seed=child["seed"],cell=child["cell_id"])
+    config.update(**dev.cell_spec(child["cell_id"]),role=child["role"],protocol_hash=child["protocol_hash"])
+    return _hash_config(config)
+
+
+def _import_base(config):
+    child,proof,route,public,hashes=_import_inputs(config["data"]["evaluation"]["config"]["path"])
+    _require(proof["config"]==config["data"]["evaluation"]["config"] and proof["receipt"]["path"]==config["data"]["evaluation"]["success_receipt"]
+        and route==config["data"]["forge"] and public==config["data"]["catalog_protocol"],"COMPLETION_IMPORT_NATIVE_PROVENANCE_CHANGED")
+    return child,{"schema_version":"medvlm.v6.evaluation-telemetry-completion.v1","evaluation_job_id":child["job_id"],
+        "evaluation_config":proof["config"],"evaluation_receipt":proof["receipt"],"native_source_hashes":hashes,"catalog_protocol":public,
+        "config_hash":config["config_hash"],"source_hash":config["source_hash"],"protocol_hash":config["protocol_hash"],
+        "scientific_evaluation_status":"SUCCEEDED","provenance":"historical_reconstructed","cuda_visible_devices":"","torch_imported":False,
+        "clinical_quality_certified":False,"training_evaluation_state_modified":False}
+
+
+def _import_intent_path(config):
+    return Path(config["output_dir"]).with_name(Path(config["output_dir"]).name+".import-intent.json")
+
+
+def _telemetry_coverage(config):
+    child,base=_import_base(config);intent=_import_intent_path(config);value=_ref(_reference(intent))
+    _require(all(value.get(k)==v for k,v in base.items()) and value.get("status") in {"IMPORTED","UNAVAILABLE","INDETERMINATE"}
+        and isinstance(value.get("reason"),str),"COMPLETION_IMPORT_INTENT_CHANGED")
+    if value["status"]=="IMPORTED":
+        result=value["result"];route=config["data"]["forge"]
+        _require(result.get("campaign_id")==route["campaign_id"] and result.get("run_id")==child["run_id"]
+            and re.fullmatch(r"hist-[a-f0-9]{24}",result.get("attempt_id","")) is not None,"COMPLETION_IMPORTED_IDENTITY_CHANGED")
+        destination=Path(route["output_root"])/result["campaign_id"]/result["run_id"]/result["attempt_id"]
+        refs=[_reference(destination/name) for name in ("manifest.json","evaluations.json","summary.json","status.json")]
+        _require(value.get("imported_artifacts")==refs,"COMPLETION_IMPORTED_ARTIFACT_CHANGED")
+        manifest=_ref(refs[0]);evaluations=_ref(refs[1])["evaluations"];status=_ref(refs[3]);protocol=_ref(config["data"]["catalog_protocol"])
+        sources={item["artifact_id"]:item["sha256"] for item in manifest["source_artifacts"]}
+        _require(manifest.get("historical") is True and manifest.get("run_id")==child["run_id"]
+            and manifest.get("data_hash")==dev._dataset_hash(protocol) and manifest.get("eval_protocol")==config["protocol_hash"]
+            and all(sources.get(name)==digest for name,digest in base["native_source_hashes"].items() if name in telemetry_import.FILES)
+            and sources.get("evaluation_protocol.json")==config["data"]["catalog_protocol"]["sha256"]
+            and status.get("evaluation_completed") is True and status.get("training_succeeded") is None
+            and evaluations and len(evaluations)==len(_read(Path(child["output_dir"])/"metrics.json")["cohorts"])
+            and all(e.get("provenance")=="historical_reconstructed" and e.get("receipt_verified") is True
+                and e.get("status")=="final" and e.get("protocol")==config["protocol_hash"] for e in evaluations),"COMPLETION_IMPORTED_EVALUATION_METADATA_CHANGED")
+    return {**value,"intent":_reference(intent),"telemetry_all_evaluations_imported":value["status"]=="IMPORTED",
+        "user_attention_required":value["status"]!="IMPORTED"}
+
+
+@_transaction
+def _telemetry_import_once(config):
+    _require(os.environ.get("CUDA_VISIBLE_DEVICES")=="" and "torch" not in sys.modules,"COMPLETION_FRESH_CPU_REQUIRED")
+    intent=_import_intent_path(config);intent.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+    with intent.with_suffix(intent.suffix+".lock").open("a") as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        return _telemetry_import_locked(config)
+
+
+def _telemetry_import_locked(config):
+    _require(os.environ.get("CUDA_VISIBLE_DEVICES")=="" and "torch" not in sys.modules,"COMPLETION_FRESH_CPU_REQUIRED")
+    child,base=_import_base(config);intent=_import_intent_path(config)
+    if intent.exists():
+        value=_read(intent)
+        _require(all(value.get(k)==v for k,v in base.items()),"COMPLETION_IMPORT_INTENT_CHANGED")
+        if value.get("status")=="STARTED":
+            atomic_json(intent,{**base,"status":"INDETERMINATE","reason":"INTERRUPTED_DURABLE_IMPORT_INTENT_NO_RETRY"})
+        return _telemetry_coverage(config)
+    # Intent survives staging failure or process death. The importer is called at most once.
+    atomic_json(intent,{**base,"status":"STARTED","reason":"SOLE_CPU_IMPORT_CALL_INTENT"})
+    try:
+        route=config["data"]["forge"];catalog=telemetry_import.load_protocol_catalog(route["data_root"])
+        protocol=_ref(config["data"]["catalog_protocol"])
+        _require(catalog.get(config["protocol_hash"])=={"split":"test","protocol_version":AXIS_PROTOCOL_VERSION,
+            "data_hash":dev._dataset_hash(protocol),"sha256":config["data"]["catalog_protocol"]["sha256"]},"COMPLETION_CURRENT_PROTOCOL_CATALOG_CHANGED")
+        result=telemetry_import.import_directory(child["output_dir"],route["output_root"],route["campaign_id"],
+            expected_hashes={k:v for k,v in base["native_source_hashes"].items() if k in telemetry_import.FILES},protocol_catalog=catalog)
+        _require("torch" not in sys.modules,"COMPLETION_CPU_IMPORT_UNEXPECTED_TORCH")
+        destination=Path(route["output_root"])/result["campaign_id"]/result["run_id"]/result["attempt_id"]
+        value={**base,"status":"IMPORTED","reason":"NATIVE_EVALUATION_HASH_VERIFIED_HISTORICAL_IMPORT","result":result,
+            "imported_artifacts":[_reference(destination/name) for name in ("manifest.json","evaluations.json","summary.json","status.json")]}
+    except Exception as exc:
+        value={**base,"status":"UNAVAILABLE","reason":"CPU_TELEMETRY_IMPORT_FAILED_NATIVE_EVALUATION_PRESERVED","exception_type":type(exc).__name__}
+    atomic_json(intent,value)
+    return _telemetry_coverage(config)
+
+
 def _test_matrix(chosen,audit):
     conditions={(cell[0],role,20261023) for cell in dev.CELLS for role in ("base","tuned")}
     for record in chosen["additional_seed_plan"]:
@@ -530,7 +709,7 @@ def _test_matrix(chosen,audit):
 
 @_transaction
 def prepare_test_audit_config(selection_config_path,test_freeze_config_path,evaluation_config_paths,output_dir,*,
-                          diagnostic_config_paths=(),likelihood_config_paths=(),repo=None,success_receipt=None):
+                          diagnostic_config_paths=(),likelihood_config_paths=(),telemetry_config_paths=(),repo=None,success_receipt=None):
     freeze,proof,_=_registered(test_freeze_config_path,"campaign_v6_completion",verify_result)
     _,selection_proof,chosen,_=_selection(selection_config_path)
     _require(freeze["kind"]=="test_freeze" and freeze["data"]["selection"]==selection_proof,"COMPLETION_REPORT_SELECTION_CHANGED")
@@ -546,6 +725,16 @@ def prepare_test_audit_config(selection_config_path,test_freeze_config_path,eval
             _require(child["kind"]==kind and child["data"]["test_freeze"]==proof,"COMPLETION_REPORT_COMMON_TEST_PROTOCOL_REQUIRED")
             validate_config(child,repo=repo)
         data[{"evaluation":"evaluations","diagnostic":"diagnostics","likelihood":"likelihoods"}[kind]]=refs
+    telemetry=[_reference(path) for path in telemetry_config_paths];targets=[]
+    evaluations={ref["path"]:ref for ref in data["evaluations"]}
+    for ref in telemetry:
+        child=_ref(ref);validate_config(child,repo=repo)
+        target=child["data"]["evaluation"]["config"]
+        _require(child["kind"]=="telemetry_import" and child["data"]["test_freeze"]==proof
+            and evaluations.get(target["path"])==target,"COMPLETION_IMPORT_EXACT_EVALUATION_REQUIRED")
+        targets.append(target["path"])
+    _require(len(targets)==len(set(targets)),"COMPLETION_DUPLICATE_TELEMETRY_COMPLETION")
+    data["telemetry_imports"]=telemetry
     return _base("test_audit",selection_config_path,output_dir,IDS["test_audit"],repo=repo,success_receipt=success_receipt,data=data)[0]
 
 
@@ -574,13 +763,46 @@ def prepare_report_config(test_audit_config_path,output_dir,*,evidence=None,repo
     return config
 
 
+def _telemetry_dispositions(config,evaluations):
+    coverage={};required={job for job,item in evaluations.items() if item["status"]=="SUCCEEDED"}
+    for ref in config["data"].get("telemetry_imports",[]):
+        child,condition,result=_terminal(config,ref);native=_ref(child["data"]["evaluation"]["config"]);job=native["job_id"]
+        _require(job in evaluations and job not in coverage,"COMPLETION_UNEXPECTED_TELEMETRY_CONDITION")
+        if job not in required:
+            _require(result is None and condition["status"]!="SUCCEEDED","COMPLETION_IMPORT_WITHOUT_NATIVE_SUCCESS")
+            coverage[job]={"status":"NOT_APPLICABLE_NATIVE_EVALUATION_UNSUCCESSFUL","reason":"SUCCESS_DEPENDENCY_NOT_SATISFIED_NO_IMPORT",
+                "scientific_evaluation_status":evaluations[job]["status"],"cpu_completion":condition,"user_attention_required":False}
+            continue
+        native,base=_import_base(child)
+        if result:entry=_telemetry_coverage(child)
+        else:
+            intent=_import_intent_path(child)
+            if intent.exists():
+                value=_ref(_reference(intent));_require(all(value.get(k)==v for k,v in base.items()),"COMPLETION_IMPORT_INTENT_CHANGED")
+                if value.get("status") in {"IMPORTED","UNAVAILABLE","INDETERMINATE"}:entry=_telemetry_coverage(child)
+                else:
+                    _require(value.get("status")=="STARTED","COMPLETION_IMPORT_INTENT_CHANGED")
+                    entry={**base,"status":"INDETERMINATE","reason":"TERMINAL_CPU_JOB_FAILED_AFTER_DURABLE_INTENT_NO_RETRY","intent":_reference(intent)}
+            else:entry={**base,"status":"UNAVAILABLE","reason":"TERMINAL_CPU_JOB_FAILED_BEFORE_IMPORT_INTENT"}
+        coverage[job]={**entry,"cpu_completion":condition,"user_attention_required":entry["status"]!="IMPORTED" or condition["status"]!="SUCCEEDED"}
+    for job in sorted(required-set(coverage)):
+        coverage[job]={"status":"NOT_RECORDED","reason":"REQUIRED_CPU_COMPLETION_JOB_NOT_RECORDED","user_attention_required":True,"scientific_evaluation_status":"SUCCEEDED"}
+    return {"conditions":coverage,"required_evaluations":len(required),
+        "all_required_cpu_dispositions_recorded":all(coverage[job]["status"] in {"IMPORTED","UNAVAILABLE","INDETERMINATE"} for job in required),
+        "telemetry_all_evaluations_imported":bool(required) and all(coverage[job]["status"]=="IMPORTED" for job in required),
+        "user_attention_required":any(row["user_attention_required"] for row in coverage.values()),
+        "coverage_is_scientific_quality":False,"training_evaluation_state_modified":False}
+
+
+@_transaction
 def _test_audit_summary(config):
     conditions={}
     for kind in ("evaluations","diagnostics","likelihoods"):
         conditions[kind]={}
         for ref in config["data"][kind]:
             child,condition,_=_terminal(config,ref);conditions[kind][child["job_id"]]=condition
-    return {"test_conditions_terminal":True,"conditions":conditions,"post_test_reselection_allowed":False,
+    coverage=_telemetry_dispositions(config,conditions["evaluations"])
+    return {"test_conditions_terminal":True,"conditions":conditions,"telemetry_coverage":coverage,"post_test_reselection_allowed":False,
             "v6_completed":False,"test_files_read":True}
 
 
@@ -596,8 +818,9 @@ def validate_config(config,*,repo=None):
     elif kind=="diagnostic":expected=prepare_diagnostic_config(config["data"]["test_freeze"]["config"]["path"],config["cell_id"],config["role"],config["output_dir"],**common)
     elif kind in {"evaluation","likelihood"}:expected=(prepare_evaluation_config if kind=="evaluation" else prepare_likelihood_config)(config["data"]["test_freeze"]["config"]["path"],config["cell_id"],config["role"],config["seed"],config["output_dir"],
         train_config_path=config["data"]["training_config"]["path"] if config["data"]["training_config"] else None,**common)
+    elif kind=="telemetry_import":expected=prepare_telemetry_import_config(config["data"]["evaluation"]["config"]["path"],config["output_dir"],**common)
     elif kind=="test_audit":expected=prepare_test_audit_config(selection,config["data"]["test_freeze"]["config"]["path"],[r["path"] for r in config["data"]["evaluations"]],config["output_dir"],
-        diagnostic_config_paths=[r["path"] for r in config["data"]["diagnostics"]],likelihood_config_paths=[r["path"] for r in config["data"]["likelihoods"]],**common)
+        diagnostic_config_paths=[r["path"] for r in config["data"]["diagnostics"]],likelihood_config_paths=[r["path"] for r in config["data"]["likelihoods"]],telemetry_config_paths=[r["path"] for r in config["data"]["telemetry_imports"]],**common)
     else:
         _require(kind=="report","COMPLETION_KIND_REQUIRED")
         expected=prepare_report_config(config["data"]["test_audit"]["config"]["path"],config["output_dir"],
@@ -610,13 +833,14 @@ def job_from_config(config_path,*,repo=None,python=None):
     path=_absolute(config_path);config=_read(path);validate_config(config,repo=repo);kind=config["kind"]
     deps=[_ref(config["data"]["selection"]["config"])["job_id"]]
     if kind=="additional_audit":deps+=[_ref(r)["job_id"] for r in config["data"]["train_configs"]]
-    elif kind in {"test_freeze","evaluation","diagnostic","likelihood","test_audit","report"}:
+    elif kind in {"test_freeze","evaluation","diagnostic","likelihood","telemetry_import","test_audit","report"}:
         key="additional_audit" if kind=="test_freeze" else "test_freeze";deps.append(_ref(config["data"][key]["config"])["job_id"])
         if kind in {"evaluation","likelihood"} and config["data"]["training_config"]:deps.append(_ref(config["data"]["training_config"])["job_id"])
+        if kind=="telemetry_import":deps.append(_ref(config["data"]["evaluation"]["config"])["job_id"])
         if kind=="report":deps.append(_ref(config["data"]["test_audit"]["config"])["job_id"])
         if kind=="test_audit":
             freeze=_ref(config["data"]["test_freeze"]["config"]);deps.append(_ref(freeze["data"]["additional_audit"]["config"])["job_id"])
-            deps += [_ref(r)["job_id"] for key in ("evaluations","diagnostics","likelihoods") for r in config["data"][key]]
+            deps += [_ref(r)["job_id"] for key in ("evaluations","diagnostics","likelihoods","telemetry_imports") for r in config["data"][key]]
     return {**{k:config[k] for k in (*IDENTITY_KEYS,"cell_id","phase","kind","seed","uses_gpu","source_files","success_receipt")},
         **{k:config[k] for k in ("model_id","family","task","role") if k in config},
         "requires_gpu":config["uses_gpu"],"gpu_lock_mode":"wrapper","dependencies":deps,"dependency_policy":"terminal" if kind in {"additional_audit","test_audit"} else "success",
@@ -1027,6 +1251,8 @@ def _report(config):
             entry.update(checkpoint=_reference(output/"checkpoint.json"),reload=_reference(output/"reload.json"),
                 final_selection=_reference(output/"final_selection.json"),metrics=_read(output/"metrics.json"))
         additional_training[child["job_id"]]=entry
+    coverage=_telemetry_dispositions(config,conditions)
+    overall_complete=not missing and coverage["all_required_cpu_dispositions_recorded"]
     summary={"scope":SCOPES["report"],"report_aggregation_completed":True,"evaluation_conditions":conditions,
         "first_seed_table":[r for r in rows if r["seed"]==20261023],"all_seed_table":rows,
         "selected_three_seed_confirmation":[{"cell_id":cell,"stratum":name,"metric":metric,**seed_statistics(values),
@@ -1038,8 +1264,9 @@ def _report(config):
         "experiment_manifest":_experiment_manifest(initial,additional_training,config),
         "manifest_counts":{"first_seed_task_cells":10,"first_seed_unique_models":len({s["model_id"] for s in training.values()}),
                            "selected_additional_training_conditions":len(chosen["additional_seed_plan"]),"test_conditions":len(conditions)},
-        "required_external_evidence":external,"missing_required_evidence":missing,"v6_completed":not missing,
-        "v6_terminal":not missing,"v7_ready":not missing,"human_review_performed":0,"clinical_quality_certified":False,
+        "required_external_evidence":external,"missing_required_evidence":missing,"scientific_v6_completed":not missing,"v6_completed":overall_complete,
+        "telemetry_coverage":coverage,"telemetry_all_evaluations_imported":coverage["telemetry_all_evaluations_imported"],"user_attention_required":coverage["user_attention_required"],
+        "v6_terminal":overall_complete,"v7_ready":overall_complete,"human_review_performed":0,"clinical_quality_certified":False,
         "anonymous_packet_prepared":True,"jetson_status":"USER_DEFERRED","limitations":LIMITATIONS,
         "test_files_read":True,"post_test_reselection_allowed":False,"training_seed_selection_from_test":False}
     summary["source_task_findings"],summary["usage_candidates"]=_source_task_findings(summary)
@@ -1170,7 +1397,8 @@ def _render_report(config,summary,key):
     for entry in summary["usage_candidates"]:
         observed="; ".join(f"{v['cell_id']} ({v['quality_metric']}={v['quality']:.4f}, p50={v['p50_seconds']:.4f}s, reserved={v['peak_reserved_bytes']/2**30:.3f}GiB, 측정 n={v['measured_requests']})" for v in entry["candidates"])
         candidates.append("- "+entry["source_stratum"]+": "+(observed or "필수 성공 측정 증거가 없어 용도 후보를 정하지 못함"))
-    status="증거 확인 완료" if summary["v6_completed"] else "미완료: "+", ".join(summary["missing_required_evidence"])
+    status=("과학 증거 및 CPU 완료 기록 확인" if summary["v6_completed"] else "미완료: "+", ".join(summary["missing_required_evidence"]))
+    telemetry=summary["telemetry_coverage"];telemetry_note=("모든 성공 평가의 historical_reconstructed 가져오기 확인" if telemetry["telemetry_all_evaluations_imported"] else "중요: telemetry 가져오기 미완료/불명확; 조건별 이유를 확인해야 하며 완전한 telemetry 상태로 취급하지 않음")
     body=("# V6 결과\n\nA. 완료 범위: "+json.dumps(summary["manifest_counts"],ensure_ascii=False)+"\n\n"
         "B. 동일 seed 20261023의 Base/Tuned 전체 예정 분모 비교는 comparison.csv에 있습니다. 실패도 분모에 포함됩니다. "
         "선택 모델의 세 seed는 별도 확인 표이며 단일 seed 순위와 섞지 않습니다.\n\n"+"\n".join(findings)+"\n\n"
@@ -1180,7 +1408,7 @@ def _render_report(config,summary,key):
         "TTFT와 decode-only는 미측정입니다. 성공 측정 조건만 speed_quality.svg/vram_quality.svg에 있습니다. "
         "아래 용도 후보는 각 source/task의 Tuned 점수·동일 GPU task별 p50·reserved 메모리의 관측 Pareto 비교입니다. "
         "검증에서 고정된 계열/seed 선택은 바꾸지 않으며 임상 배포를 권하지 않습니다.\n\n"+"\n".join(candidates)+"\n\n"
-        "E. 현재 판정: "+status+". 사람 검토는 0건이며 점수를 채우지 않았습니다. Jetson USER_DEFERRED. "
+        "E. 현재 판정: "+status+". "+telemetry_note+". 과학 평가 성공/실패와 telemetry 범위는 별도입니다. 사람 검토는 0건이며 점수를 채우지 않았습니다. Jetson USER_DEFERRED. "
         "실패/미실행은 summary.json의 조건별 상태와 원래 native terminal record에 있습니다.\n\n"
         "F. config.json, summary.json, checkpoint/reload 참조, inference_examples.json, HANDOFF.md를 사용합니다. "
         "외부 commit/push/CI/보존 증거는 required_external_evidence에 명시됩니다.\n\n"+
@@ -1207,11 +1435,20 @@ def _render_report(config,summary,key):
         "inference_examples.json":json.dumps(examples,sort_keys=True,indent=2)+"\n"}
 
 
+def _receipt_coverage_fields(kind,summary):
+    if kind=="telemetry_import":
+        return {"telemetry_coverage":summary["status"],"telemetry_reason":summary["reason"],
+            "telemetry_all_evaluations_imported":summary["telemetry_all_evaluations_imported"],
+            "user_attention_required":summary["user_attention_required"],"scientific_evaluation_status":"SUCCEEDED"}
+    if kind=="report":return {key:summary[key] for key in ("scientific_v6_completed","telemetry_all_evaluations_imported","user_attention_required")}
+    return {}
+
+
 def _artifact_names(kind):
-    if kind=="evaluation":return ("config.json","metrics.json","predictions.private.jsonl","scored.private.jsonl")
+    if kind=="evaluation":return ("config.json","metrics.json","predictions.private.jsonl","scored.private.jsonl","run_manifest.json")
     if kind in {"diagnostic","likelihood"}:return ("config.json","metrics.json","records.private.jsonl")
     result=("config.json","summary.json")
-    if kind=="test_freeze":result+=("protocol.json",)
+    if kind=="test_freeze":result+=("protocol.json","evaluation_protocol.text.json","evaluation_protocol.vqa.json","catalog_publication.json")
     if kind=="report":result+=REPORT_NAMES
     return result
 
@@ -1268,19 +1505,26 @@ def verify_result(config,*,repo=None):
         _gpu_metrics_proof(config,metrics,records)
         _require(metrics.get("protocol_hash")==config["protocol_hash"] and marker.get("v6_completed") is False,"COMPLETION_GPU_PROTOCOL_CHANGED")
         if kind=="evaluation":
+            _require(_equal(_read(output/"run_manifest.json"),_native_run_manifest(config,output)),"COMPLETION_NATIVE_RUN_MANIFEST_CHANGED")
             scored,_=dev.score_predictions(_rows_for(config)[config["task"]],records)
             _require(_equal(scored,[json.loads(line) for line in (output/"scored.private.jsonl").read_text().splitlines()]),"COMPLETION_TEST_SCORES_CHANGED")
     else:
         if kind=="additional_audit":expected=_additional_summary(config)
         elif kind=="test_audit":expected=_test_audit_summary(config)
+        elif kind=="telemetry_import":expected=_telemetry_coverage(config)
         elif kind=="test_freeze":
             expected={"test_protocol_frozen":True,"test_inference_performed":False,"test_files_read":True}
-            _require(_equal(_read(output/"protocol.json"),_test_protocol(config)),"COMPLETION_TEST_PROTOCOL_CHANGED")
+            parent=_test_protocol(config)
+            _require(_equal(_read(output/"protocol.json"),parent),"COMPLETION_TEST_PROTOCOL_CHANGED")
+            protocols={axis:_axis_protocol(config,parent,axis) for axis in ("text","vqa")}
+            _require(all(_equal(_read(output/f"evaluation_protocol.{axis}.json"),protocol) for axis,protocol in protocols.items()),"COMPLETION_AXIS_PROTOCOL_CHANGED")
+            _require(_equal(_read(output/"catalog_publication.json"),_catalog_publication(config,protocols)),"COMPLETION_CATALOG_PUBLICATION_CHANGED")
         else:
             expected=_report(config);key=_read(output/"anonymous_key.private.json")
             for name,text in _render_report(config,expected,key).items():
                 _require((output/name).read_text()==text,"COMPLETION_RENDERED_REPORT_CHANGED")
-        _require(_equal(_read(output/"summary.json"),expected) and marker.get("v6_completed") is expected.get("v6_completed",False),"COMPLETION_SUMMARY_CHANGED")
+        _require(_equal(_read(output/"summary.json"),expected) and marker.get("v6_completed") is expected.get("v6_completed",False)
+            and all(marker.get(key)==value for key,value in _receipt_coverage_fields(kind,expected).items()),"COMPLETION_SUMMARY_CHANGED")
     return {**marker,"artifacts":marker["artifacts"]+[_reference(output/"completion.json")]}
 
 
@@ -1319,11 +1563,17 @@ def run_job(config_path,receipt_path):
                             for row in scored:stream.write(json.dumps(row,sort_keys=True,ensure_ascii=False)+"\n")
                             stream.flush();os.fsync(stream.fileno())
                     atomic_json(staging/"metrics.json",summary)
+                    if kind=="evaluation":atomic_json(staging/"run_manifest.json",_native_run_manifest(config,staging))
                 else:
                     if kind=="additional_audit":summary=_additional_summary(config)
                     elif kind=="test_audit":summary=_test_audit_summary(config)
+                    elif kind=="telemetry_import":summary=_telemetry_import_once(config)
                     elif kind=="test_freeze":
-                        summary={"test_protocol_frozen":True,"test_inference_performed":False,"test_files_read":True};atomic_json(staging/"protocol.json",_test_protocol(config))
+                        summary={"test_protocol_frozen":True,"test_inference_performed":False,"test_files_read":True}
+                        parent=_test_protocol(config);atomic_json(staging/"protocol.json",parent)
+                        protocols={axis:_axis_protocol(config,parent,axis) for axis in ("text","vqa")}
+                        for axis,protocol in protocols.items():atomic_json(staging/f"evaluation_protocol.{axis}.json",protocol)
+                        atomic_json(staging/"catalog_publication.json",_catalog_publication(config,protocols,publish=True))
                     else:
                         summary=_report(config);key={"private_only":True,"mapping":{_ref(ref)["job_id"]:"response-"+secrets.token_hex(8) for ref in config["data"]["evaluations"]}}
                         for name,text in _render_report(config,summary,key).items():(staging/name).write_text(text)
@@ -1331,7 +1581,7 @@ def run_job(config_path,receipt_path):
                 _require(file_hash(path)==before,"COMPLETION_CONFIG_CHANGED_DURING_EXECUTION");validate_config(config);names=_artifact_names(kind)
                 marker={"schema_version":"medvlm.v6.completion-receipt.v1","status":"SUCCEEDED","scope":config["scope"],**{k:config[k] for k in IDENTITY_KEYS},
                     "v6_completed":summary.get("v6_completed",False),"campaign_terminal":False,"clinical_quality_certified":False,
-                    "test_files_read":kind!="additional_audit","artifacts":[{"path":str(output/name),"sha256":file_hash(staging/name)} for name in names]}
+                    "test_files_read":kind!="additional_audit",**_receipt_coverage_fields(kind,summary),"artifacts":[{"path":str(output/name),"sha256":file_hash(staging/name)} for name in names]}
                 atomic_json(staging/"completion.json",marker);os.rename(staging,output)
                 descriptor=os.open(output.parent,os.O_DIRECTORY)
                 try:os.fsync(descriptor)
@@ -1358,9 +1608,10 @@ def main(argv=None):
         else:
             if not config["uses_gpu"]:os.environ["CUDA_VISIBLE_DEVICES"]=""
             result=run_job(args.config,args.receipt)
+        _require(result.get("status")=="SUCCEEDED","COMPLETION_CLI_RESULT_NOT_SUCCEEDED")
     except Exception as exc:
         print(json.dumps({"status":"FAILED","exception_type":type(exc).__name__,**({"reason_code":str(exc)} if isinstance(exc,dev.caps.initial.gate.GateError) else {})}),file=sys.stderr);return 1
-    print(json.dumps({"status":result["status"],"scope":result["scope"]}));return 0
+    print(json.dumps({"status":result["status"],"scope":config["scope"]}));return 0
 
 
 if __name__=="__main__":raise SystemExit(main())

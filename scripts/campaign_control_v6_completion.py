@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from contextlib import ExitStack
 import hashlib
 import importlib.util
 import json
@@ -22,6 +23,12 @@ sys.dont_write_bytecode = True
 GUARD_SHA = '9d6c6c8d596e0cef05c0b067469788f893d8d4c17c72e97a7ffb0bf39817ff8c'
 SCHEMA = 'mediflow.recorded-v6-completion-refinement.v1'
 EVENT = 'RECORDED_V6_COMPLETION_REFINEMENT'
+REPAIR_SCHEMA = 'mediflow.recorded-v6-completion-source-repair.v1'
+REPAIR_EVENT = 'RECORDED_V6_COMPLETION_SOURCE_REPAIR'
+REPAIR_REVIEW_SCHEMA = 'mediflow.v6-completion-source-repair-review.v1'
+REPAIR_TRAIN_IDS = [f'v6-additional-{cell}-{seed}' for cell in ('T2', 'T3', 'V1', 'V3') for seed in (20261114, 20261115)]
+REPAIR_IDS = [*REPAIR_TRAIN_IDS, 'v6-additional_seeds']
+REPAIR_SOURCE = 'src/mediflow_medvlm/campaign_v6_completion.py'
 ANCHORS = {'v6-family_selection', 'v6-additional_seeds', 'v6-test', 'v6-report'}
 MODULES = {'mediflow_medvlm.campaign_family_selection', 'mediflow_medvlm.campaign_v6_completion'}
 
@@ -58,9 +65,13 @@ def reference(path):
     return {'path': str(absolute(path)), 'sha256': file_hash(path)}
 
 
-def pinned(ref):
+def pin_bytes(ref):
     require(set(ref) == {'path', 'sha256'} and re.fullmatch(r'[0-9a-f]{64}', ref['sha256']), 'exact external file pin required')
     require(reference(ref['path']) == ref, 'pinned completion evidence changed')
+
+
+def pinned(ref):
+    pin_bytes(ref)
     return read(ref['path'])
 
 
@@ -71,7 +82,9 @@ def validate_pair(engine, parent, replacement, *, activated, inserted):
             == digest({k: v for k, v in replacement.items() if k != 'jobs'}), 'campaign science metadata immutable')
     old = {j['job_id']: j for j in parent['jobs']}
     new = {j['job_id']: j for j in replacement['jobs']}
-    require(activated and set(activated) <= ANCHORS and len(set(activated)) == len(activated), 'only explicit V6 completion anchors may activate')
+    require((activated or inserted) and set(activated) <= ANCHORS
+            and len(set(activated)) == len(activated),
+            'only explicit V6 completion anchors or children may activate')
     require(len(set(inserted)) == len(inserted) and not set(inserted) & set(old)
             and set(new) == set(old) | set(inserted), 'exact declared child job insertion required')
     require([j['job_id'] for j in replacement['jobs'] if j['job_id'] in old]
@@ -94,6 +107,46 @@ def validate_pair(engine, parent, replacement, *, activated, inserted):
                 and argv[3] == '--config' and argv[5:] == ['--receipt', job['success_receipt']],
                 'exact native completion worker command required')
         require(job.get('gpu_lock_mode') == 'wrapper', 'same wrapper-owned physical lease required')
+    return old, new
+
+
+def validate_source_pair(engine, parent, replacement, *, repaired):
+    engine.validate_manifest(parent); engine.validate_manifest(replacement)
+    require(repaired == REPAIR_IDS and len(parent['jobs']) == len(replacement['jobs']) == 105
+            and [j['job_id'] for j in parent['jobs']] == [j['job_id'] for j in replacement['jobs']]
+            and digest({k:v for k,v in parent.items() if k != 'jobs'}) == digest({k:v for k,v in replacement.items() if k != 'jobs'}),
+            'exact nine-job source-only repair of the same 105-job namespace required')
+    old = {j['job_id']:j for j in parent['jobs']}; new = {j['job_id']:j for j in replacement['jobs']}
+    require(set(REPAIR_IDS) <= set(old), 'registered additional-seed cohort required')
+    for key, job in old.items():
+        fixed = new[key]
+        if key not in repaired:
+            require(job == fixed, 'all ninety-six protected job declarations immutable'); continue
+        audit = key == REPAIR_IDS[-1]
+        require(job.get('kind') == ('additional_audit' if audit else 'train')
+                and job.get('implementation_pending') is False
+                and job.get('argv', [])[1:3] == ['-m','mediflow_medvlm.campaign_v6_completion'], 'only registered train/additional-audit source repair allowed')
+        allowed = {'cwd','source_files','source_hash','config_hash','argv'} | ({'data_hash'} if audit else set())
+        require(digest({k:v for k,v in job.items() if k not in allowed}) == digest({k:v for k,v in fixed.items() if k not in allowed}), 'source repair scientific job identity changed')
+        require(len(job['argv']) == len(fixed['argv']) == 7
+                and job['argv'][:4]+job['argv'][5:] == fixed['argv'][:4]+fixed['argv'][5:]
+                and job['argv'][4] != fixed['argv'][4] and job['cwd'] != fixed['cwd'], 'source repair requires new archive/config and unchanged nonconfig argv')
+        require(len(job['source_files']) == 36 and set(job['source_files']) == set(fixed['source_files'])
+                and REPAIR_SOURCE in job['source_files'] and job['source_files'][REPAIR_SOURCE] != fixed['source_files'][REPAIR_SOURCE]
+                and all(fixed['source_files'][name] == sha for name,sha in job['source_files'].items() if name != REPAIR_SOURCE), 'only completion worker may change in the same 36-source closure')
+        before, after = read(job['argv'][4]), read(fixed['argv'][4])
+        excluded = {'source_files','source_hash','config_hash'} | ({'data','data_hash'} if audit else set())
+        require(digest({k:v for k,v in before.items() if k not in excluded}) == digest({k:v for k,v in after.items() if k not in excluded}), 'source repair scientific config identity changed')
+        if audit:
+            require(digest({k:v for k,v in before['data'].items() if k != 'train_configs'}) == digest({k:v for k,v in after['data'].items() if k != 'train_configs'})
+                    and before['data']['train_configs'] == [reference(old[k]['argv'][4]) for k in REPAIR_TRAIN_IDS]
+                    and after['data']['train_configs'] == [reference(new[k]['argv'][4]) for k in REPAIR_TRAIN_IDS], 'audit may change only ordered train-config references')
+        for config, declaration in ((before,job),(after,fixed)):
+            require(config.get('config_hash') == digest({k:v for k,v in config.items() if k != 'config_hash'})
+                    and config.get('data_hash') == digest(config.get('data')) and config.get('source_hash') == digest(config.get('source_files'))
+                    and all(config.get(k) == declaration.get(k) for k in ('job_id','run_id','source_files','source_hash','config_hash','data_hash','model_hash','success_receipt')), 'source repair config/job hashes changed')
+            engine.verify_source(declaration)
+    require(len({old[k]['source_hash'] for k in repaired}) == len({new[k]['source_hash'] for k in repaired}) == 1, 'one exact prior/replacement source cohort required')
     return old, new
 
 
@@ -135,22 +188,49 @@ class CompletionMixin:
                     pinned(config_ref)
                     self.engine.verify_source(jobs[key])
                 for proof in binding['review_evidence']:
-                    pinned(proof)
+                    pin_bytes(proof)
+                if binding['schema_version'] == REPAIR_SCHEMA:
+                    review = pinned(binding['repair_review'])
+                    for proof in review['evidence']: pin_bytes(proof)
             return cached
         entries = []
         prior_replacement = None
         for ref in self.completion_refs:
             binding = pinned(ref)
-            require(binding.get('schema_version') == SCHEMA
+            require(binding.get('schema_version') in {SCHEMA, REPAIR_SCHEMA}
                     and binding.get('campaign_root') == str(self.root)
                     and binding.get('data_root') == str(self.data_root)
                     and binding.get('parent_deployment') == self.completion_parent_deployment,
                     'completion owner namespace or parent route changed')
             parent, replacement = pinned(binding['parent']), pinned(binding['replacement'])
+            require(binding.get('previous_binding') == (entries[-1][0] if entries else None), 'exact previous completion binding pin required')
             require(prior_replacement is None or digest(parent) == digest(prior_replacement), 'continuous immutable refinement chain required')
-            validate_pair(self.engine, parent, replacement, activated=binding['activated'], inserted=binding['inserted'])
+            repair = binding['schema_version'] == REPAIR_SCHEMA
+            if repair:
+                require(binding['activated'] == binding['inserted'] == [] and binding.get('previous_binding') is not None
+                        and binding.get('original_anchor_records') == {}, 'repair cannot activate/insert or fabricate parent anchors')
+                old, _ = validate_source_pair(self.engine,parent,replacement,repaired=binding['repaired'])
+                require(set(binding['parent_record_hashes']) == set(old)
+                        and set(binding['parent_repair_records']) == set(REPAIR_IDS), 'all 105 parent records and exact repair snapshots required')
+                for key,record in binding['parent_repair_records'].items():
+                    require(digest(record) == binding['parent_record_hashes'][key]
+                            and record.get('status') in {'ANALYSIS_REQUIRED','FAILED','BLOCKED_PREREQUISITE'}
+                            and record.get('source_repair_required') is True and record.get('failed_source_hash') == old[key]['source_hash']
+                            and all(type(record.get(k)) is int and record[k] >= 0 for k in ('attempts','failure_count','recovery_attempts'))
+                            and isinstance(record.get('history'),list), 'exact held prior-source record proof required')
+                review = pinned(binding['repair_review'])
+                new = {j['job_id']:j for j in replacement['jobs']}
+                require(review.get('schema_version') == REPAIR_REVIEW_SCHEMA and review.get('status') == 'CPU_VALIDATED'
+                        and review.get('cpu_only') is True and review.get('cpu_tests_passed') is True
+                        and review.get('job_ids') == REPAIR_IDS
+                        and review.get('parent_source_hash') == old[REPAIR_IDS[0]]['source_hash']
+                        and review.get('replacement_source_hash') == new[REPAIR_IDS[0]]['source_hash']
+                        and isinstance(review.get('reason'),str) and review['reason'].strip() and review.get('evidence'), 'typed exact-source CPU repair review required')
+                for proof in review['evidence']: pin_bytes(proof)
+            else:
+                validate_pair(self.engine, parent, replacement, activated=binding['activated'], inserted=binding['inserted'])
             jobs = {j['job_id']: j for j in replacement['jobs']}
-            changed = binding['activated'] + binding['inserted']
+            changed = binding['repaired'] if repair else binding['activated'] + binding['inserted']
             require(set(binding['configs']) == set(changed), 'all changed workers need pinned configs')
             for key in changed:
                 job = jobs[key]
@@ -168,7 +248,7 @@ class CompletionMixin:
                 self.engine.verify_source(job)
                 self._verify_worker_job(job, binding['configs'][key])
             for proof in binding['review_evidence']:
-                pinned(proof)
+                pin_bytes(proof)
             require(binding['review_evidence'], 'CPU review evidence required')
             entries.append((ref, binding, parent, replacement))
             prior_replacement = replacement
@@ -229,13 +309,34 @@ class CompletionMixin:
         matches = [i for i, entry in enumerate(chain) if digest(entry[3]) == state['manifest_hash']]
         if matches:
             for ref, binding, parent, replacement in chain[:matches[0] + 1]:
+                repair = binding['schema_version'] == REPAIR_SCHEMA
                 events = [e for e in state.get('manifest_revisions', []) if e.get('kind') == EVENT
                           and e.get('binding_sha256') == ref['sha256'] and e.get('manifest_hash') == digest(replacement)
                           and e.get('previous_hash') == digest(parent)
                           and e.get('activated_jobs') == binding['activated']
                           and e.get('inserted_jobs') == binding['inserted']
                           and e.get('parent_record_hashes') == binding['parent_record_hashes']]
-                require(len(events) == 1, 'exact registered completion audit required for every applied prefix')
+                if repair:
+                    counters = {key:{k:record[k] for k in ('attempts','failure_count','recovery_attempts')}
+                                for key,record in binding['parent_repair_records'].items()}
+                    events = [e for e in state.get('manifest_revisions', []) if e.get('kind') == REPAIR_EVENT
+                              and e.get('binding_sha256') == ref['sha256'] and e.get('manifest_hash') == digest(replacement)
+                              and e.get('previous_hash') == digest(parent) and e.get('repaired_jobs') == binding['repaired']
+                              and e.get('parent_record_hashes') == binding['parent_record_hashes']
+                              and e.get('preserved_counters') == counters
+                              and e.get('repair_review_sha256') == binding['repair_review']['sha256']]
+                    require(len(events) == 1, 'exact registered source repair audit required for every applied prefix')
+                    event = events[0]
+                    old,new = ({j['job_id']:j for j in value['jobs']} for value in (parent,replacement))
+                    for key,before in binding['parent_repair_records'].items():
+                        current = state['jobs'][key]; history = current.get('history',[]); prefix = before.get('history',[])
+                        require(all(type(current.get(k)) is int and current[k] >= before[k] for k in counters[key])
+                                and history[:len(prefix)] == prefix and len(history) > len(prefix), 'repair counters/history cannot be reset')
+                        require(history[len(prefix)] == {'status':'SOURCE_REPAIR_AUTHORIZED','binding_sha256':ref['sha256'],
+                            'original_source_hash':old[key]['source_hash'],'replacement_source_hash':new[key]['source_hash'],
+                            'retry_limit':None,'mandatory_astra_before_retry':False,'at':event['at']}, 'pinned repair authorization history required')
+                else:
+                    require(len(events) == 1, 'exact registered completion audit required for every applied prefix')
 
     def call(self, command, *, manifest=None, job_id=None, receipt=None):
         require(command in {'status', 'tick', 'refine-completion'} and job_id is None and receipt is None,
@@ -251,6 +352,8 @@ class CompletionMixin:
         ref, binding, parent, replacement = chain[-1]
         require(manifest == replacement, 'exact reviewed replacement required')
         with self.routed_locks():
+            if binding['schema_version'] == REPAIR_SCHEMA:
+                return self.supervisor.repair_completion_source(ref,binding,parent,replacement)
             return self.supervisor.refine_completion(ref, binding, parent, replacement)
 
 
@@ -277,6 +380,19 @@ def install_supervisor(control):
             if key is not None:
                 manifest, _ = engine.Supervisor.load(self)
                 jobs = {job['job_id']: job for job in manifest['jobs']}
+                if (key.startswith('v6-test-telemetry-')
+                        and jobs[key].get('kind') == 'telemetry_import'
+                        and jobs[key].get('uses_gpu') is False):
+                    # A killed CPU importer may have called the once-only import
+                    # before losing its receipt. Keep the native failure and
+                    # stop automatic import retries without holding GPU science.
+                    record.update(status='FAILED', failure_domain='telemetry_reconstruction',
+                                  telemetry_coverage='INDETERMINATE', scientific_failure=False)
+                    record.setdefault('history', []).append({
+                        'status': 'TELEMETRY_RECONSTRUCTION_FAILED',
+                        'coverage': 'INDETERMINATE', 'automatic_reimport_allowed': False,
+                        'at': engine.now()})
+                    return
                 for target in current_keys:
                     item = state['jobs'].get(target)
                     if item is not None and jobs[target]['source_hash'] == jobs[key]['source_hash'] \
@@ -332,6 +448,53 @@ def install_supervisor(control):
                 engine.atomic_json(self.state_path, state)
                 return self.status()
 
+        def repair_completion_source(self, ref, binding, parent, replacement):
+            with engine.try_lock(self.root / 'supervisor.lock') as lock:
+                if lock is None: return {'status':'SUPERVISOR_BUSY'}
+                current,state = engine.Supervisor.load(self)
+                require(state.get('queue_owner') == 'supervisor', 'sole canonical Supervisor owner required')
+                if state['manifest_hash'] == digest(replacement):
+                    owner._validate_live(current,state)
+                    return self.status()
+                require(current == parent and file_hash(self.state_path) == binding['parent_state_sha256']
+                        and {key:digest(value) for key,value in state['jobs'].items()} == binding['parent_record_hashes'], 'exact unchanged reconciled repair parent state required')
+                owner._validate_live(current,state)
+                owner._quiescent(state,allow_dead_running=False)
+                with ExitStack() as leases:
+                    for path in (self.root/'worker.lock',owner.data_root/'runtime/medvlm_gpu.lock'):
+                        require(leases.enter_context(engine.try_lock(path)) is not None, 'canonical worker/GPU lease busy')
+                    owner._quiescent(state,allow_dead_running=False)
+                    owner._verify()
+                    require(file_hash(self.state_path) == binding['parent_state_sha256'], 'repair parent changed during locked verification')
+                    old,new = validate_source_pair(engine,parent,replacement,repaired=binding['repaired'])
+                    for key in binding['repaired']:
+                        record = state['jobs'][key]
+                        require(record.get('status') != 'SUCCEEDED', 'successful completion outputs cannot be source-rebound')
+                        require(record == binding['parent_repair_records'][key]
+                                and record.get('status') in {'ANALYSIS_REQUIRED','FAILED','BLOCKED_PREREQUISITE'}
+                                and record.get('source_repair_required') is True
+                                and record.get('failed_source_hash') == old[key]['source_hash'], 'all nine jobs must be held for the exact prior source')
+                        require(all(type(record.get(k)) is int and record[k] >= 0 for k in ('attempts','failure_count','recovery_attempts'))
+                                and isinstance(record.get('history'),list), 'valid preserved counters/history required')
+                        require(not absolute(new[key]['success_receipt']).exists(), 'existing completion success receipt cannot be overwritten')
+                    target = digest(replacement); version = self.root/'manifests'/(target+'.json'); at = engine.now()
+                    if version.exists(): require(read(version) == replacement, 'immutable repair manifest changed')
+                    else: engine.atomic_json(version,replacement)
+                    counters = {key:{k:state['jobs'][key][k] for k in ('attempts','failure_count','recovery_attempts')} for key in binding['repaired']}
+                    for key in binding['repaired']:
+                        state['jobs'][key].update(status='PENDING',source_repair_required=False)
+                        state['jobs'][key]['history'].append({'status':'SOURCE_REPAIR_AUTHORIZED','binding_sha256':ref['sha256'],
+                            'original_source_hash':old[key]['source_hash'],'replacement_source_hash':new[key]['source_hash'],
+                            'retry_limit':None,'mandatory_astra_before_retry':False,'at':at})
+                    state.setdefault('manifest_revisions',[]).append({'kind':REPAIR_EVENT,
+                        'previous_hash':digest(parent),'manifest_hash':target,'manifest_path':str(version),
+                        'repaired_jobs':binding['repaired'],'binding_sha256':ref['sha256'],
+                        'parent_record_hashes':binding['parent_record_hashes'],'preserved_counters':counters,
+                        'repair_review_sha256':binding['repair_review']['sha256'],'at':at})
+                    state.update(manifest_hash=target,manifest_path=str(version),updated_at=at)
+                    engine.atomic_json(self.state_path,state)
+                return self.status()
+
     control.supervisor.__class__ = CompletionSupervisor
 
 
@@ -353,7 +516,7 @@ def build_control(*, deployment, deployment_sha256, completion_binding, completi
     current = {'path': str(absolute(completion_binding)), 'sha256': completion_binding_sha256}
     seen = set()
     while current:
-        require(current['sha256'] not in seen and len(seen) < 10, 'finite acyclic refinement chain required')
+        require(current['sha256'] not in seen, 'finite acyclic refinement chain required')
         seen.add(current['sha256'])
         value = pinned(current)
         refs.append(current)
@@ -379,6 +542,19 @@ def prepare_binding(deployment, parent_manifest, replacement_manifest, state_pat
             'original_anchor_records': {key: state['jobs'][key] for key in activated},
             'configs': {read(path)['job_id']: reference(path) for path in config_paths},
             'review_evidence': [reference(path) for path in review_paths]}
+
+
+def prepare_repair_binding(deployment,parent_manifest,replacement_manifest,state_path,*,config_paths,
+                           review_paths,previous_binding,repair_review_path):
+    state = read(state_path)
+    require(previous_binding is not None, 'source repair must extend the previous completion binding')
+    require(state['manifest_hash'] == digest(read(parent_manifest)), 'repair binding must pin the current parent manifest')
+    value = prepare_binding(deployment,parent_manifest,replacement_manifest,state_path,activated=[],inserted=[],
+        config_paths=config_paths,review_paths=review_paths,previous_binding=previous_binding)
+    value.update(schema_version=REPAIR_SCHEMA,repaired=copy.deepcopy(REPAIR_IDS),
+        parent_repair_records={key:copy.deepcopy(state['jobs'][key]) for key in REPAIR_IDS},
+        repair_review=reference(repair_review_path))
+    return value
 
 
 def main(argv=None):
