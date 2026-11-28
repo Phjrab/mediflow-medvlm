@@ -1,0 +1,710 @@
+{
+  "evaluation": {
+    "checkpoint": "final persisted adapter",
+    "base_model": "Qwen/Qwen3.5-2B",
+    "sample_seed": "mediflow-holdout-20261128-v1",
+    "class_sample_caps": {
+      "face": 10,
+      "scalp": 30,
+      "skin": 8
+    },
+    "frozen_exclusions": {
+      "current": {
+        "train": 12527,
+        "validation": 1891
+      },
+      "prior_vqa": {
+        "train": 1979,
+        "validation": 512
+      }
+    },
+    "total_attempted": 312,
+    "match": "Exact configured class after whitespace trimming",
+    "generation": {
+      "do_sample": false,
+      "max_new_tokens": 64
+    },
+    "cohort": {
+      "eye": "All unused in-scope external eye photos, rejected by the pseudo-label threshold",
+      "scalp": "Original dataset test split, source split manifest",
+      "face": "Original dataset test split, PMG CSV true_index",
+      "skin": "Original dataset test split, source split manifest"
+    },
+    "face_reference": "https://github.com/Phjrab/mediflow-datasets/blob/d52bd95e4b6417ad39aa4550eaaf257dd40d29ed/results/web_skin/candidates/public_candidate_v2_pmg_b0_256_ce_20260922_235840_093d10de/final_test_predictions.csv",
+    "patient_level_independence_verified": false,
+    "independent_clinical_truth": false,
+    "previous_vlm_baseline_evaluated": false
+  },
+  "domains": {
+    "eye": {
+      "available": 32,
+      "attempted": 32,
+      "valid_class_outputs": 32,
+      "out_of_schema": 0,
+      "inference_errors": 0,
+      "teacher_matches": 18,
+      "teacher_match_rate": 0.5625,
+      "prediction_distribution": {
+        "결막염 (Conjunctivitis)": 5,
+        "다래끼 (Eyelid)": 7,
+        "백내장 (Cataract)": 8,
+        "일반 (Normal)": 0,
+        "포도막염 (Uveitis)": 12
+      },
+      "correct": null,
+      "accuracy": null,
+      "teacher_correct": null,
+      "teacher_accuracy": null,
+      "per_class": null,
+      "confusion": null
+    },
+    "face": {
+      "available": 400,
+      "attempted": 50,
+      "valid_class_outputs": 50,
+      "out_of_schema": 0,
+      "inference_errors": 0,
+      "teacher_matches": 42,
+      "teacher_match_rate": 0.84,
+      "prediction_distribution": {
+        "건선": 10,
+        "아토피": 8,
+        "여드름": 13,
+        "정상": 10,
+        "주사": 9
+      },
+      "correct": 42,
+      "accuracy": 0.84,
+      "teacher_correct": 46,
+      "teacher_accuracy": 0.92,
+      "per_class": {
+        "건선": {
+          "support": 10,
+          "correct": 8,
+          "predicted": 10,
+          "recall": 0.8,
+          "precision": 0.8,
+          "f1": 0.8,
+          "teacher_correct": 8
+        },
+        "아토피": {
+          "support": 10,
+          "correct": 7,
+          "predicted": 8,
+          "recall": 0.7,
+          "precision": 0.875,
+          "f1": 0.7777777777777778,
+          "teacher_correct": 9
+        },
+        "여드름": {
+          "support": 10,
+          "correct": 9,
+          "predicted": 13,
+          "recall": 0.9,
+          "precision": 0.6923076923076923,
+          "f1": 0.782608695652174,
+          "teacher_correct": 9
+        },
+        "정상": {
+          "support": 10,
+          "correct": 10,
+          "predicted": 10,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 10
+        },
+        "주사": {
+          "support": 10,
+          "correct": 8,
+          "predicted": 9,
+          "recall": 0.8,
+          "precision": 0.8888888888888888,
+          "f1": 0.8421052631578947,
+          "teacher_correct": 10
+        }
+      },
+      "confusion": {
+        "건선": {
+          "건선": 8,
+          "아토피": 0,
+          "여드름": 2,
+          "정상": 0,
+          "주사": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "아토피": {
+          "건선": 1,
+          "아토피": 7,
+          "여드름": 2,
+          "정상": 0,
+          "주사": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "여드름": {
+          "건선": 0,
+          "아토피": 0,
+          "여드름": 9,
+          "정상": 0,
+          "주사": 1,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "정상": {
+          "건선": 0,
+          "아토피": 0,
+          "여드름": 0,
+          "정상": 10,
+          "주사": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "주사": {
+          "건선": 1,
+          "아토피": 1,
+          "여드름": 0,
+          "정상": 0,
+          "주사": 8,
+          "outside_schema": 0,
+          "error": 0
+        }
+      },
+      "reference_pool_by_class": {
+        "건선": 80,
+        "아토피": 80,
+        "여드름": 80,
+        "정상": 80,
+        "주사": 80
+      }
+    },
+    "scalp": {
+      "available": 1252,
+      "attempted": 150,
+      "valid_class_outputs": 150,
+      "out_of_schema": 0,
+      "inference_errors": 0,
+      "teacher_matches": 97,
+      "teacher_match_rate": 0.6466666666666666,
+      "prediction_distribution": {
+        "모낭사이홍반": 27,
+        "미세각질": 39,
+        "비듬": 17,
+        "탈모": 27,
+        "피지과다": 40,
+        "양호": 0
+      },
+      "correct": 93,
+      "accuracy": 0.62,
+      "teacher_correct": 111,
+      "teacher_accuracy": 0.74,
+      "per_class": {
+        "모낭사이홍반": {
+          "support": 30,
+          "correct": 20,
+          "predicted": 27,
+          "recall": 0.6666666666666666,
+          "precision": 0.7407407407407407,
+          "f1": 0.7017543859649122,
+          "teacher_correct": 22
+        },
+        "미세각질": {
+          "support": 30,
+          "correct": 19,
+          "predicted": 39,
+          "recall": 0.6333333333333333,
+          "precision": 0.48717948717948717,
+          "f1": 0.5507246376811594,
+          "teacher_correct": 24
+        },
+        "비듬": {
+          "support": 30,
+          "correct": 12,
+          "predicted": 17,
+          "recall": 0.4,
+          "precision": 0.7058823529411765,
+          "f1": 0.5106382978723404,
+          "teacher_correct": 17
+        },
+        "탈모": {
+          "support": 30,
+          "correct": 18,
+          "predicted": 27,
+          "recall": 0.6,
+          "precision": 0.6666666666666666,
+          "f1": 0.631578947368421,
+          "teacher_correct": 24
+        },
+        "피지과다": {
+          "support": 30,
+          "correct": 24,
+          "predicted": 40,
+          "recall": 0.8,
+          "precision": 0.6,
+          "f1": 0.6857142857142857,
+          "teacher_correct": 24
+        },
+        "양호": {
+          "support": 0,
+          "correct": 0,
+          "predicted": 0,
+          "recall": null,
+          "precision": null,
+          "f1": null,
+          "teacher_correct": 0
+        }
+      },
+      "confusion": {
+        "모낭사이홍반": {
+          "모낭사이홍반": 20,
+          "미세각질": 5,
+          "비듬": 0,
+          "탈모": 5,
+          "피지과다": 0,
+          "양호": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "미세각질": {
+          "모낭사이홍반": 3,
+          "미세각질": 19,
+          "비듬": 3,
+          "탈모": 2,
+          "피지과다": 3,
+          "양호": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "비듬": {
+          "모낭사이홍반": 0,
+          "미세각질": 10,
+          "비듬": 12,
+          "탈모": 0,
+          "피지과다": 8,
+          "양호": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "탈모": {
+          "모낭사이홍반": 2,
+          "미세각질": 4,
+          "비듬": 1,
+          "탈모": 18,
+          "피지과다": 5,
+          "양호": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "피지과다": {
+          "모낭사이홍반": 2,
+          "미세각질": 1,
+          "비듬": 1,
+          "탈모": 2,
+          "피지과다": 24,
+          "양호": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "양호": {
+          "모낭사이홍반": 0,
+          "미세각질": 0,
+          "비듬": 0,
+          "탈모": 0,
+          "피지과다": 0,
+          "양호": 0,
+          "outside_schema": 0,
+          "error": 0
+        }
+      },
+      "reference_pool_by_class": {
+        "모낭사이홍반": 248,
+        "미세각질": 256,
+        "비듬": 241,
+        "양호": 0,
+        "탈모": 245,
+        "피지과다": 262
+      }
+    },
+    "skin": {
+      "available": 700,
+      "attempted": 80,
+      "valid_class_outputs": 80,
+      "out_of_schema": 0,
+      "inference_errors": 0,
+      "teacher_matches": 78,
+      "teacher_match_rate": 0.975,
+      "prediction_distribution": {
+        "광선각화증": 7,
+        "기저세포암": 7,
+        "보웬병": 9,
+        "사마귀": 8,
+        "지루각화증": 8,
+        "편평세포암": 8,
+        "표피낭종": 9,
+        "피부섬유종": 8,
+        "혈관종": 8,
+        "흑색점": 8
+      },
+      "correct": 78,
+      "accuracy": 0.975,
+      "teacher_correct": 78,
+      "teacher_accuracy": 0.975,
+      "per_class": {
+        "광선각화증": {
+          "support": 8,
+          "correct": 7,
+          "predicted": 7,
+          "recall": 0.875,
+          "precision": 1.0,
+          "f1": 0.9333333333333333,
+          "teacher_correct": 8
+        },
+        "기저세포암": {
+          "support": 8,
+          "correct": 7,
+          "predicted": 7,
+          "recall": 0.875,
+          "precision": 1.0,
+          "f1": 0.9333333333333333,
+          "teacher_correct": 7
+        },
+        "보웬병": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 9,
+          "recall": 1.0,
+          "precision": 0.8888888888888888,
+          "f1": 0.9411764705882353,
+          "teacher_correct": 8
+        },
+        "사마귀": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 8,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 7
+        },
+        "지루각화증": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 8,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 8
+        },
+        "편평세포암": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 8,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 8
+        },
+        "표피낭종": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 9,
+          "recall": 1.0,
+          "precision": 0.8888888888888888,
+          "f1": 0.9411764705882353,
+          "teacher_correct": 8
+        },
+        "피부섬유종": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 8,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 8
+        },
+        "혈관종": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 8,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 8
+        },
+        "흑색점": {
+          "support": 8,
+          "correct": 8,
+          "predicted": 8,
+          "recall": 1.0,
+          "precision": 1.0,
+          "f1": 1.0,
+          "teacher_correct": 8
+        }
+      },
+      "confusion": {
+        "광선각화증": {
+          "광선각화증": 7,
+          "기저세포암": 0,
+          "보웬병": 1,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "기저세포암": {
+          "광선각화증": 0,
+          "기저세포암": 7,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 1,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "보웬병": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 8,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "사마귀": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 8,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "지루각화증": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 8,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "편평세포암": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 8,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "표피낭종": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 8,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "피부섬유종": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 8,
+          "혈관종": 0,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "혈관종": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 8,
+          "흑색점": 0,
+          "outside_schema": 0,
+          "error": 0
+        },
+        "흑색점": {
+          "광선각화증": 0,
+          "기저세포암": 0,
+          "보웬병": 0,
+          "사마귀": 0,
+          "지루각화증": 0,
+          "편평세포암": 0,
+          "표피낭종": 0,
+          "피부섬유종": 0,
+          "혈관종": 0,
+          "흑색점": 8,
+          "outside_schema": 0,
+          "error": 0
+        }
+      },
+      "reference_pool_by_class": {
+        "광선각화증": 70,
+        "기저세포암": 70,
+        "보웬병": 70,
+        "사마귀": 70,
+        "지루각화증": 70,
+        "편평세포암": 70,
+        "표피낭종": 70,
+        "피부섬유종": 70,
+        "혈관종": 70,
+        "흑색점": 70
+      }
+    }
+  },
+  "training": {
+    "status": "SUCCEEDED",
+    "reload_verified": true,
+    "optimizer_steps": 783,
+    "planned_steps": 783,
+    "actual_epochs": 0.9996008621377824,
+    "train_samples_processed": 12522,
+    "training_seconds": 11998.833948923042,
+    "peak_gpu_gib": 9.631,
+    "last_training_loss": 0.001553688850981416,
+    "best_validation": {
+      "attempted": 32,
+      "completed": 32,
+      "context_overflow": 0,
+      "loss": 0.032738853411171755,
+      "target_tokens": 193
+    },
+    "validation_truth": "teacher_pseudo",
+    "uses_test_for_selection": false,
+    "initialization": "existing VQA adapter",
+    "frozen_counts": {
+      "test": 0,
+      "train": 12527,
+      "validation": 1891
+    },
+    "supervision_counts": {
+      "teacher_pseudo": 14418
+    },
+    "by_domain": {
+      "eye": {
+        "inventory": {
+          "test": 0,
+          "train": 2003,
+          "validation": 519
+        },
+        "eligible": {
+          "test": 0,
+          "train": 1895,
+          "validation": 482
+        },
+        "excluded": {
+          "duplicate_labeled_image": 42,
+          "eye_input_uncertain": 12,
+          "out_of_scope": 59,
+          "pseudo_threshold": 32
+        },
+        "supervision": {
+          "teacher_pseudo": 2377
+        }
+      },
+      "face": {
+        "inventory": {
+          "test": 400,
+          "train": 3600,
+          "validation": 500
+        },
+        "eligible": {
+          "test": 0,
+          "train": 3553,
+          "validation": 458
+        },
+        "excluded": {
+          "pseudo_threshold": 89,
+          "review_required_test": 400
+        },
+        "supervision": {
+          "teacher_pseudo": 4011
+        }
+      },
+      "scalp": {
+        "inventory": {
+          "test": 1252,
+          "train": 10032,
+          "validation": 1252
+        },
+        "eligible": {
+          "test": 0,
+          "train": 1044,
+          "validation": 133
+        },
+        "excluded": {
+          "pseudo_threshold": 10107,
+          "review_required_test": 1252
+        },
+        "supervision": {
+          "teacher_pseudo": 1177
+        }
+      },
+      "skin": {
+        "inventory": {
+          "test": 700,
+          "train": 7249,
+          "validation": 1000
+        },
+        "eligible": {
+          "test": 0,
+          "train": 6035,
+          "validation": 818
+        },
+        "excluded": {
+          "pseudo_threshold": 1396,
+          "review_required_test": 700
+        },
+        "supervision": {
+          "teacher_pseudo": 6853
+        }
+      }
+    }
+  }
+}
