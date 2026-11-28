@@ -965,3 +965,98 @@ def test_heartbeat_failure_is_error_even_during_cooperative_stop(tmp_path, monke
     assert status['status'] == 'ERROR' and status['error']['type'] == 'RuntimeError'
     with engine.try_lock(control.physical['supervisor']) as lease:
         assert lease is not None
+
+
+@pytest.fixture
+def hf_snapshot_fixture(scientific_cache_fixture, tmp_path):
+    f = scientific_cache_fixture
+    cache = tmp_path / 'models--fixture'
+    blobs = cache / 'blobs'
+    snapshot = cache / 'snapshots' / ('a' * 40)
+    blobs.mkdir(parents=True)
+    snapshot.mkdir(parents=True)
+    blob = blobs / 'content-addressed-blob'
+    blob.write_text('science')
+    alias = snapshot / 'model-config.json'
+    alias.symlink_to('../../blobs/' + blob.name)
+    for _, ref in f.jobs:
+        config = owner.read(ref['path'])
+        config['science'] = str(alias)
+        write(Path(ref['path']), config)
+        ref['sha256'] = owner.file_hash(ref['path'])
+    return SimpleNamespace(**vars(f), alias=alias, blob=blob, snapshot=snapshot, cache=cache)
+
+
+def test_hf_snapshot_symlink_is_verified_then_cached(hf_snapshot_fixture, monkeypatch):
+    f = hf_snapshot_fixture
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    proof = next(iter(f.control._scientific_proofs.values()))
+    actual = proof['files'][str(f.alias)]
+    assert actual['sha256'] == owner.file_hash(f.blob)
+    assert actual['path_identity']['resolved_path'] == str(f.blob)
+    assert actual['path_identity']['links'][0]['path'] == str(f.alias)
+    assert actual['path_identity']['links'][0]['target'] == '../../blobs/' + f.blob.name
+    monkeypatch.setattr(owner.subprocess, 'run', lambda *a, **k: pytest.fail('valid HF proof must stay cached'))
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+@pytest.mark.parametrize('change', ['retarget', 'blob', 'parent-alias'])
+def test_hf_snapshot_alias_or_blob_change_fails_closed(hf_snapshot_fixture, change):
+    import shutil
+    f = hf_snapshot_fixture
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    if change == 'blob':
+        f.blob.write_text('changed model contents')
+    elif change == 'retarget':
+        other = f.blob.with_name('other-blob')
+        other.write_text('science')  # Same bytes do not authorize a new alias.
+        f.alias.unlink()
+        f.alias.symlink_to('../../blobs/' + other.name)
+    else:
+        copied = f.snapshot.with_name('replacement-snapshot')
+        shutil.copytree(f.snapshot, copied, symlinks=True)
+        shutil.rmtree(f.snapshot)
+        f.snapshot.symlink_to(copied, target_is_directory=True)
+    with pytest.raises((ValueError, OSError), match='scientific'):
+        owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+def test_initial_model_parent_directory_alias_is_pinned(hf_snapshot_fixture):
+    f = hf_snapshot_fixture
+    directory_alias = f.cache / 'active-snapshot'
+    directory_alias.symlink_to(f.snapshot, target_is_directory=True)
+    for _, ref in f.jobs:
+        config = owner.read(ref['path'])
+        config['science'] = str(directory_alias / f.alias.name)
+        write(Path(ref['path']), config)
+        ref['sha256'] = owner.file_hash(ref['path'])
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    proof = next(iter(f.control._scientific_proofs.values()))
+    links = proof['files'][str(directory_alias / f.alias.name)]['path_identity']['links']
+    assert [item['path'] for item in links] == [str(directory_alias), str(f.alias)]
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    directory_alias.unlink()
+    directory_alias.symlink_to(f.snapshot.parent, target_is_directory=True)
+    with pytest.raises((ValueError, OSError)):
+        owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+def test_stat_only_model_shard_size_is_pinned_without_byte_hash(hf_snapshot_fixture):
+    f = hf_snapshot_fixture
+    # Native model preflight intentionally uses type + declared size for weights.
+    # This checks that such unopened shards still belong to the cached proof.
+    f.module.write_text(f.module.read_text().replace(
+        "state['cache']['shared']=pathlib.Path(config['science']).read_text()",
+        "assert pathlib.Path(config['science']).is_file()\n        assert pathlib.Path(config['science']).stat().st_size==7\n        state['cache']['shared']='science'"))
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    proof = next(iter(f.control._scientific_proofs.values()))
+    assert str(f.alias) not in proof['files']
+    assert proof['metadata'][str(f.alias)]['resolved_path'] == str(f.blob)
+    f.blob.write_text('resized unopened native weight shard')
+    with pytest.raises(ValueError, match='scientific file metadata changed'):
+        owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+def test_model_alias_support_keeps_config_and_source_symlink_rule(hf_snapshot_fixture):
+    with pytest.raises(ValueError, match='nonsymlink'):
+        owner.absolute(hf_snapshot_fixture.alias)

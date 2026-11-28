@@ -22,6 +22,7 @@ import signal
 import threading
 import math
 import time
+import stat
 from contextlib import contextmanager
 
 sys.dont_write_bytecode = True
@@ -60,6 +61,52 @@ _FILE_HASH_CACHE = {}
 def file_identity(info):
     return [info.st_dev, info.st_ino, info.st_mode, info.st_size,
             info.st_mtime_ns, info.st_ctime_ns]
+
+
+def read_path_identity(path):
+    """Bind a native-validated read alias to every link and its actual target.
+
+    This is only for observed scientific reads. Config/source/binding path rules
+    continue to use absolute(), which refuses all symlinks.
+    """
+    path = Path(path)
+    require(path.is_absolute(), 'absolute scientific read path required: ' + str(path))
+    pending = list(path.parts[1:])
+    resolved = Path('/')
+    links = []
+    while pending:
+        part = pending.pop(0)
+        if part in ('', '.'):
+            continue
+        if part == '..':
+            resolved = resolved.parent
+            continue
+        candidate = resolved / part
+        info = candidate.lstat()
+        if stat.S_ISLNK(info.st_mode):
+            target = os.readlink(candidate)
+            links.append({'path': str(candidate), 'target': target, 'identity': file_identity(info)})
+            require(len(links) <= 40, 'scientific read symlink cycle: ' + str(path))
+            destination = Path(target)
+            if destination.is_absolute():
+                resolved = Path('/')
+                pending = list(destination.parts[1:]) + pending
+            else:
+                pending = list(destination.parts) + pending
+        else:
+            resolved = candidate
+    return {'resolved_path': str(resolved), 'links': links,
+            'identity': file_identity(resolved.lstat())}
+
+
+def read_directory_identity(path):
+    identity = read_path_identity(path)
+    entries = {}
+    for item in Path(path).iterdir():
+        info = item.lstat()
+        entries[item.name] = ({'target': os.readlink(item), 'identity': file_identity(info)}
+                              if stat.S_ISLNK(info.st_mode) else None)
+    return {'path_identity': identity, 'entries': entries}
 
 
 def file_hash(path):
@@ -178,29 +225,78 @@ def validate_source_pair(engine, parent, replacement, *, repaired):
 # Native validation stays isolated from the owner's immutable package roots.
 # Proofs are returned over stdout and retained in memory only.
 _WORKER_VERIFIER = r"""
-import hashlib, importlib, json, os, pathlib, sys
+import hashlib, importlib, json, os, pathlib, stat, sys
+from pathlib import Path
+def _require(ok, reason):
+    if not ok:
+        raise RuntimeError(reason)
+def file_identity(info):
+    return [info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
+def read_path_identity(path):
+    '''Bind a native-validated read alias to every link and its actual target.
+
+    This is only for observed scientific reads. Config/source/binding path rules
+    continue to use absolute(), which refuses all symlinks.
+    '''
+    path = Path(path)
+    _require(path.is_absolute(), 'absolute scientific read path required: ' + str(path))
+    pending = list(path.parts[1:])
+    resolved = Path('/')
+    links = []
+    while pending:
+        part = pending.pop(0)
+        if part in ('', '.'):
+            continue
+        if part == '..':
+            resolved = resolved.parent
+            continue
+        candidate = resolved / part
+        info = candidate.lstat()
+        if stat.S_ISLNK(info.st_mode):
+            target = os.readlink(candidate)
+            links.append({'path': str(candidate), 'target': target, 'identity': file_identity(info)})
+            _require(len(links) <= 40, 'scientific read symlink cycle: ' + str(path))
+            destination = Path(target)
+            if destination.is_absolute():
+                resolved = Path('/')
+                pending = list(destination.parts[1:]) + pending
+            else:
+                pending = list(destination.parts) + pending
+        else:
+            resolved = candidate
+    return {'resolved_path': str(resolved), 'links': links,
+            'identity': file_identity(resolved.lstat())}
+
+
+def read_directory_identity(path):
+    identity = read_path_identity(path)
+    entries = {}
+    for item in Path(path).iterdir():
+        info = item.lstat()
+        entries[item.name] = ({'target': os.readlink(item), 'identity': file_identity(info)}
+                              if stat.S_ISLNK(info.st_mode) else None)
+    return {'path_identity': identity, 'entries': entries}
+
+
 spec = json.load(sys.stdin)
 sys.path.insert(0, spec['repo'] + '/src')
 module = importlib.import_module(spec['module'])
-files, directories, snapshots, observations = {}, {}, {}, {}
+files, directories, snapshots, observations, metadata = {}, {}, {}, {}, {}
 busy = False
 runtime = tuple({sys.prefix, sys.base_prefix, '/usr', '/lib', '/lib64'})
 state_path = spec['state_path']
-def identity(path):
-    info = os.stat(path, follow_symlinks=False)
-    return [info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
 def sha(path):
-    before = identity(path)
+    before = read_path_identity(path)
     h = hashlib.sha256()
     with open(path, 'rb') as stream:
         info = os.fstat(stream.fileno())
         observed = [info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
-        if observed != before:
-            raise RuntimeError('scientific file changed while opening')
+        if observed != before['identity']:
+            raise RuntimeError('scientific file changed while opening: ' + str(path))
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(block)
-    if identity(path) != before:
-        raise RuntimeError('scientific file changed while hashing')
+    if read_path_identity(path) != before:
+        raise RuntimeError('scientific file changed while hashing: ' + str(path))
     return h.hexdigest()
 def audit(event, args):
     global busy
@@ -218,15 +314,15 @@ def audit(event, args):
             if args[2] & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND):
                 raise RuntimeError('scientific verifier must be read only')
             if os.path.isfile(path) and path not in files:
-                before = identity(path)
-                files[path] = {'sha256': sha(path), 'identity': before}
-                if identity(path) != before:
-                    raise RuntimeError('scientific file changed before native read')
+                before = read_path_identity(path)
+                files[path] = {'sha256': sha(path), 'path_identity': before}
+                if read_path_identity(path) != before:
+                    raise RuntimeError('scientific file changed before native read: ' + str(path))
                 if path == state_path:
                     with open(path) as stream:
                         snapshots[path] = json.load(stream)
         elif os.path.isdir(path) and path not in directories:
-            directories[path] = sorted(os.listdir(path))
+            directories[path] = read_directory_identity(path)
     finally:
         busy = False
 sys.addaudithook(audit)
@@ -241,8 +337,17 @@ def observe(function, kind):
             return result
         key = (absolute, kind)
         if key in observations and observations[key] != result:
-            raise RuntimeError('scientific path observation changed during batch')
+            raise RuntimeError('scientific path observation changed during batch: ' + str(path))
         observations[key] = result
+        if kind == 'is_file' and result and absolute != state_path:
+            busy = True
+            try:
+                current = read_path_identity(absolute)
+                if absolute in metadata and metadata[absolute] != current:
+                    raise RuntimeError('scientific file metadata changed during batch: ' + absolute)
+                metadata[absolute] = current
+            finally:
+                busy = False
         return result
     return wrapped
 for kind in ('exists', 'is_file', 'is_dir', 'is_symlink'):
@@ -257,7 +362,7 @@ try:
     if transaction is not None:
         for path, expected in transaction.get()['refs'].items():
             if sha(path) != expected:
-                raise RuntimeError('native scientific proof changed during batch')
+                raise RuntimeError('native scientific proof changed during batch: ' + str(path))
 finally:
     if token is not None:
         transaction.reset(token)
@@ -265,14 +370,17 @@ if 'torch' in sys.modules:
     raise RuntimeError('CPU verifier imported GPU runtime')
 busy = True
 for path, expected in files.items():
-    if identity(path) != expected['identity']:
-        raise RuntimeError('scientific proof changed during batch')
+    if read_path_identity(path) != expected['path_identity']:
+        raise RuntimeError('scientific proof changed during batch: ' + str(path))
 for path, expected in directories.items():
-    if sorted(os.listdir(path)) != expected:
-        raise RuntimeError('scientific proof directory changed during batch')
+    if read_directory_identity(path) != expected:
+        raise RuntimeError('scientific proof directory changed during batch: ' + str(path))
+for path, expected in metadata.items():
+    if read_path_identity(path) != expected:
+        raise RuntimeError('scientific file metadata changed during batch: ' + str(path))
 for (path, kind), expected in observations.items():
     if getattr(pathlib.Path(path), kind)() != expected:
-        raise RuntimeError('scientific path observation changed during batch')
+        raise RuntimeError('scientific path observation changed during batch: ' + str(path))
 # All previously terminal native records are immutable scientific evidence.
 # Newly terminal records are allowed as the canonical owner advances work.
 states = []
@@ -285,22 +393,21 @@ for path, state in snapshots.items():
                    'manifest_path': state.get('manifest_path'),
                    'manifest_revisions': state.get('manifest_revisions', [])})
     del files[path]
-print(json.dumps({'jobs': jobs, 'proof': {'files': files, 'directories': directories, 'states': states, 'observations': [{'path': path, 'kind': kind, 'value': value} for (path, kind), value in observations.items()]}}, sort_keys=True))
+print(json.dumps({'jobs': jobs, 'proof': {'files': files, 'directories': directories, 'states': states, 'metadata': metadata, 'observations': [{'path': path, 'kind': kind, 'value': value} for (path, kind), value in observations.items()]}}, sort_keys=True))
 """
 
 
 def verify_read_proof(proof):
     """Rehash immutable science; permit unrelated native state transitions."""
     for path, expected in proof['files'].items():
-        path = absolute(path)
-        require(file_identity(path.stat()) == expected['identity'],
+        require(read_path_identity(path) == expected['path_identity'],
                 'cached scientific evidence changed: ' + str(path))
     for path, expected in proof['directories'].items():
-        directory = absolute(path)
-        require(sorted(item.name for item in directory.iterdir()) == expected,
-                'cached scientific artifact set changed: ' + path)
-        require(not any(item.is_symlink() for item in directory.iterdir()),
-                'cached scientific artifact symlink changed: ' + path)
+        require(read_directory_identity(path) == expected,
+                'cached scientific artifact set changed: ' + str(path))
+    for path, expected in proof['metadata'].items():
+        require(read_path_identity(path) == expected,
+                'cached scientific file metadata changed: ' + str(path))
     for observation in proof['observations']:
         path = Path(observation['path'])
         require(getattr(path, observation['kind'])() == observation['value'],
