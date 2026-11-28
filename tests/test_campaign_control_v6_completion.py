@@ -895,7 +895,9 @@ for key in ('source_hash','config_hash','data_hash','model_hash'):receipt[key]=o
             return result
     control = Control()
     control.root, control.data_root, control.engine = supervisor.root, supervisor.data_root, engine
-    control.physical = {'supervisor': physical}
+    control.supervisor = supervisor
+    control.physical = {'supervisor': physical, 'worker': supervisor.root / 'worker.lock',
+                        'gpu': supervisor.root / 'gpu-fixture.lock'}
     result = owner.serve(control, interval_seconds=.02, heartbeat_seconds=.01, stop_event=stop)
     assert result['status'] == 'STOPPED' and result['ticks_completed'] >= 3
     assert all(results[-1]['jobs'][job['job_id']]['status'] == 'SUCCEEDED' for job in jobs)
@@ -1223,3 +1225,259 @@ def test_direct_verify_does_not_leave_an_epoch_for_later_calls(epoch_fixture):
     f.science.science.write_text('changed after direct verification')
     with pytest.raises(ValueError, match='scientific evidence changed'):
         f.control._completion_chain()
+
+
+def observation_fixture_control(tmp_path, record_identity=None, health=None):
+    control = service_fixture_control(tmp_path, lambda _: pytest.fail('healthy observer cannot tick'))
+    control.physical.update(worker=control.root / 'physical-worker.lock', gpu=control.root / 'physical-gpu.lock')
+    for path in control.physical.values():
+        with engine.try_lock(path):
+            pass
+    attempt = control.root / 'attempts/v6-fixture/0001'
+    attempt.mkdir(parents=True)
+    if health is not None:
+        write(attempt / 'heartbeat.json', health)
+    state = {'campaign_id': 'fixture', 'queue_owner': 'supervisor', 'updated_at': 'unchanged',
+             'jobs': {'v6-fixture': {'status': 'RUNNING', 'attempt_dir': str(attempt),
+                                    'worker_identity': record_identity, 'attempts': 1}}}
+    write(control.supervisor.state_path, state)
+    return control, attempt
+
+
+@pytest.mark.parametrize('live_source', ['record', 'heartbeat_worker', 'child'])
+def test_readonly_observer_checks_each_identity_independently(tmp_path, live_source):
+    actual = engine.process_identity()
+    dead = {**actual, 'worker_pid': 99999999, 'process_start_time': '0'}
+    control, _ = observation_fixture_control(tmp_path,
+        record_identity=actual if live_source == 'record' else dead,
+        health={'worker_identity': actual if live_source == 'heartbeat_worker' else dead,
+                'child_identity': actual if live_source == 'child' else dead})
+    before = control.supervisor.state_path.read_bytes()
+    modified = control.supervisor.state_path.stat().st_mtime_ns
+    for _ in range(3):
+        result = owner.observe_native_worker(control)
+        assert result['live_jobs'] == ['v6-fixture']
+    assert control.supervisor.state_path.read_bytes() == before
+    assert control.supervisor.state_path.stat().st_mtime_ns == modified
+
+
+@pytest.mark.parametrize('lease_name', ['worker', 'gpu'])
+def test_unknown_retained_lease_blocks_tick_with_corrupt_heartbeat(tmp_path, lease_name):
+    control, attempt = observation_fixture_control(tmp_path)
+    (attempt / 'heartbeat.json').write_text('{incomplete heartbeat')
+    with engine.try_lock(control.physical[lease_name]):
+        result = owner.observe_native_worker(control)
+        assert result['reason'] == 'UNKNOWN_RETAINED_LEASE'
+        assert result['lease_busy'] == [lease_name] and result['live_jobs'] == []
+    assert owner.observe_native_worker(control) is None
+
+
+def test_real_native_transaction_survives_repeated_service_observations(tmp_path, monkeypatch):
+    import threading
+    from mediflow_medvlm import campaign_v6_completion as worker
+    control, _ = observation_fixture_control(tmp_path, record_identity=engine.process_identity())
+    stop = threading.Event()
+    observed = []
+    native = owner.observe_native_worker
+    def observe(control):
+        result = native(control)
+        observed.append(result)
+        if len(observed) == 4:
+            stop.set()
+        return result
+    monkeypatch.setattr(owner, 'observe_native_worker', observe)
+    before = control.supervisor.state_path.read_bytes()
+    modified = control.supervisor.state_path.stat().st_mtime_ns
+    @worker._transaction
+    def native_audit():
+        worker._track_pins([worker._reference(control.supervisor.state_path)])
+        result = owner.serve(control, interval_seconds=.005, heartbeat_seconds=.005, stop_event=stop)
+        worker._track_pins([worker._reference(control.supervisor.state_path)])
+        return result
+    result = native_audit()
+    assert result['ticks_completed'] == 0 and result['observations_completed'] == 4
+    assert 'last_tick_completed_at' not in result
+    assert result['last_observation_completed_at']
+    assert control.supervisor.state_path.read_bytes() == before
+    assert control.supervisor.state_path.stat().st_mtime_ns == modified
+
+
+def test_dead_raw_running_and_free_leases_allow_reconcile_tick(tmp_path):
+    import threading
+    control, _ = observation_fixture_control(tmp_path)
+    stop = threading.Event()
+    calls = []
+    def tick(command):
+        calls.append(command)
+        stop.set()
+        return {'jobs': {}}
+    control.call = tick
+    result = owner.serve(control, interval_seconds=.005, heartbeat_seconds=.005, stop_event=stop)
+    assert calls == ['tick'] and result['ticks_completed'] == 1
+    assert result['observations_completed'] == 0
+
+
+@pytest.fixture
+def controller_recovery_fixture(tmp_path):
+    supervisor = engine.Supervisor(tmp_path / 'data')
+    root = supervisor.root
+    source = root / 'snapshots' / ('3' * 40)
+    source.mkdir(parents=True)
+    module = source / 'src/mediflow_medvlm/campaign_v6_completion.py'
+    module.parent.mkdir(parents=True)
+    module.write_text('# CPU controller recovery fixture\n')
+    wrapper = source / 'src/mediflow_medvlm/campaign_supervisor.py'
+    wrapper.parent.mkdir(parents=True, exist_ok=True)
+    wrapper.write_text('# pinned native worker wrapper fixture\n')
+    source_files = {str(module.relative_to(source)): owner.file_hash(module),
+                    str(wrapper.relative_to(source)): owner.file_hash(wrapper)}
+    jobs = []
+    for index, key in enumerate(owner.CONTROLLER_RECOVERY_IDS):
+        config = {'job_id': key, 'kind': 'telemetry_import' if index == 0 else 'evaluation',
+                  'uses_gpu': bool(index), 'output_dir': str(root / 'completion' / key),
+                  'success_receipt': str(root / 'receipts' / (key + '.json'))}
+        path = write(root / 'configs' / (key + '.json'), config)
+        jobs.append({'job_id': key, 'run_id': key, 'kind': config['kind'], 'phase': config['kind'],
+                     'cell_id': 'T1', 'role': 'base' if index == 0 else 'tuned', 'seed': 20261023,
+                     'uses_gpu': bool(index), 'implementation_pending': False, 'gpu_lock_mode': 'wrapper',
+                     'argv': [sys.executable, '-m', 'mediflow_medvlm.campaign_v6_completion', '--config', str(path), '--receipt', config['success_receipt']],
+                     'cwd': str(source), 'source_files': source_files, 'source_hash': owner.digest(source_files),
+                     'config_hash': owner.digest(config), 'data_hash': 'same-data', 'model_hash': 'same-model',
+                     'success_receipt': config['success_receipt'], 'dependencies': []})
+    for index in range(196):
+        jobs.append({'job_id': 'protected-' + str(index), 'run_id': 'protected-' + str(index),
+                     'phase': 'protected', 'cell_id': 'PROTECTED', 'implementation_pending': True, 'dependencies': []})
+    supervisor.initialize({'campaign_id': root.name, 'jobs': jobs})
+    manifest, state = engine.Supervisor.load(supervisor)
+    dead = {'worker_pid': 99999999, 'process_start_time': '0', 'boot_identity': 'dead-fixture-boot'}
+    for index, key in enumerate(owner.CONTROLLER_RECOVERY_IDS):
+        record = state['jobs'][key]
+        attempt = root / 'attempts' / key / '0001'
+        record.update(status='FAILED' if index == 0 else 'RUNNING', attempts=1,
+                      failure_count=1 if index == 0 else 0, recovery_attempts=0,
+                      attempt_dir=str(attempt), launch_token='token-' + str(index), worker_identity=dead)
+        if index == 0:
+            record.update(failure_domain='telemetry_reconstruction', telemetry_coverage='INDETERMINATE', scientific_failure=False)
+            record['history'] = [{'status': 'FAILED', 'attempt': 1}, {'status': 'TELEMETRY_RECONSTRUCTION_FAILED', 'automatic_reimport_allowed': False}]
+        write(attempt / 'launch.json', {'campaign_id': state['campaign_id'], 'attempt': 1,
+              'launch_token': record['launch_token'], 'job': jobs[index], 'job_hash': owner.digest(jobs[index])})
+        write(attempt / 'exit.json', {'status': 'EXITED', 'exit_code': 1, 'launch_token': record['launch_token'],
+              'worker_identity': dead, 'child_identity': dead})
+        write(attempt / 'heartbeat.json', {'worker_identity': dead, 'child_identity': dead})
+        write(attempt / 'stderr.log', {'status': 'FAILED', 'exception_type': 'GateError', 'reason_code': 'COMPLETION_REFERENCE_CONFLICT_IN_AUDIT'})
+    write(supervisor.state_path, state)
+    proof = {'files': {}, 'directories': {}, 'metadata': {}, 'observations': [],
+             'states': [{'path': str(supervisor.state_path), 'campaign_id': state['campaign_id'], 'queue_owner': state['queue_owner'],
+                         'manifest_hash': state['manifest_hash'], 'manifest_path': state['manifest_path'],
+                         'manifest_revisions': state.get('manifest_revisions', []),
+                         'records': {owner.CONTROLLER_RECOVERY_IDS[0]: copy.deepcopy(state['jobs'][owner.CONTROLLER_RECOVERY_IDS[0]])}}]}
+    class Control:
+        def _verify(self, **kwargs):
+            owner.verify_read_proof(proof)
+        def _validate_live(self, manifest, state):
+            assert owner.digest(manifest) == state['manifest_hash']
+            assert set(state['jobs']) == {job['job_id'] for job in manifest['jobs']}
+        def _quiescent(self, state, *, allow_dead_running):
+            assert allow_dead_running
+            for record in state['jobs'].values():
+                health = owner.read(Path(record['attempt_dir']) / 'heartbeat.json') if record.get('attempt_dir') else {}
+                owner.require(not any(engine.same_process(identity) for identity in
+                              (record.get('worker_identity'), health.get('worker_identity'), health.get('child_identity'))), 'live native worker')
+        def _physical_lock(self, path):
+            return engine.try_lock(path)
+        def _completion_chain(self):
+            owner.verify_read_proof(proof)
+            return self._completion_cache
+    control = Control()
+    control.root, control.data_root, control.engine, control.supervisor = root, supervisor.data_root, engine, supervisor
+    control.physical = {'worker': root / 'worker.lock', 'gpu': root / 'gpu.lock'}
+    control._completion_cache = ['validated immutable completion chain']
+    control._scientific_proofs = {'realistic-terminal-state-proof': proof}
+    owner.install_supervisor(control)
+    evidence = write(tmp_path / 'cpu-evidence.json', {'cpu_only': True, 'exact_conflict_reproduced': True})
+    receipt = {'schema_version': owner.CONTROLLER_RECOVERY_SCHEMA, 'campaign_root': str(root), 'data_root': str(control.data_root),
+               'parent_manifest': owner.reference(state['manifest_path']), 'manifest_hash': state['manifest_hash'],
+               'parent_state_sha256': owner.file_hash(supervisor.state_path), 'job_ids': owner.CONTROLLER_RECOVERY_IDS,
+               'controller_operator': owner.reference(Path(owner.__file__).resolve()),
+               'review': {'status': 'CPU_VALIDATED', 'cause': owner.CONTROLLER_RECOVERY_CAUSE, 'evidence': [owner.reference(evidence)]},
+               'targets': {}}
+    for index, key in enumerate(owner.CONTROLLER_RECOVERY_IDS):
+        attempt = Path(state['jobs'][key]['attempt_dir'])
+        receipt['targets'][key] = {'job_hash': owner.digest(jobs[index]), 'config': owner.reference(jobs[index]['argv'][4]),
+                                  'record_hash': owner.digest(state['jobs'][key]),
+                                  **{name: owner.reference(attempt / filename) for name, filename in
+                                     (('launch', 'launch.json'), ('exit', 'exit.json'), ('stderr', 'stderr.log'))}}
+    receipt_path = write(tmp_path / 'recovery-review.json', receipt)
+    return SimpleNamespace(control=control, supervisor=supervisor, before=state, manifest=manifest, jobs=jobs,
+                           receipt=receipt, receipt_path=receipt_path, ref=owner.reference(receipt_path), proof=proof)
+
+
+def test_exact_controller_recovery_preserves_manifest_records_and_monotonic_counters(controller_recovery_fixture):
+    f = controller_recovery_fixture
+    manifest_bytes = Path(f.before['manifest_path']).read_bytes()
+    result = f.supervisor.recover_controller(f.ref)
+    assert result['status'] == 'CONTROLLER_COMPATIBILITY_RECOVERED' and result['no_dispatch']
+    after = owner.read(f.supervisor.state_path)
+    assert Path(f.before['manifest_path']).read_bytes() == manifest_bytes
+    for key, before in f.before['jobs'].items():
+        record = after['jobs'][key]
+        if key not in owner.CONTROLLER_RECOVERY_IDS:
+            assert record == before
+            continue
+        assert record['status'] == 'PENDING' and record['attempts'] == 1
+        assert record['failure_count'] == 1 and record['recovery_attempts'] == 0
+        assert record['history'][:len(before['history'])] == before['history']
+        assert record['history'][-1]['status'] == owner.CONTROLLER_RECOVERY_EVENT
+    assert after['jobs'][owner.CONTROLLER_RECOVERY_IDS[0]]['telemetry_coverage'] == 'INDETERMINATE'
+    assert len(after['controller_recoveries']) == 1
+    assert f.control._completion_cache is None and f.control._scientific_proofs == {}
+    with pytest.raises(ValueError, match='terminal evidence changed'):
+        owner.verify_read_proof(f.proof)
+    # Next native load accepts the registration audit and the same 198 jobs.
+    assert engine.Supervisor.load(f.supervisor)[1] == after
+    f.control._verify = lambda **kwargs: None  # Standalone next call rebuilds before reaching replay.
+    before_replay = f.supervisor.state_path.read_bytes()
+    assert f.supervisor.recover_controller(f.ref)['status'] == 'CONTROLLER_RECOVERY_ALREADY_AUTHORIZED'
+    assert f.supervisor.state_path.read_bytes() == before_replay
+
+
+@pytest.mark.parametrize('block', ['worker', 'gpu', 'live', 'intent', 'dangling-intent', 'receipt', 'output', 'staging', 'config', 'exit', 'stderr', 'protected-state'])
+def test_controller_recovery_rejects_busy_or_changed_evidence_without_mutation(controller_recovery_fixture, block):
+    import os
+    f = controller_recovery_fixture
+    key = owner.CONTROLLER_RECOVERY_IDS[0]
+    config = owner.read(f.jobs[0]['argv'][4])
+    output = Path(config['output_dir'])
+    held = None
+    try:
+        if block in ('worker', 'gpu'):
+            held = engine.try_lock(f.control.physical[block])
+            held.__enter__()
+        elif block == 'live':
+            write(Path(f.before['jobs'][key]['attempt_dir']) / 'heartbeat.json', {'child_identity': engine.process_identity()})
+        elif block in ('intent', 'dangling-intent'):
+            path = output.with_name(output.name + '.import-intent.json')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if block == 'intent':
+                path.write_text('{"status":"STARTED"}')
+            else:
+                path.symlink_to(path.parent / 'missing')
+        elif block == 'receipt':
+            write(Path(f.jobs[0]['success_receipt']), {'status': 'SUCCEEDED'})
+        elif block in ('output', 'staging'):
+            path = output if block == 'output' else output.with_name(output.name + '.attempt-interrupted')
+            path.mkdir(parents=True)
+        elif block == 'protected-state':
+            state = owner.read(f.supervisor.state_path)
+            state['jobs']['protected-0']['attempts'] = 9
+            write(f.supervisor.state_path, state)
+        else:
+            path = Path(f.jobs[0]['argv'][4]) if block == 'config' else Path(f.receipt['targets'][key][block]['path'])
+            path.write_text('{}')
+        before = f.supervisor.state_path.read_bytes()
+        with pytest.raises((ValueError, OSError)):
+            f.supervisor.recover_controller(f.ref)
+        assert f.supervisor.state_path.read_bytes() == before
+    finally:
+        if held is not None:
+            held.__exit__(None, None, None)

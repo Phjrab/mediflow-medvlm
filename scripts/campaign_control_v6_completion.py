@@ -37,6 +37,10 @@ REPAIR_IDS = [*REPAIR_TRAIN_IDS, 'v6-additional_seeds']
 REPAIR_SOURCE = 'src/mediflow_medvlm/campaign_v6_completion.py'
 ANCHORS = {'v6-family_selection', 'v6-additional_seeds', 'v6-test', 'v6-report'}
 MODULES = {'mediflow_medvlm.campaign_family_selection', 'mediflow_medvlm.campaign_v6_completion'}
+CONTROLLER_RECOVERY_SCHEMA = 'mediflow.canonical-controller-state-conflict-recovery.v1'
+CONTROLLER_RECOVERY_IDS = ['v6-test-telemetry-T1-base-20261023', 'v6-test-T1-tuned-20261023']
+CONTROLLER_RECOVERY_EVENT = 'CONTROLLER_STATE_CONFLICT_RECOVERY_AUTHORIZED'
+CONTROLLER_RECOVERY_CAUSE = 'HEALTHY_TICK_REWROTE_MUTABLE_STATE_DURING_NATIVE_AUDIT'
 
 
 def require(ok, reason):
@@ -752,18 +756,24 @@ class CompletionMixin:
             result = self._completion_call(command, manifest=manifest, job_id=job_id, receipt=receipt)
             # Recheck the immutable closure once after native work as well. Queue
             # state is always read fresh and uses its existing semantic checks.
-            self._completion_validation_epoch = {}
-            self._completion_chain()
+            if command != 'recover-controller':
+                self._completion_validation_epoch = {}
+                self._completion_chain()
             return result
         finally:
             self._completion_call_active = previous_active
             self._completion_validation_epoch = previous_epoch
 
     def _completion_call(self, command, *, manifest=None, job_id=None, receipt=None):
-        require(command in {'status', 'tick', 'refine-completion'} and job_id is None and receipt is None,
+        require(command in {'status', 'tick', 'refine-completion', 'recover-controller'} and job_id is None
+                and ((receipt is not None) if command == 'recover-controller' else receipt is None),
                 'only canonical status/tick/reviewed completion refinement supported')
         self._verify()
         self._registered()
+        if command == 'recover-controller':
+            require(manifest is None, 'controller recovery cannot replace a manifest')
+            with self.routed_locks():
+                return self.supervisor.recover_controller(receipt)
         if command != 'refine-completion':
             require(manifest is None, 'unexpected manifest')
             # Bypass only the old facade's exact 97-job *routing* restriction.
@@ -779,10 +789,156 @@ class CompletionMixin:
             return self.supervisor.refine_completion(ref, binding, parent, replacement)
 
 
+def recover_controller_state(owner, supervisor, receipt_ref):
+    """One reviewed two-job repair of controller-caused, preexecution failures."""
+    engine = owner.engine
+    with engine.try_lock(owner.root / 'supervisor.lock') as lock:
+        if lock is None:
+            return {'status': 'SUPERVISOR_BUSY'}
+        owner._verify()
+        with ExitStack() as leases:
+            for name in ('worker', 'gpu'):
+                require(leases.enter_context(owner._physical_lock(owner.physical[name])) is not None,
+                        'canonical worker/GPU lease busy; refuse controller recovery')
+            manifest, state = engine.Supervisor.load(supervisor)
+            owner._validate_live(manifest, state)
+            owner._quiescent(state, allow_dead_running=True)
+            review = pinned(receipt_ref)
+            require(review.get('schema_version') == CONTROLLER_RECOVERY_SCHEMA
+                    and review.get('campaign_root') == str(owner.root)
+                    and review.get('data_root') == str(owner.data_root)
+                    and review.get('job_ids') == CONTROLLER_RECOVERY_IDS
+                    and set(review.get('targets', {})) == set(CONTROLLER_RECOVERY_IDS)
+                    and len(manifest['jobs']) == 198 and state.get('queue_owner') == 'supervisor',
+                    'exact reviewed two-job 198-job controller recovery required')
+            require(review.get('controller_operator') == reference(Path(__file__).resolve()),
+                    'recovery must pin this executing controller with read-only worker observation')
+            require(review.get('parent_manifest') == reference(state['manifest_path'])
+                    and review.get('manifest_hash') == digest(manifest) == state['manifest_hash'],
+                    'controller recovery manifest/source/config namespace immutable')
+            cpu = review.get('review', {})
+            require(cpu.get('status') == 'CPU_VALIDATED' and cpu.get('cause') == CONTROLLER_RECOVERY_CAUSE
+                    and bool(cpu.get('evidence')), 'CPU-reviewed exact mutable-state conflict evidence required')
+            for proof in cpu['evidence']:
+                pin_bytes(proof)
+            jobs = {job['job_id']: job for job in manifest['jobs']}
+            prior_events = [event for event in state.get('controller_recoveries', [])
+                            if event.get('receipt') == receipt_ref]
+            if prior_events:
+                require(len(prior_events) == 1 and prior_events[0].get('kind') == CONTROLLER_RECOVERY_EVENT
+                        and prior_events[0].get('job_ids') == CONTROLLER_RECOVERY_IDS
+                        and prior_events[0].get('manifest_hash') == state['manifest_hash'],
+                        'exact prior controller recovery authorization required')
+                event = prior_events[0]
+                for key in CONTROLLER_RECOVERY_IDS:
+                    record = state['jobs'][key]
+                    parent = event.get('parent_records', {}).get(key, {})
+                    prefix = parent.get('history', [])
+                    require(digest(parent) == review['targets'][key]['record_hash']
+                            and record.get('history', [])[:len(prefix)] == prefix,
+                            'exact pinned parent history must remain a prefix')
+                    require(all(record[name] >= value for name, value in event['after_counters'][key].items())
+                            and any(item.get('status') == CONTROLLER_RECOVERY_EVENT
+                                    and item.get('receipt_sha256') == receipt_ref['sha256']
+                                    for item in record.get('history', [])), 'recovery counters/history cannot reset')
+                return {'status': 'CONTROLLER_RECOVERY_ALREADY_AUTHORIZED', 'receipt': receipt_ref,
+                        'manifest_hash': state['manifest_hash'], 'jobs': {key: state['jobs'][key] for key in CONTROLLER_RECOVERY_IDS},
+                        'no_dispatch': True}
+            require(file_hash(supervisor.state_path) == review.get('parent_state_sha256'),
+                    'exact unchanged controller recovery parent state required')
+            before = copy.deepcopy(state)
+            for key in CONTROLLER_RECOVERY_IDS:
+                job, record, target = jobs[key], state['jobs'][key], review['targets'][key]
+                require(target.get('job_hash') == digest(job) and target.get('record_hash') == digest(record)
+                        and target.get('config') == reference(job['argv'][4]),
+                        'exact unchanged target declaration/config/record required')
+                config = pinned(target['config'])
+                telemetry = key == CONTROLLER_RECOVERY_IDS[0]
+                require(job.get('kind') == ('telemetry_import' if telemetry else 'evaluation')
+                        and job.get('uses_gpu') is (not telemetry) and job.get('cell_id') == 'T1'
+                        and job.get('role') == ('base' if telemetry else 'tuned')
+                        and job.get('seed') == 20261023 and record.get('attempts') == 1
+                        and record.get('failure_count') == (1 if telemetry else 0)
+                        and record.get('recovery_attempts') == 0
+                        and record.get('status') == ('FAILED' if telemetry else 'RUNNING'),
+                        'only the exact first controller-conflict attempts may recover')
+                if telemetry:
+                    require(record.get('failure_domain') == 'telemetry_reconstruction'
+                            and record.get('telemetry_coverage') == 'INDETERMINATE'
+                            and record.get('scientific_failure') is False,
+                            'preserve exact CPU telemetry failure disposition')
+                attempt = absolute(record['attempt_dir'])
+                require(attempt == owner.root / 'attempts' / key / '0001', 'exact first native attempt required')
+                for name, filename in (('launch', 'launch.json'), ('exit', 'exit.json'), ('stderr', 'stderr.log')):
+                    require(target.get(name) == reference(attempt / filename), 'exact native attempt evidence pin required')
+                launch, exited, stderr = (pinned(target[name]) for name in ('launch', 'exit', 'stderr'))
+                require(launch.get('campaign_id') == state['campaign_id'] and launch.get('attempt') == 1
+                        and launch.get('launch_token') == record.get('launch_token') == exited.get('launch_token')
+                        and launch.get('job') == job and launch.get('job_hash') == digest(job)
+                        and exited.get('status') == 'EXITED' and exited.get('exit_code') == 1
+                        and exited.get('worker_identity') == record.get('worker_identity')
+                        and stderr == {'status': 'FAILED', 'exception_type': 'GateError',
+                                       'reason_code': 'COMPLETION_REFERENCE_CONFLICT_IN_AUDIT'},
+                        'exact preexecution native mutable-state conflict proof required')
+                health = read(attempt / 'heartbeat.json') if (attempt / 'heartbeat.json').exists() else {}
+                require(not any(engine.same_process(identity) for identity in
+                        (record.get('worker_identity'), health.get('worker_identity'), health.get('child_identity'),
+                         exited.get('worker_identity'), exited.get('child_identity'))),
+                        'live native worker/child forbids controller recovery')
+                output = absolute(config['output_dir'])
+                require(output.is_relative_to(owner.root), 'target output escaped owner namespace')
+                intent = output.with_name(output.name + '.import-intent.json')
+                absence = (absolute(job['success_receipt']), output, intent,
+                           intent.with_suffix(intent.suffix + '.lock'), output.with_name(output.name + '.worker.lock'))
+                require(all(not os.path.lexists(path) for path in absence)
+                        and not list(output.parent.glob(output.name + '.attempt-*'))
+                        and not list(output.parent.glob(output.name + '.failed-*')),
+                        'receipt/output/staging/import intent exists; never reimport or rerun executed work')
+            require(file_hash(supervisor.state_path) == review['parent_state_sha256'],
+                    'controller recovery parent changed during locked evidence audit')
+            at = engine.now()
+            counters = ('attempts', 'failure_count', 'recovery_attempts')
+            for key in CONTROLLER_RECOVERY_IDS:
+                record = state['jobs'][key]
+                if key == CONTROLLER_RECOVERY_IDS[1]:
+                    # Invoke only the native failure transition, never the source-
+                    # cohort hold hook. No scientific implementation changed.
+                    engine.Supervisor._failure(supervisor, record, CONTROLLER_RECOVERY_CAUSE, 1)
+                record['history'].append({'status': CONTROLLER_RECOVERY_EVENT,
+                    'receipt_sha256': receipt_ref['sha256'], 'cause': CONTROLLER_RECOVERY_CAUSE,
+                    'preexecution_only': True, 'importer_called': False, 'at': at})
+                record.update(status='PENDING', controller_recovery_receipt_sha256=receipt_ref['sha256'])
+            require(all(state['jobs'][key] == record for key, record in before['jobs'].items()
+                        if key not in CONTROLLER_RECOVERY_IDS), 'protected native records must remain unchanged')
+            event = {'kind': CONTROLLER_RECOVERY_EVENT, 'receipt': receipt_ref,
+                     'job_ids': CONTROLLER_RECOVERY_IDS, 'manifest_hash': state['manifest_hash'], 'at': at,
+                     'parent_records': {key: before['jobs'][key] for key in CONTROLLER_RECOVERY_IDS},
+                     'before_counters': {key: {name: before['jobs'][key][name] for name in counters} for key in CONTROLLER_RECOVERY_IDS},
+                     'after_counters': {key: {name: state['jobs'][key][name] for name in counters} for key in CONTROLLER_RECOVERY_IDS}}
+            state.setdefault('controller_recoveries', []).append(event)
+            state['updated_at'] = at
+            owner._completion_validation_epoch = {}
+            owner._completion_chain()
+            require(file_hash(supervisor.state_path) == review['parent_state_sha256'],
+                    'controller recovery parent changed before atomic authorization')
+            engine.atomic_json(supervisor.state_path, state)
+            # This explicit reviewed transition changes a previously terminal
+            # record. Drop all scientific proofs; the next call must rebuild.
+            owner._completion_cache = None
+            owner._scientific_proofs = {}
+            owner._completion_validation_epoch = {}
+            return {'status': 'CONTROLLER_COMPATIBILITY_RECOVERED', 'receipt': receipt_ref,
+                    'manifest_hash': state['manifest_hash'], 'jobs': {key: state['jobs'][key] for key in CONTROLLER_RECOVERY_IDS},
+                    'no_dispatch': True, 'scientific_proofs_invalidated': True}
+
+
 def install_supervisor(control):
     owner, engine, inherited = control, control.engine, type(control.supervisor)
 
     class CompletionSupervisor(inherited):
+        def recover_controller(self, receipt_ref):
+            return recover_controller_state(owner, self, receipt_ref)
+
         def load(self):
             # Validate the full native view before inherited V7 dispatch projection.
             manifest, state = engine.Supervisor.load(self)
@@ -979,6 +1135,49 @@ def prepare_repair_binding(deployment,parent_manifest,replacement_manifest,state
     return value
 
 
+def observe_native_worker(control):
+    """Read-only observation: a live identity OR retained lease forbids tick.
+
+    Frozen workers audit canonical state bytes. Native tick rewrites those bytes
+    even for a healthy worker, so the persistent owner waits without calling it.
+    """
+    state_path = absolute(control.supervisor.state_path)
+    if not state_path.exists():
+        return None
+    state = read(state_path)
+    live, progress = [], {}
+    for key, record in state.get('jobs', {}).items():
+        if record.get('status') not in {'STARTING', 'RUNNING'}:
+            continue
+        health = {}
+        if record.get('attempt_dir'):
+            attempt = absolute(record['attempt_dir'])
+            require(attempt.is_relative_to(control.root / 'attempts' / key), 'worker attempt escaped owner namespace')
+            try:
+                health = read(attempt / 'heartbeat.json')
+                if not isinstance(health, dict):
+                    health = {}
+            except (OSError, ValueError):
+                health = {}
+        identities = (record.get('worker_identity'), health.get('worker_identity'), health.get('child_identity'))
+        if any(control.engine.same_process(identity) for identity in identities):
+            live.append(key)
+        progress[key] = {'record_worker_identity': record.get('worker_identity'),
+                         **{name: health.get(name) for name in
+                            ('worker_identity', 'child_identity', 'heartbeat_at', 'last_progress_at',
+                             'optimizer_step', 'total_updates', 'last_complete_checkpoint')}}
+    busy = []
+    for name in ('worker', 'gpu'):
+        require(name in control.physical, 'canonical physical worker/GPU lease route required')
+        with control._physical_lock(control.physical[name]) as lease:
+            if lease is None:
+                busy.append(name)
+    if not live and not busy:
+        return None
+    return {'state': state, 'live_jobs': live, 'lease_busy': busy, 'progress': progress,
+            'reason': 'LIVE_NATIVE_IDENTITY' if live else 'UNKNOWN_RETAINED_LEASE'}
+
+
 def service_status(status_path):
     """Read-only telemetry; this endpoint never constructs or ticks an owner."""
     value = read(status_path)
@@ -1044,7 +1243,7 @@ def serve(control, *, interval_seconds=10.0, heartbeat_seconds=5.0, status_path=
         telemetry = {'schema_version': 'mediflow.canonical-supervisor-service.v1',
                      'status': 'STARTING', 'scope': 'V6_ONLY', 'v7_policy': 'MANUAL',
                      'process_identity': control.engine.process_identity(),
-                     'interval_seconds': interval_seconds, 'ticks_completed': 0,
+                     'interval_seconds': interval_seconds, 'ticks_completed': 0, 'observations_completed': 0,
                      'canonical_supervisor_lock': str(physical),
                      'campaign_root': str(control.root), 'data_root': str(control.data_root)}
         heartbeat_error = []
@@ -1073,27 +1272,43 @@ def serve(control, *, interval_seconds=10.0, heartbeat_seconds=5.0, status_path=
             thread.start()
             while not stop_event.is_set():
                 started = time.monotonic()
-                publish(status='TICKING', tick_started_at=control.engine.now())
-                result = control.call('tick')
+                with control._physical_lock(physical) as current_guard:
+                    require(current_guard is held, 'same held canonical supervisor stream required')
+                observation = observe_native_worker(control)
+                if observation is None:
+                    publish(status='TICKING', tick_started_at=control.engine.now())
+                    result = control.call('tick')
+                    telemetry['ticks_completed'] += 1
+                else:
+                    result = observation['state']
+                    telemetry['observations_completed'] += 1
                 require(not heartbeat_error, 'service heartbeat failed')
                 jobs = result.get('jobs', {})
-                running = [key for key, record in jobs.items() if record.get('status') in {'STARTING', 'RUNNING'}]
+                running = (observation['live_jobs'] if observation is not None else
+                           [key for key, record in jobs.items() if record.get('status') in {'STARTING', 'RUNNING'}])
                 held_jobs = {key: record.get('status') for key, record in jobs.items()
                              if key.startswith('v6-') and record.get('status') in
                              {'IMPLEMENTATION_PENDING', 'ANALYSIS_REQUIRED', 'BLOCKED_PREREQUISITE', 'FAILED'}}
                 held_reasons = {key: {field: record[field] for field in
                                 ('error_signature', 'source_repair_required', 'failed_source_hash', 'blocked_by', 'reason')
                                 if field in record} for key, record in jobs.items() if key in held_jobs}
-                publish(status='RUNNING' if running else 'BLOCKED' if held_jobs else 'IDLE',
-                        ticks_completed=telemetry['ticks_completed'] + 1,
-                        last_tick_completed_at=control.engine.now(),
-                        last_tick_seconds=round(time.monotonic() - started, 6),
+                cycle_seconds = round(time.monotonic() - started, 6)
+                timing = ({'last_observation_completed_at': control.engine.now(), 'last_observation_seconds': cycle_seconds}
+                          if observation is not None else
+                          {'last_tick_completed_at': control.engine.now(), 'last_tick_seconds': cycle_seconds})
+                publish(status='RUNNING' if running else 'WAITING_NATIVE_LEASE' if observation is not None else 'BLOCKED' if held_jobs else 'IDLE',
+                        ticks_completed=telemetry['ticks_completed'],
+                        observations_completed=telemetry['observations_completed'],
+                        observation=({key: value for key, value in observation.items() if key != 'state'}
+                                     if observation is not None else None),
+                        last_cycle_completed_at=control.engine.now(), last_cycle_seconds=cycle_seconds,
+                        **timing,
                         running_jobs=running, held_v6_jobs=held_jobs, held_v6_reasons=held_reasons,
                         native_status=result.get('status'), error=None)
-                print(json.dumps({'event': 'CANONICAL_SUPERVISOR_TICK',
+                print(json.dumps({'event': 'CANONICAL_SUPERVISOR_OBSERVE' if observation is not None else 'CANONICAL_SUPERVISOR_TICK',
                       'status': telemetry['status'], 'ticks_completed': telemetry['ticks_completed'],
                       'running_jobs': running, 'held_v6_jobs': held_jobs,
-                      'duration_seconds': telemetry['last_tick_seconds']}, sort_keys=True), flush=True)
+                      'duration_seconds': cycle_seconds}, sort_keys=True), flush=True)
                 stop_event.wait(max(0, interval_seconds - (time.monotonic() - started)))
             require(not heartbeat_error, 'service heartbeat failed')
             publish(status='STOPPED')
@@ -1133,13 +1348,18 @@ def main(argv=None):
     parser.add_argument('--completion-binding')
     parser.add_argument('--completion-binding-sha256')
     parser.add_argument('--scope', choices=['auto'], default='auto')
-    parser.add_argument('command', choices=['status', 'tick', 'refine-completion', 'serve', 'service-status'])
+    parser.add_argument('command', choices=['status', 'tick', 'refine-completion', 'serve', 'service-status', 'recover-controller'])
     parser.add_argument('--manifest')
+    parser.add_argument('--recovery-receipt')
+    parser.add_argument('--recovery-receipt-sha256')
     parser.add_argument('--status-file')
     parser.add_argument('--interval-seconds', type=float, default=10.0)
     parser.add_argument('--heartbeat-seconds', type=float, default=5.0)
     args = vars(parser.parse_args(argv))
     command, manifest = args.pop('command'), args.pop('manifest')
+    recovery_path, recovery_sha = args.pop('recovery_receipt'), args.pop('recovery_receipt_sha256')
+    require((command == 'recover-controller') == (recovery_path is not None and recovery_sha is not None)
+            and ((recovery_path is None) == (recovery_sha is None)), 'exact recovery command/receipt SHA pair required')
     status_path = args.pop('status_file')
     interval, heartbeat = args.pop('interval_seconds'), args.pop('heartbeat_seconds')
     if command == 'service-status':
@@ -1154,7 +1374,9 @@ def main(argv=None):
             result = serve(control, interval_seconds=interval, heartbeat_seconds=heartbeat, status_path=status_path)
         else:
             require(status_path is None, 'status file is only supported for service commands')
-            result = control.call(command, manifest=read(manifest) if manifest else None)
+            result = control.call(command, manifest=read(manifest) if manifest else None,
+                                  receipt={'path': str(absolute(recovery_path)), 'sha256': recovery_sha}
+                                  if recovery_path else None)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
