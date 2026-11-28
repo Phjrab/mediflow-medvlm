@@ -18,6 +18,11 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import signal
+import threading
+import math
+import time
+from contextlib import contextmanager
 
 sys.dont_write_bytecode = True
 GUARD_SHA = '9d6c6c8d596e0cef05c0b067469788f893d8d4c17c72e97a7ffb0bf39817ff8c'
@@ -49,12 +54,32 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+_FILE_HASH_CACHE = {}
+
+
+def file_identity(info):
+    return [info.st_dev, info.st_ino, info.st_mode, info.st_size,
+            info.st_mtime_ns, info.st_ctime_ns]
+
+
 def file_hash(path):
+    # The initial digest is checked against stable bytes. Repeated local checks
+    # use inode/ctime as well as size/mtime; any metadata change rehashes bytes.
+    path = absolute(path)
+    before = file_identity(path.stat())
+    cached = _FILE_HASH_CACHE.get(str(path))
+    if cached is not None and cached[0] == before:
+        return cached[1]
     h = hashlib.sha256()
-    with absolute(path).open('rb') as stream:
+    with path.open('rb') as stream:
+        require(file_identity(os.fstat(stream.fileno())) == before, 'file changed while opening')
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(block)
-    return h.hexdigest()
+        require(file_identity(os.fstat(stream.fileno())) == before, 'file changed while hashing')
+    require(file_identity(path.stat()) == before, 'file replaced while hashing')
+    value = h.hexdigest()
+    _FILE_HASH_CACHE[str(path)] = (before, value)
+    return value
 
 
 def read(path):
@@ -150,35 +175,232 @@ def validate_source_pair(engine, parent, replacement, *, repaired):
     return old, new
 
 
+# Native validation stays isolated from the owner's immutable package roots.
+# Proofs are returned over stdout and retained in memory only.
+_WORKER_VERIFIER = r"""
+import hashlib, importlib, json, os, pathlib, sys
+spec = json.load(sys.stdin)
+sys.path.insert(0, spec['repo'] + '/src')
+module = importlib.import_module(spec['module'])
+files, directories, snapshots, observations = {}, {}, {}, {}
+busy = False
+runtime = tuple({sys.prefix, sys.base_prefix, '/usr', '/lib', '/lib64'})
+state_path = spec['state_path']
+def identity(path):
+    info = os.stat(path, follow_symlinks=False)
+    return [info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
+def sha(path):
+    before = identity(path)
+    h = hashlib.sha256()
+    with open(path, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        observed = [info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns]
+        if observed != before:
+            raise RuntimeError('scientific file changed while opening')
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            h.update(block)
+    if identity(path) != before:
+        raise RuntimeError('scientific file changed while hashing')
+    return h.hexdigest()
+def audit(event, args):
+    global busy
+    if busy or event not in {'open', 'os.listdir', 'os.scandir'}:
+        return
+    path = args[0]
+    if not isinstance(path, (str, bytes, os.PathLike)):
+        return
+    path = os.path.abspath(os.fsdecode(path))
+    if any(path == prefix or path.startswith(prefix + '/') for prefix in runtime):
+        return
+    busy = True
+    try:
+        if event == 'open':
+            if args[2] & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND):
+                raise RuntimeError('scientific verifier must be read only')
+            if os.path.isfile(path) and path not in files:
+                before = identity(path)
+                files[path] = {'sha256': sha(path), 'identity': before}
+                if identity(path) != before:
+                    raise RuntimeError('scientific file changed before native read')
+                if path == state_path:
+                    with open(path) as stream:
+                        snapshots[path] = json.load(stream)
+        elif os.path.isdir(path) and path not in directories:
+            directories[path] = sorted(os.listdir(path))
+    finally:
+        busy = False
+sys.addaudithook(audit)
+def observe(function, kind):
+    def wrapped(path, *args, **kwargs):
+        global busy
+        result = function(path, *args, **kwargs)
+        if busy:
+            return result
+        absolute = os.path.abspath(os.fsdecode(path))
+        if any(absolute == prefix or absolute.startswith(prefix + '/') for prefix in runtime):
+            return result
+        key = (absolute, kind)
+        if key in observations and observations[key] != result:
+            raise RuntimeError('scientific path observation changed during batch')
+        observations[key] = result
+        return result
+    return wrapped
+for kind in ('exists', 'is_file', 'is_dir', 'is_symlink'):
+    setattr(pathlib.Path, kind, observe(getattr(pathlib.Path, kind), kind))
+for name, kind in (('exists', 'exists'), ('isfile', 'is_file'), ('isdir', 'is_dir'), ('islink', 'is_symlink')):
+    setattr(os.path, name, observe(getattr(os.path, name), kind))
+transaction = getattr(module, '_TRANSACTION', None)
+token = transaction.set({'cache': {}, 'refs': {}}) if transaction is not None else None
+try:
+    jobs = [module.job_from_config(path, repo=spec['repo'], python=sys.executable)
+            for path in spec['configs']]
+    if transaction is not None:
+        for path, expected in transaction.get()['refs'].items():
+            if sha(path) != expected:
+                raise RuntimeError('native scientific proof changed during batch')
+finally:
+    if token is not None:
+        transaction.reset(token)
+if 'torch' in sys.modules:
+    raise RuntimeError('CPU verifier imported GPU runtime')
+busy = True
+for path, expected in files.items():
+    if identity(path) != expected['identity']:
+        raise RuntimeError('scientific proof changed during batch')
+for path, expected in directories.items():
+    if sorted(os.listdir(path)) != expected:
+        raise RuntimeError('scientific proof directory changed during batch')
+for (path, kind), expected in observations.items():
+    if getattr(pathlib.Path(path), kind)() != expected:
+        raise RuntimeError('scientific path observation changed during batch')
+# All previously terminal native records are immutable scientific evidence.
+# Newly terminal records are allowed as the canonical owner advances work.
+states = []
+for path, state in snapshots.items():
+    records = {key: value for key, value in state['jobs'].items()
+               if value.get('status') in {'SUCCEEDED', 'FAILED', 'BLOCKED_PREREQUISITE'}}
+    states.append({'path': path, 'campaign_id': state['campaign_id'],
+                   'queue_owner': state['queue_owner'], 'records': records,
+                   'manifest_hash': state.get('manifest_hash'),
+                   'manifest_path': state.get('manifest_path'),
+                   'manifest_revisions': state.get('manifest_revisions', [])})
+    del files[path]
+print(json.dumps({'jobs': jobs, 'proof': {'files': files, 'directories': directories, 'states': states, 'observations': [{'path': path, 'kind': kind, 'value': value} for (path, kind), value in observations.items()]}}, sort_keys=True))
+"""
+
+
+def verify_read_proof(proof):
+    """Rehash immutable science; permit unrelated native state transitions."""
+    for path, expected in proof['files'].items():
+        path = absolute(path)
+        require(file_identity(path.stat()) == expected['identity'],
+                'cached scientific evidence changed: ' + str(path))
+    for path, expected in proof['directories'].items():
+        directory = absolute(path)
+        require(sorted(item.name for item in directory.iterdir()) == expected,
+                'cached scientific artifact set changed: ' + path)
+        require(not any(item.is_symlink() for item in directory.iterdir()),
+                'cached scientific artifact symlink changed: ' + path)
+    for observation in proof['observations']:
+        path = Path(observation['path'])
+        require(getattr(path, observation['kind'])() == observation['value'],
+                'cached scientific path observation changed: ' + str(path))
+    for snapshot in proof['states']:
+        state = read(snapshot['path'])
+        require(state.get('campaign_id') == snapshot['campaign_id']
+                and state.get('queue_owner') == snapshot['queue_owner']
+                and all(state.get(key, [] if key == 'manifest_revisions' else None) == snapshot[key]
+                        for key in ('manifest_hash', 'manifest_path', 'manifest_revisions'))
+                and all(state.get('jobs', {}).get(key) == record
+                        for key, record in snapshot['records'].items()),
+                'cached native scientific terminal evidence changed')
+
+
+class ServiceStopped(Exception):
+    """Cooperative owner shutdown; never a scientific job failure."""
+
+
+def check_service_stop(control):
+    event = getattr(control, '_service_stop', None)
+    if event is not None and event.is_set():
+        raise ServiceStopped('canonical supervisor service stopping')
+
+
 class CompletionMixin:
     def _verify_worker_job(self, job, config_ref):
-        """Run the pinned worker's own scientific validator in a fresh CPU process.
+        self._verify_worker_batch([(job, config_ref)])
 
-        The legacy owner refuses mixed package roots, so do not import a new
-        worker into that process. This finite verifier cannot execute run_job.
-        """
-        require(job['argv'][0] == sys.executable, 'same pinned Python runtime required')
-        code = ('import importlib,json,sys;'
-                'spec=json.load(sys.stdin);sys.path.insert(0,spec["repo"]+"/src");'
-                'm=importlib.import_module(spec["module"]);'
-                'result=m.job_from_config(spec["config"],repo=spec["repo"],python=sys.executable);'
-                'exec("if \\\"torch\\\" in sys.modules: raise RuntimeError(\\\"CPU verifier imported GPU runtime\\\")");'
-                'print(json.dumps(result,sort_keys=True))')
+    def _verify_worker_jobs(self, jobs):
+        method = self._verify_worker_job
+        if getattr(method, '__func__', None) is not CompletionMixin._verify_worker_job:
+            for job, ref in jobs:
+                method(job, ref)
+            return
+        groups = {}
+        for job, ref in jobs:
+            groups.setdefault((job['cwd'], job['argv'][2]), []).append((job, ref))
+        for group in groups.values():
+            self._verify_worker_batch(group)
+
+    def _verify_worker_batch(self, jobs):
+        require(all(job['argv'][0] == sys.executable for job, _ in jobs),
+                'same pinned Python runtime required')
+        key = digest(jobs)
+        proofs = getattr(self, '_scientific_proofs', {})
+        if key in proofs:
+            verify_read_proof(proofs[key])
+            return
+        first = jobs[0][0]
         env = {key: os.environ[key] for key in ('HOME', 'PATH', 'LANG', 'LC_ALL', 'TMPDIR') if key in os.environ}
         env.update(CUDA_VISIBLE_DEVICES='', HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
                    PYTHONDONTWRITEBYTECODE='1', HF_HUB_DISABLE_TELEMETRY='1')
-        process = subprocess.run([sys.executable, '-I', '-B', '-c', code],
-            input=json.dumps({'module': job['argv'][2], 'repo': job['cwd'], 'config': config_ref['path']}),
-            capture_output=True, text=True, env=env, cwd=job['cwd'], timeout=600)
-        require(process.returncode == 0, 'pinned scientific worker validation failed: ' + process.stderr[-1200:])
-        require(json.loads(process.stdout) == job, 'worker-generated exact job closure changed')
+        payload = json.dumps({'module': first['argv'][2], 'repo': first['cwd'],
+                              'state_path': str(self.supervisor.state_path),
+                              'configs': [ref['path'] for _, ref in jobs]})
+        command = [sys.executable, '-I', '-B', '-c', _WORKER_VERIFIER]
+        check_service_stop(self)
+        if getattr(self, '_service_stop', None) is None:
+            process = subprocess.run(command, input=payload, capture_output=True,
+                                     text=True, env=env, cwd=first['cwd'], timeout=3600)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, text=True, env=env, cwd=first['cwd'])
+            deadline = time.monotonic() + 3600
+            try:
+                pending_input = payload
+                while True:
+                    check_service_stop(self)
+                    require(time.monotonic() < deadline, 'pinned scientific validation timed out')
+                    try:
+                        stdout, stderr = process.communicate(input=pending_input, timeout=.2)
+                        break
+                    except subprocess.TimeoutExpired:
+                        pending_input = None
+            except BaseException:
+                process.terminate()
+                try:
+                    process.communicate(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.communicate()
+                raise
+        require(process.returncode == 0, 'pinned scientific worker validation failed: ' + stderr[-1200:])
+        result = json.loads(stdout)
+        require(result['jobs'] == [job for job, _ in jobs], 'worker-generated exact job closure changed')
+        verify_read_proof(result['proof'])
+        proofs[key] = result['proof']
+        self._scientific_proofs = proofs
 
     def _completion_chain(self):
         cached = getattr(self, '_completion_cache', None)
         if cached is not None:
-            # Full scientific validation runs at each outer _verify, including
-            # the routed canonical lock entry. Repeated native load/status calls
-            # within that transaction still rehash every pinned config/source.
+            # Results live only in this process. Native locked entry still
+            # rehashes the complete immutable scientific proof.
+            require(getattr(self, '_completion_refs_digest', None) == digest(self.completion_refs),
+                    'completion refinement chain changed during owner lifetime')
+            for proof in getattr(self, '_scientific_proofs', {}).values():
+                verify_read_proof(proof)
             for ref, binding, _, _ in cached:
                 pinned(ref)
                 pinned(binding['parent'])
@@ -186,7 +408,9 @@ class CompletionMixin:
                 jobs = {j['job_id']: j for j in replacement['jobs']}
                 for key, config_ref in binding['configs'].items():
                     pinned(config_ref)
-                    self.engine.verify_source(jobs[key])
+                    for name, expected in jobs[key]['source_files'].items():
+                        require(file_hash(Path(jobs[key]['cwd']) / name) == expected,
+                                'source snapshot changed: ' + name)
                 for proof in binding['review_evidence']:
                     pin_bytes(proof)
                 if binding['schema_version'] == REPAIR_SCHEMA:
@@ -194,6 +418,7 @@ class CompletionMixin:
                     for proof in review['evidence']: pin_bytes(proof)
             return cached
         entries = []
+        worker_jobs = []
         prior_replacement = None
         for ref in self.completion_refs:
             binding = pinned(ref)
@@ -246,13 +471,15 @@ class CompletionMixin:
                 require(absolute(job['argv'][4]).is_relative_to(self.root / 'configs')
                         and absolute(job['success_receipt']) == self.root / 'receipts' / (key + '.json'), 'completion config/receipt escaped owner namespace')
                 self.engine.verify_source(job)
-                self._verify_worker_job(job, binding['configs'][key])
+                worker_jobs.append((job, binding['configs'][key]))
             for proof in binding['review_evidence']:
                 pin_bytes(proof)
             require(binding['review_evidence'], 'CPU review evidence required')
             entries.append((ref, binding, parent, replacement))
             prior_replacement = replacement
         require(entries, 'at least one pinned completion refinement required')
+        self._verify_worker_jobs(worker_jobs)
+        self._completion_refs_digest = digest(self.completion_refs)
         self._completion_cache = entries
         return entries
 
@@ -279,9 +506,9 @@ class CompletionMixin:
         return super()._check_original_records(view)
 
     def _verify(self, *, prepared=True):
-        self._completion_cache = None
         result = super()._verify(prepared=prepared)
         self._completion_chain()
+        check_service_stop(self)
         return result
 
     def _registered(self):
@@ -347,6 +574,7 @@ class CompletionMixin:
             require(manifest is None, 'unexpected manifest')
             # Bypass only the old facade's exact 97-job *routing* restriction.
             # Its verification, native Supervisor/recovery tick and V7 fence remain.
+            check_service_stop(self)
             return self.base.CampaignControl.call(self, command)
         chain = self._completion_chain()
         ref, binding, parent, replacement = chain[-1]
@@ -557,19 +785,182 @@ def prepare_repair_binding(deployment,parent_manifest,replacement_manifest,state
     return value
 
 
+def service_status(status_path):
+    """Read-only telemetry; this endpoint never constructs or ticks an owner."""
+    value = read(status_path)
+    identity = value.get('process_identity')
+    alive = False
+    if isinstance(identity, dict):
+        try:
+            pid = int(identity['worker_pid'])
+            text = Path('/proc').joinpath(str(pid), 'stat').read_text()
+            fields = text[text.rfind(')') + 2:].split()
+            alive = (fields[0] != 'Z' and fields[19] == identity['process_start_time']
+                     and Path('/proc/sys/kernel/random/boot_id').read_text().strip() == identity['boot_identity'])
+        except (OSError, KeyError, ValueError, IndexError):
+            pass
+    value.update(process_alive=alive,
+                 heartbeat_age_seconds=max(0, time.time() - value['heartbeat_unix']),
+                 telemetry_only=True)
+    return value
+
+
+def serve(control, *, interval_seconds=10.0, heartbeat_seconds=5.0, status_path=None, stop_event=None):
+    """Keep the canonical Supervisor lock; dispatch only its existing tick."""
+    require(math.isfinite(interval_seconds) and 0 < interval_seconds <= 60,
+            'service tick interval must be finite and between 0 and 60 seconds')
+    require(math.isfinite(heartbeat_seconds) and 0 < heartbeat_seconds <= 60,
+            'service heartbeat interval must be finite and between 0 and 60 seconds')
+    path = absolute(status_path or control.root / 'runtime/persistent-supervisor.json')
+    require(path.is_relative_to(control.root / 'runtime'), 'service telemetry must stay in owner runtime')
+    stop_event = stop_event or threading.Event()
+    physical = absolute(control.physical['supervisor'])
+    original = control._physical_lock
+    # Keep this exact native inode locked for the service lifetime. Existing
+    # one-shot commands remain fenced, and worker/GPU routing is unchanged.
+    with original(physical) as held:
+        if held is None:
+            return {'status': 'SUPERVISOR_BUSY'}
+        os.set_inheritable(held.fileno(), False)
+        held_identity = file_identity(os.fstat(held.fileno()))[:2]
+
+        @contextmanager
+        def nested(path):
+            check_service_stop(control)
+            path = absolute(path)
+            if path == physical:
+                require(not held.closed and file_identity(path.stat())[:2] == held_identity,
+                        'canonical supervisor lock inode changed')
+                yield held
+            else:
+                with original(path) as lease:
+                    yield lease
+
+        control._physical_lock = nested
+        control._service_stop = stop_event
+        original_popen = control.engine.subprocess.Popen
+
+        def guarded_popen(*args, **kwargs):
+            check_service_stop(control)
+            return original_popen(*args, **kwargs)
+
+        control.engine.subprocess.Popen = guarded_popen
+        mutex = threading.Lock()
+        heartbeat_stop = threading.Event()
+        telemetry = {'schema_version': 'mediflow.canonical-supervisor-service.v1',
+                     'status': 'STARTING', 'scope': 'V6_ONLY', 'v7_policy': 'MANUAL',
+                     'process_identity': control.engine.process_identity(),
+                     'interval_seconds': interval_seconds, 'ticks_completed': 0,
+                     'canonical_supervisor_lock': str(physical),
+                     'campaign_root': str(control.root), 'data_root': str(control.data_root)}
+        heartbeat_error = []
+
+        def publish(**values):
+            with mutex:
+                telemetry.update(values, heartbeat_unix=time.time(), heartbeat_at=control.engine.now())
+                control.engine.atomic_json(path, telemetry)
+
+        def heartbeat():
+            while not heartbeat_stop.wait(heartbeat_seconds):
+                try:
+                    publish()
+                except Exception as exc:
+                    heartbeat_error.append(exc)
+                    stop_event.set()
+                    return
+
+        handlers = {}
+        if threading.current_thread() is threading.main_thread():
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                handlers[sig] = signal.signal(sig, lambda *_: stop_event.set())
+        thread = threading.Thread(target=heartbeat, name='supervisor-heartbeat', daemon=True)
+        try:
+            publish()
+            thread.start()
+            while not stop_event.is_set():
+                started = time.monotonic()
+                publish(status='TICKING', tick_started_at=control.engine.now())
+                result = control.call('tick')
+                require(not heartbeat_error, 'service heartbeat failed')
+                jobs = result.get('jobs', {})
+                running = [key for key, record in jobs.items() if record.get('status') in {'STARTING', 'RUNNING'}]
+                held_jobs = {key: record.get('status') for key, record in jobs.items()
+                             if key.startswith('v6-') and record.get('status') in
+                             {'IMPLEMENTATION_PENDING', 'ANALYSIS_REQUIRED', 'BLOCKED_PREREQUISITE', 'FAILED'}}
+                held_reasons = {key: {field: record[field] for field in
+                                ('error_signature', 'source_repair_required', 'failed_source_hash', 'blocked_by', 'reason')
+                                if field in record} for key, record in jobs.items() if key in held_jobs}
+                publish(status='RUNNING' if running else 'BLOCKED' if held_jobs else 'IDLE',
+                        ticks_completed=telemetry['ticks_completed'] + 1,
+                        last_tick_completed_at=control.engine.now(),
+                        last_tick_seconds=round(time.monotonic() - started, 6),
+                        running_jobs=running, held_v6_jobs=held_jobs, held_v6_reasons=held_reasons,
+                        native_status=result.get('status'), error=None)
+                print(json.dumps({'event': 'CANONICAL_SUPERVISOR_TICK',
+                      'status': telemetry['status'], 'ticks_completed': telemetry['ticks_completed'],
+                      'running_jobs': running, 'held_v6_jobs': held_jobs,
+                      'duration_seconds': telemetry['last_tick_seconds']}, sort_keys=True), flush=True)
+                stop_event.wait(max(0, interval_seconds - (time.monotonic() - started)))
+            require(not heartbeat_error, 'service heartbeat failed')
+            publish(status='STOPPED')
+            return dict(telemetry)
+        except ServiceStopped:
+            if heartbeat_error:
+                error = RuntimeError('service heartbeat failed: ' + str(heartbeat_error[0]))
+                print(json.dumps({'event': 'CANONICAL_SUPERVISOR_ERROR', 'type': type(error).__name__,
+                                  'message': str(error)[-2000:]}, sort_keys=True), flush=True)
+                try:
+                    publish(status='ERROR', error={'type': type(error).__name__, 'message': str(error)[-2000:]})
+                except Exception:
+                    pass
+                raise error from heartbeat_error[0]
+            publish(status='STOPPED')
+            return dict(telemetry)
+        except BaseException as exc:
+            print(json.dumps({'event': 'CANONICAL_SUPERVISOR_ERROR', 'type': type(exc).__name__,
+                              'message': str(exc)[-2000:]}, sort_keys=True), flush=True)
+            publish(status='ERROR', error={'type': type(exc).__name__, 'message': str(exc)[-2000:]})
+            raise
+        finally:
+            heartbeat_stop.set()
+            if thread.ident is not None:
+                thread.join(timeout=heartbeat_seconds + 1)
+            control._physical_lock = original
+            control.engine.subprocess.Popen = original_popen
+            del control._service_stop
+            for sig, handler in handlers.items():
+                signal.signal(sig, handler)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--deployment', required=True)
-    parser.add_argument('--deployment-sha256', required=True)
-    parser.add_argument('--completion-binding', required=True)
-    parser.add_argument('--completion-binding-sha256', required=True)
+    parser.add_argument('--deployment')
+    parser.add_argument('--deployment-sha256')
+    parser.add_argument('--completion-binding')
+    parser.add_argument('--completion-binding-sha256')
     parser.add_argument('--scope', choices=['auto'], default='auto')
-    parser.add_argument('command', choices=['status', 'tick', 'refine-completion'])
+    parser.add_argument('command', choices=['status', 'tick', 'refine-completion', 'serve', 'service-status'])
     parser.add_argument('--manifest')
+    parser.add_argument('--status-file')
+    parser.add_argument('--interval-seconds', type=float, default=10.0)
+    parser.add_argument('--heartbeat-seconds', type=float, default=5.0)
     args = vars(parser.parse_args(argv))
     command, manifest = args.pop('command'), args.pop('manifest')
-    control = build_control(**args)
-    result = control.call(command, manifest=read(manifest) if manifest else None)
+    status_path = args.pop('status_file')
+    interval, heartbeat = args.pop('interval_seconds'), args.pop('heartbeat_seconds')
+    if command == 'service-status':
+        require(status_path is not None and manifest is None, 'service-status requires only a status file')
+        result = service_status(status_path)
+    else:
+        require(all(args[key] for key in ('deployment', 'deployment_sha256', 'completion_binding',
+                                          'completion_binding_sha256')), 'pinned deployment and completion binding required')
+        control = build_control(**args)
+        if command == 'serve':
+            require(manifest is None, 'service cannot refine or replace a manifest')
+            result = serve(control, interval_seconds=interval, heartbeat_seconds=heartbeat, status_path=status_path)
+        else:
+            require(status_path is None, 'status file is only supported for service commands')
+            result = control.call(command, manifest=read(manifest) if manifest else None)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

@@ -608,3 +608,360 @@ def test_full_refinement_and_repair_chain_audits_remain_required(repair_fixture,
     else: state['jobs'][key]['history'][-1]['replacement_source_hash'] = 'forged'
     write(f.control.supervisor.state_path,state)
     with pytest.raises(ValueError): f.control.supervisor.load()
+
+
+@pytest.fixture
+def scientific_cache_fixture(tmp_path):
+    """An isolated native-style validator with real transitive file readers."""
+    import json
+    repo = tmp_path / 'scientific-source'
+    package = repo / 'src/mediflow_medvlm'
+    package.mkdir(parents=True)
+    (package / '__init__.py').write_text('')
+    module = package / 'campaign_v6_completion.py'
+    module.write_text('''import contextvars,json,pathlib
+_TRANSACTION=contextvars.ContextVar('fixture_transaction',default=None)
+def job_from_config(path, *, repo, python):
+    config=json.loads(pathlib.Path(path).read_text())
+    state=_TRANSACTION.get()
+    assert state is not None
+    if config['second']:
+        assert state['cache']['shared']=='science'
+    else:
+        state['cache']['shared']=pathlib.Path(config['science']).read_text()
+    pathlib.Path(config['science']).parent.iterdir().__iter__().__next__()
+    assert not pathlib.Path(config['absent']).exists()
+    native=json.loads(pathlib.Path(config['state']).read_text())
+    assert native['jobs']['prior']['status']=='SUCCEEDED'
+    return config['job']
+''')
+    data = tmp_path / 'private'
+    supervisor = engine.Supervisor(data)
+    state = {'campaign_id': 'science-fixture', 'queue_owner': 'supervisor',
+             'manifest_hash': 'same-manifest', 'manifest_path': str(tmp_path / 'manifest.json'),
+             'manifest_revisions': [], 'jobs': {'prior': {'status': 'SUCCEEDED', 'attempts': 1},
+                                               'next': {'status': 'PENDING', 'attempts': 0}}}
+    write(supervisor.state_path, state)
+    science = tmp_path / 'immutable-science/result.txt'
+    science.parent.mkdir()
+    science.write_text('science')
+    absent = tmp_path / 'missing-intent.json'
+    jobs = []
+    for index in range(2):
+        config_path = tmp_path / ('config-' + str(index) + '.json')
+        job = {'job_id': 'cpu-' + str(index), 'cwd': str(repo),
+               'argv': [sys.executable, '-m', 'mediflow_medvlm.campaign_v6_completion', '--config', str(config_path)]}
+        write(config_path, {'job_id': job['job_id'], 'config_hash': str(index), 'job': job,
+                            'second': bool(index), 'science': str(science),
+                            'absent': str(absent), 'state': str(supervisor.state_path)})
+        jobs.append((job, owner.reference(config_path)))
+    control = owner.CompletionMixin()
+    control.supervisor = supervisor
+    return SimpleNamespace(control=control, jobs=jobs, state=state, science=science,
+                           absent=absent, module=module)
+
+
+def test_batch_science_validation_shared_transaction_once_then_memory_proof(scientific_cache_fixture, monkeypatch):
+    f = scientific_cache_fixture
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    assert len(f.control._scientific_proofs) == 1
+    def forbidden(*args, **kwargs):
+        raise AssertionError('successful immutable proof must not rerun native validator')
+    monkeypatch.setattr(owner.subprocess, 'run', forbidden)
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    state = copy.deepcopy(f.state)
+    state['jobs']['next'].update(status='SUCCEEDED', attempts=1)
+    state['jobs']['new-child'] = {'status': 'RUNNING', 'attempts': 1}
+    state['updated_at'] = 'native-progress'
+    write(f.control.supervisor.state_path, state)
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+@pytest.mark.parametrize('change', ['science', 'config', 'terminal', 'manifest', 'directory', 'absent', 'symlink'])
+def test_cached_transitive_science_change_fails_closed(scientific_cache_fixture, change):
+    f = scientific_cache_fixture
+    owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+    if change == 'science':
+        original = f.science.stat()
+        f.science.write_text('changed')
+        # Same bytes/mtime size is insufficient: ctime still detects local edits.
+        import os
+        os.utime(f.science, ns=(original.st_atime_ns, original.st_mtime_ns))
+    elif change == 'config':
+        Path(f.jobs[0][1]['path']).write_text('{}')
+    elif change == 'directory':
+        (f.science.parent / 'unexpected.txt').write_text('extra')
+    elif change == 'absent':
+        f.absent.write_text('{}')
+    elif change == 'symlink':
+        target = f.science.parent.parent / 'replacement.txt'
+        target.write_text('science')
+        f.science.unlink()
+        f.science.symlink_to(target)
+    else:
+        state = copy.deepcopy(f.state)
+        if change == 'terminal':
+            state['jobs']['prior']['attempts'] = 2
+        else:
+            state['manifest_hash'] = 'foreign-manifest'
+        write(f.control.supervisor.state_path, state)
+    with pytest.raises((ValueError, OSError), match='scientific|symlink'):
+        owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+def service_fixture_control(tmp_path, call):
+    supervisor = engine.Supervisor(tmp_path / 'private')
+    supervisor.root.mkdir(parents=True, exist_ok=True)
+    physical = supervisor.root / 'canonical-supervisor.lock'
+    with engine.try_lock(physical):
+        pass
+    class Control:
+        def _physical_lock(self, path):
+            return engine.try_lock(path)
+        def call(self, command):
+            assert command == 'tick'
+            with self._physical_lock(physical) as lease:
+                assert lease is not None
+                with engine.try_lock(physical) as competitor:
+                    assert competitor is None  # Existing one-shot owner stays fenced.
+                return call(self)
+    control = Control()
+    control.root, control.data_root, control.supervisor = supervisor.root, supervisor.data_root, supervisor
+    control.engine, control.physical = engine, {'supervisor': physical}
+    return control
+
+
+def test_service_uses_canonical_lock_and_tick_releases_lock_on_stop(tmp_path):
+    import threading
+    stop = threading.Event()
+    count = []
+    def tick(control):
+        count.append(1)
+        if len(count) == 2:
+            stop.set()
+        return {'jobs': {'v6-report': {'status': 'IMPLEMENTATION_PENDING'},
+                         'v7-report': {'status': 'IMPLEMENTATION_PENDING'}}}
+    control = service_fixture_control(tmp_path, tick)
+    original = control._physical_lock
+    result = owner.serve(control, interval_seconds=.01, heartbeat_seconds=.01, stop_event=stop)
+    assert result['ticks_completed'] == 2 and result['status'] == 'STOPPED'
+    assert result['held_v6_jobs'] == {'v6-report': 'IMPLEMENTATION_PENDING'}
+    assert result['scope'] == 'V6_ONLY' and result['v7_policy'] == 'MANUAL'
+    assert control._physical_lock == original
+    with engine.try_lock(control.physical['supervisor']) as lock:
+        assert lock is not None
+    status = owner.service_status(control.root / 'runtime/persistent-supervisor.json')
+    assert status['telemetry_only'] and status['process_alive']
+    assert status['heartbeat_age_seconds'] < 2
+
+
+def test_duplicate_service_returns_busy_without_tick_or_telemetry_mutation(tmp_path):
+    control = service_fixture_control(tmp_path, lambda _: pytest.fail('duplicate service cannot dispatch'))
+    path = control.root / 'runtime/persistent-supervisor.json'
+    write(path, {'original': True})
+    before = path.read_bytes()
+    with engine.try_lock(control.physical['supervisor']):
+        assert owner.serve(control) == {'status': 'SUPERVISOR_BUSY'}
+    assert path.read_bytes() == before
+
+
+def test_service_heartbeat_continues_during_long_tick_and_records_error(tmp_path):
+    import threading
+    import time
+    ticks_entered = threading.Event()
+    release = threading.Event()
+    errors = []
+    def tick(control):
+        ticks_entered.set()
+        assert release.wait(2)
+        raise ValueError('finite scientific proof mismatch')
+    control = service_fixture_control(tmp_path, tick)
+    def runner():
+        try:
+            owner.serve(control, interval_seconds=.01, heartbeat_seconds=.01)
+        except ValueError as exc:
+            errors.append(str(exc))
+    thread = threading.Thread(target=runner)
+    thread.start()
+    try:
+        assert ticks_entered.wait(2)
+        path = control.root / 'runtime/persistent-supervisor.json'
+        first = owner.read(path)['heartbeat_unix']
+        deadline = time.monotonic() + 2
+        while owner.read(path)['heartbeat_unix'] <= first and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert owner.read(path)['heartbeat_unix'] > first
+    finally:
+        release.set()
+        thread.join(3)
+    assert errors == ['finite scientific proof mismatch']
+    assert owner.read(path)['status'] == 'ERROR'
+    assert owner.read(path)['error']['type'] == 'ValueError'
+    with engine.try_lock(control.physical['supervisor']) as lock:
+        assert lock is not None
+
+
+@pytest.mark.parametrize('interval', [0, -1, float('nan'), float('inf'), 61])
+def test_service_rejects_unbounded_or_nonpositive_interval(tmp_path, interval):
+    control = service_fixture_control(tmp_path, lambda _: {})
+    with pytest.raises(ValueError, match='finite'):
+        owner.serve(control, interval_seconds=interval)
+
+
+def test_service_status_cli_never_builds_dispatch_owner(tmp_path, monkeypatch, capsys):
+    import time
+    path = write(tmp_path / 'status.json', {'heartbeat_unix': time.time(), 'status': 'IDLE'})
+    monkeypatch.setattr(owner, 'build_control', lambda **_: pytest.fail('telemetry must be read only'))
+    assert owner.main(['service-status', '--status-file', str(path)]) == 0
+    assert '"telemetry_only": true' in capsys.readouterr().out
+
+
+def test_service_advances_two_real_cpu_workers_with_cached_proof(scientific_cache_fixture, tmp_path):
+    import os
+    import shutil
+    import threading
+    import time
+    f = scientific_cache_fixture
+    snapshot = tmp_path / 'native-worker'
+    package = snapshot / 'src/mediflow_medvlm'
+    package.mkdir(parents=True)
+    (package / '__init__.py').write_text('')
+    shutil.copy(engine.__file__, package / 'campaign_supervisor.py')
+    fixture_script = snapshot / 'cpu.py'
+    fixture_script.write_text('''import hashlib,json,os,pathlib,sys
+root=pathlib.Path(sys.argv[1]);root.mkdir(parents=True,exist_ok=True)
+artifact=root/'actual.txt';artifact.write_text('actual CPU output')
+receipt={'status':'SUCCEEDED','job_id':os.environ['MEDVLM_SUPERVISOR_JOB_ID'],'run_id':os.environ['MEDVLM_SUPERVISOR_RUN_ID'],
+'artifacts':[{'path':str(artifact),'sha256':hashlib.sha256(artifact.read_bytes()).hexdigest()}]}
+for key in ('source_hash','config_hash','data_hash','model_hash'):receipt[key]=os.environ['MEDVLM_SUPERVISOR_'+key.upper()]
+(root/'success.json').write_text(json.dumps(receipt))
+''')
+    sources = {str(path.relative_to(snapshot)): engine.file_hash(path) for path in snapshot.rglob('*.py')}
+    jobs = []
+    for index in range(2):
+        output = tmp_path / ('new-output-' + str(index))
+        jobs.append({'job_id': 'v6-cpu-' + str(index), 'run_id': 'cpu-' + str(index),
+                     'phase': 'CPU_FIXTURE', 'cell_id': 'T1', 'uses_gpu': False,
+                     'argv': [sys.executable, str(fixture_script), str(output)], 'cwd': str(snapshot),
+                     'source_files': sources, 'source_hash': engine.canonical_hash(sources),
+                     'config_hash': 'fixed', 'data_hash': 'fixed', 'model_hash': 'fixed',
+                     'success_receipt': str(output / 'success.json'),
+                     'dependencies': [] if index == 0 else ['v6-cpu-0']})
+    supervisor = engine.Supervisor(tmp_path / 'native-private')
+    manifest = {'campaign_id': 'cpu-fixture', 'jobs': [
+        {'job_id': 'prior', 'run_id': 'prior', 'phase': 'CPU', 'cell_id': 'ALL',
+         'implementation_pending': True, 'dependencies': []}, *jobs]}
+    supervisor.initialize(manifest)
+    state = engine.read_json(supervisor.state_path)
+    state['jobs']['prior']['status'] = 'SUCCEEDED'
+    write(supervisor.state_path, state)
+    f.control.supervisor = supervisor
+    import json
+    for _, ref in f.jobs:
+        config = owner.read(ref['path'])
+        config['state'] = str(supervisor.state_path)
+        write(Path(ref['path']), config)
+        ref['sha256'] = owner.file_hash(ref['path'])
+    native_lock = engine.try_lock
+    physical = supervisor.root / 'supervisor.lock'
+    stop = threading.Event()
+    deadline = time.monotonic() + 8
+    results = []
+    class Control:
+        def _physical_lock(self, path):
+            return native_lock(path)
+        def call(self, command):
+            assert command == 'tick'
+            owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+            with native_lock(physical) as competitor:
+                assert competitor is None
+            @contextmanager
+            def route(path):
+                if Path(path) == physical:
+                    with self._physical_lock(path) as lease:
+                        yield lease
+                else:
+                    with native_lock(path) as lease:
+                        yield lease
+            engine.try_lock = route
+            try:
+                result = supervisor.tick()
+            finally:
+                engine.try_lock = native_lock
+            results.append(result)
+            if result['all_terminal']:
+                stop.set()
+            assert time.monotonic() < deadline, 'finite CPU service integration timed out'
+            return result
+    control = Control()
+    control.root, control.data_root, control.engine = supervisor.root, supervisor.data_root, engine
+    control.physical = {'supervisor': physical}
+    result = owner.serve(control, interval_seconds=.02, heartbeat_seconds=.01, stop_event=stop)
+    assert result['status'] == 'STOPPED' and result['ticks_completed'] >= 3
+    assert all(results[-1]['jobs'][job['job_id']]['status'] == 'SUCCEEDED' for job in jobs)
+    assert all(results[-1]['jobs'][job['job_id']]['attempts'] == 1 for job in jobs)
+    assert all(Path(job['success_receipt']).is_file() for job in jobs)
+    assert len(f.control._scientific_proofs) == 1
+    f.science.write_text('tampered terminal artifact')
+    with pytest.raises(ValueError, match='scientific evidence changed'):
+        owner.CompletionMixin._verify_worker_jobs(f.control, f.jobs)
+
+
+def test_service_stop_cancels_and_reaps_only_cpu_verifier(scientific_cache_fixture):
+    import threading
+    import time
+    f = scientific_cache_fixture
+    f.module.write_text('''import pathlib,time
+def job_from_config(path, *, repo, python):
+    time.sleep(30)
+    return {}
+''')
+    stop = threading.Event()
+    f.control._service_stop = stop
+    timer = threading.Timer(.1, stop.set)
+    timer.start()
+    started = time.monotonic()
+    try:
+        with pytest.raises(owner.ServiceStopped):
+            owner.CompletionMixin._verify_worker_job(f.control, *f.jobs[0])
+    finally:
+        timer.cancel()
+        del f.control._service_stop
+    assert time.monotonic() - started < 3
+    assert not getattr(f.control, '_scientific_proofs', {})
+
+
+def test_service_stop_prevents_new_launcher_after_tick_stop_request(tmp_path):
+    import threading
+    stop = threading.Event()
+    def tick(control):
+        stop.set()
+        control.engine.subprocess.Popen([sys.executable, '-c', 'raise RuntimeError("must never execute")'])
+        pytest.fail('stop must prevent launcher')
+    control = service_fixture_control(tmp_path, tick)
+    result = owner.serve(control, interval_seconds=.01, heartbeat_seconds=.01, stop_event=stop)
+    assert result['status'] == 'STOPPED' and result['ticks_completed'] == 0
+
+
+def test_heartbeat_failure_is_error_even_during_cooperative_stop(tmp_path, monkeypatch):
+    import threading
+    import time
+    def tick(control):
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            owner.check_service_stop(control)
+            time.sleep(.005)
+        pytest.fail('heartbeat failure must stop active owner')
+    control = service_fixture_control(tmp_path, tick)
+    native_atomic = engine.atomic_json
+    def failing_heartbeat(path, value):
+        if threading.current_thread().name == 'supervisor-heartbeat':
+            raise OSError('finite telemetry write failure')
+        return native_atomic(path, value)
+    monkeypatch.setattr(engine, 'atomic_json', failing_heartbeat)
+    with pytest.raises(RuntimeError, match='service heartbeat failed'):
+        owner.serve(control, interval_seconds=.01, heartbeat_seconds=.01)
+    status = owner.read(control.root / 'runtime/persistent-supervisor.json')
+    assert status['status'] == 'ERROR' and status['error']['type'] == 'RuntimeError'
+    with engine.try_lock(control.physical['supervisor']) as lease:
+        assert lease is not None
