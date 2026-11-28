@@ -499,6 +499,62 @@ class CompletionMixin:
         proofs[key] = result['proof']
         self._scientific_proofs = proofs
 
+    def _immutable_binding(self, name):
+        """Memoize only pinned declaration readers inside one verified epoch.
+
+        These legacy helpers read immutable bindings/configs/source archives;
+        live state, holds, lock identity and native loads are never memoized.
+        Include all route pins so source-repair proxy copies stay independent.
+        """
+        method = getattr(super(CompletionMixin, self), name)
+        epoch = getattr(self, '_completion_validation_epoch', None)
+        if epoch is None:
+            return method()
+        pins = tuple(sorted((key, str(value)) for key, value in vars(self).items()
+                            if key.endswith(('_path', '_sha256')) or key in
+                            {'root', 'data_root', 'engine_root', 'hold_path'}))
+        key = (name, pins)
+        cache = epoch.setdefault('immutable_bindings', {})
+        if key not in cache:
+            cache[key] = copy.deepcopy(method())
+        return copy.deepcopy(cache[key])
+
+    def _recovery(self):
+        return self._immutable_binding('_recovery')
+
+    def _stage(self):
+        return self._immutable_binding('_stage')
+
+    def _validation(self):
+        return self._immutable_binding('_validation')
+
+    def _caps(self):
+        return self._immutable_binding('_caps')
+
+    def _full_dev(self):
+        return self._immutable_binding('_full_dev')
+
+    def _bootstrap(self):
+        return self._immutable_binding('_bootstrap')
+
+    def _choice_likelihood(self):
+        return self._immutable_binding('_choice_likelihood')
+
+    def _likelihood_recovery(self):
+        return self._immutable_binding('_likelihood_recovery')
+
+    def _original_choice_binding(self):
+        return self._immutable_binding('_original_choice_binding')
+
+    def _completion_epoch_key(self, chain):
+        return (id(chain), tuple(sorted((key, id(proof)) for key, proof in
+                                        getattr(self, '_scientific_proofs', {}).items())))
+
+    def _mark_completion_checked(self, chain):
+        epoch = getattr(self, '_completion_validation_epoch', None)
+        if epoch is not None:
+            epoch['checked'] = self._completion_epoch_key(chain)
+
     def _completion_chain(self):
         cached = getattr(self, '_completion_cache', None)
         if cached is not None:
@@ -506,6 +562,9 @@ class CompletionMixin:
             # rehashes the complete immutable scientific proof.
             require(getattr(self, '_completion_refs_digest', None) == digest(self.completion_refs),
                     'completion refinement chain changed during owner lifetime')
+            epoch = getattr(self, '_completion_validation_epoch', None)
+            if epoch is not None and epoch.get('checked') == self._completion_epoch_key(cached):
+                return cached
             for proof in getattr(self, '_scientific_proofs', {}).values():
                 verify_read_proof(proof)
             for ref, binding, _, _ in cached:
@@ -523,6 +582,7 @@ class CompletionMixin:
                 if binding['schema_version'] == REPAIR_SCHEMA:
                     review = pinned(binding['repair_review'])
                     for proof in review['evidence']: pin_bytes(proof)
+            self._mark_completion_checked(cached)
             return cached
         entries = []
         worker_jobs = []
@@ -588,6 +648,7 @@ class CompletionMixin:
         self._verify_worker_jobs(worker_jobs)
         self._completion_refs_digest = digest(self.completion_refs)
         self._completion_cache = entries
+        self._mark_completion_checked(entries)
         return entries
 
     def _manifest(self, value):
@@ -613,10 +674,20 @@ class CompletionMixin:
         return super()._check_original_records(view)
 
     def _verify(self, *, prepared=True):
-        result = super()._verify(prepared=prepared)
-        self._completion_chain()
-        check_service_stop(self)
-        return result
+        # Every entry, especially the canonical routed-lock entry, starts a new
+        # immutable-proof epoch. Recursive manifest/load checks share that work.
+        previous = getattr(self, '_completion_validation_epoch', None)
+        self._completion_validation_epoch = {}
+        try:
+            result = super()._verify(prepared=prepared)
+            self._completion_chain()
+            check_service_stop(self)
+            return result
+        finally:
+            # A call keeps this fresh epoch for following native loads. Direct
+            # verification must never leave a proof exemption behind.
+            if not getattr(self, '_completion_call_active', False):
+                self._completion_validation_epoch = previous
 
     def _registered(self):
         super()._registered()
@@ -673,6 +744,22 @@ class CompletionMixin:
                     require(len(events) == 1, 'exact registered completion audit required for every applied prefix')
 
     def call(self, command, *, manifest=None, job_id=None, receipt=None):
+        previous_active = getattr(self, '_completion_call_active', False)
+        previous_epoch = getattr(self, '_completion_validation_epoch', None)
+        self._completion_call_active = True
+        self._completion_validation_epoch = {}
+        try:
+            result = self._completion_call(command, manifest=manifest, job_id=job_id, receipt=receipt)
+            # Recheck the immutable closure once after native work as well. Queue
+            # state is always read fresh and uses its existing semantic checks.
+            self._completion_validation_epoch = {}
+            self._completion_chain()
+            return result
+        finally:
+            self._completion_call_active = previous_active
+            self._completion_validation_epoch = previous_epoch
+
+    def _completion_call(self, command, *, manifest=None, job_id=None, receipt=None):
         require(command in {'status', 'tick', 'refine-completion'} and job_id is None and receipt is None,
                 'only canonical status/tick/reviewed completion refinement supported')
         self._verify()

@@ -1060,3 +1060,166 @@ def test_stat_only_model_shard_size_is_pinned_without_byte_hash(hf_snapshot_fixt
 def test_model_alias_support_keeps_config_and_source_symlink_rule(hf_snapshot_fixture):
     with pytest.raises(ValueError, match='nonsymlink'):
         owner.absolute(hf_snapshot_fixture.alias)
+
+
+@pytest.fixture
+def epoch_fixture(fixture, scientific_cache_fixture):
+    from types import MethodType
+    f, science = fixture, scientific_cache_fixture
+    f.control._completion_chain()
+    owner.CompletionMixin._verify_worker_jobs(science.control, science.jobs)
+    f.control._scientific_proofs = science.control._scientific_proofs
+    base_spec = importlib.util.spec_from_file_location('epoch_canonical_owner', ROOT / 'scripts/campaign_control.py')
+    base = importlib.util.module_from_spec(base_spec)
+    base_spec.loader.exec_module(base)
+    native_lock = engine.try_lock
+    f.control.physical = {name: f.control.root / ('physical-' + name + '.lock')
+                          for name in ('supervisor', 'worker', 'gpu')}
+    for path in f.control.physical.values():
+        with native_lock(path):
+            pass
+    class Guard:
+        def _verify(self, *, prepared=True):
+            self.guard_entries += 1
+            for _ in range(6):
+                self._stage()
+                self._completion_chain()
+            return {'prepared': prepared}
+        def _stage(self):
+            self.binding_reads += 1
+            owner.pin_bytes(self.binding_test_ref)
+            return owner.read(self.binding_test_ref['path'])
+        def _bootstrap(self):
+            self.bootstrap_reads += 1
+            return {'route': str(getattr(self, 'choice_likelihood_path', 'original'))}
+    original = type(f.control)
+    class Control(original, Guard):
+        def _registered(self):
+            self.registration_reads += 1
+            for _ in range(6):
+                self._stage()
+                self._completion_chain()
+    f.control.__class__ = Control
+    f.control.guard_entries = f.control.registration_reads = f.control.binding_reads = f.control.bootstrap_reads = 0
+    f.control.binding_test_ref = owner.reference(f.proof)
+    f.control.base = base
+    f.control.before_locked = None
+    f.control.dispatches = 0
+    @contextmanager
+    def physical(path):
+        with native_lock(path) as lease:
+            if path == f.control.physical['supervisor'] and f.control.before_locked is not None:
+                f.control.before_locked()
+            yield lease
+    f.control._physical_lock = physical
+    f.control.routed_locks = MethodType(base.CampaignControl.routed_locks, f.control)
+    state_path = f.control.supervisor.state_path
+    def native_status():
+        for _ in range(12):
+            f.control._stage()
+            f.control._completion_chain()
+        return {'jobs': {}}
+    def native_tick():
+        with engine.try_lock(f.control.root / 'supervisor.lock') as lease:
+            assert lease is not None
+            native_status()
+            f.control.dispatches += 1
+            return {'jobs': {}}
+    f.control.supervisor = SimpleNamespace(state_path=state_path, status=native_status, tick=native_tick)
+    return SimpleNamespace(control=f.control, source=f, science=science, native_lock=native_lock)
+
+
+def test_recursive_loads_share_epoch_but_native_lock_and_end_revalidate(epoch_fixture, monkeypatch):
+    f = epoch_fixture
+    checks = []
+    actual = owner.verify_read_proof
+    def counted(proof):
+        checks.append(1)
+        return actual(proof)
+    monkeypatch.setattr(owner, 'verify_read_proof', counted)
+    f.control.call('tick')
+    # Initial facade guard, canonical base guard, physical-lock guard, end check.
+    assert len(checks) == 4
+    assert f.control.guard_entries == 3 and f.control.binding_reads == 3
+    assert f.control.registration_reads == 2 and f.control.dispatches == 1
+    assert f.control._completion_validation_epoch is None
+    assert not f.control._completion_call_active
+    f.control.call('tick')
+    assert len(checks) == 8 and f.control.binding_reads == 6
+    assert f.control.registration_reads == 4 and f.control.dispatches == 2
+
+
+def test_mutation_between_preflight_and_canonical_lock_fails_before_dispatch(epoch_fixture):
+    f = epoch_fixture
+    before = f.control.supervisor.state_path.read_bytes()
+    f.control.before_locked = lambda: f.science.science.write_text('changed before native lock guard')
+    with pytest.raises(ValueError, match='scientific evidence changed'):
+        f.control.call('tick')
+    assert f.control.dispatches == 0
+    assert f.control.supervisor.state_path.read_bytes() == before
+    assert f.control._completion_validation_epoch is None
+    assert not f.control._completion_call_active
+
+
+def test_direct_chain_after_call_has_no_epoch_exemption(epoch_fixture):
+    f = epoch_fixture
+    f.control.call('status')
+    f.science.science.write_text('changed after completed owner call')
+    with pytest.raises(ValueError, match='scientific evidence changed'):
+        f.control._completion_chain()
+
+
+def test_failed_scientific_check_never_marks_epoch_verified(epoch_fixture, monkeypatch):
+    f = epoch_fixture
+    attempts = []
+    def reject(proof):
+        attempts.append(1)
+        raise ValueError('finite rejected scientific proof')
+    monkeypatch.setattr(owner, 'verify_read_proof', reject)
+    f.control._completion_validation_epoch = {}
+    try:
+        for _ in range(2):
+            with pytest.raises(ValueError, match='rejected scientific proof'):
+                f.control._completion_chain()
+        assert len(attempts) == 2
+        assert 'checked' not in f.control._completion_validation_epoch
+    finally:
+        f.control._completion_validation_epoch = None
+
+
+def test_legacy_static_binding_cache_resets_before_canonical_lock(epoch_fixture):
+    f = epoch_fixture
+    f.control.before_locked = lambda: f.source.proof.write_text('{"changed": true}')
+    with pytest.raises(ValueError, match='pinned completion evidence changed'):
+        f.control.call('tick')
+    assert f.control.binding_reads == 3
+    assert f.control.dispatches == 0
+
+
+def test_legacy_static_binding_proxy_routes_and_return_values_are_independent(epoch_fixture):
+    f = epoch_fixture
+    f.control._completion_validation_epoch = {}
+    try:
+        first = f.control._bootstrap()
+        first['route'] = 'caller-local mutation'
+        assert f.control._bootstrap() == {'route': 'original'}
+        proxy = copy.copy(f.control)
+        proxy.choice_likelihood_path = Path('/different/pinned/source-repair-binding.json')
+        assert proxy._bootstrap() == {'route': str(proxy.choice_likelihood_path)}
+        assert f.control._bootstrap() == {'route': 'original'}
+        assert f.control.bootstrap_reads == 1
+    finally:
+        f.control._completion_validation_epoch = None
+    # Direct helper calls never inherit the previous transaction's exemptions.
+    f.control._bootstrap()
+    f.control._bootstrap()
+    assert f.control.bootstrap_reads == 3
+
+
+def test_direct_verify_does_not_leave_an_epoch_for_later_calls(epoch_fixture):
+    f = epoch_fixture
+    f.control._verify()
+    assert f.control._completion_validation_epoch is None
+    f.science.science.write_text('changed after direct verification')
+    with pytest.raises(ValueError, match='scientific evidence changed'):
+        f.control._completion_chain()
